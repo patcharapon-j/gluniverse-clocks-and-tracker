@@ -170,13 +170,22 @@ export class TimeEngine {
   /** Set an absolute time from calendar components (used by the set-time dialog). */
   static async setExact(components) {
     const cal = this.calendar;
-    // Resolve components (year/month/dayOfMonth/hour/minute) to an absolute
-    // world time via the calendar — matching CalendarView — instead of handing
-    // a raw components object to game.time.set, which expects a number of
-    // seconds and would otherwise silently fail to change the date.
-    const time = (typeof cal?.componentsToTime === "function")
-      ? cal.componentsToTime(components)
-      : components;
-    return game.time.set(time);
+    if (typeof cal?.componentsToTime !== "function") return game.time.set(components);
+
+    // Foundry resolves a calendar position from `day` (the 0-based day-of-year),
+    // which is the authoritative field produced by timeToComponents. Passing
+    // only month + dayOfMonth is not honored — componentsToTime falls back to
+    // day 0, landing on the first day of the year regardless of the chosen
+    // month. Compute the day-of-year ourselves and pass a fully consistent set
+    // of components so the resulting date matches what the GM selected.
+    const month = components.month ?? 0;
+    const dayOfMonth = components.dayOfMonth ?? 0;
+    const resolved = {
+      ...components,
+      month,
+      dayOfMonth,
+      day: this.dayOfYear(month, dayOfMonth)
+    };
+    return game.time.set(cal.componentsToTime(resolved));
   }
 }
