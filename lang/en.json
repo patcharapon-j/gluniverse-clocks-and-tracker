@@ -75,6 +75,7 @@
   "GLCT.tracker.types.pool": "Resource Pool",
   "GLCT.tracker.types.task": "Task",
   "GLCT.tracker.types.hazard": "Hazard",
+  "GLCT.tracker.types.separator": "Separator",
 
   "GLCT.tracker.field.name": "Name",
   "GLCT.tracker.field.titleField": "Title",
@@ -87,6 +88,7 @@
   "GLCT.tracker.field.discard": "Discard ≤",
   "GLCT.tracker.field.current": "Dice remaining",
   "GLCT.tracker.field.playerRoll": "Players may roll",
+  "GLCT.tracker.field.label": "Label (optional)",
   "GLCT.tracker.field.visible": "Visible to players",
 
   "GLCT.keybindings.toggleHud": "Toggle HUD",

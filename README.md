@@ -16,12 +16,13 @@ A premium, tactile in-game **calendar and time HUD** for Foundry VTT, built on F
 - **Events & holidays** — single day, day range, or whole month. Mark each event visible or hidden to players. Players get a read-only calendar view.
 - **Combat aware** — reflects combat state on the HUD (time only advances when the GM advances it).
 - **Per-shift theming** — subtle color tint and an optional full-scene glow that shifts with the time of day.
-- **Tracker dock** — a *separate* compact floating HUD where the GM keeps live, at-a-glance trackers and shows them to players (read-only). Five types, each a single tidy row:
-  - **Point** — a big numeral; left-click +1, right-click −1.
+- **Tracker dock** — a *separate* compact floating HUD where the GM keeps live, at-a-glance trackers and shows them to players (read-only). Six types, each a single tidy row:
+  - **Point** — a prominent numeral with a bold label; left-click +1, right-click −1.
   - **Clock** — a Blades-in-the-Dark segmented progress clock; left-click advances a slice, right-click steps back.
-  - **Resource Pool** — a pool of dice; clicking rolls them and drops any die at or below the discard range, posting a compact chat card and rolling real 3D dice via **Dice So Nice** when installed. Empty the pool and it shows a bold **EMPTY**. Optionally lets players roll it.
+  - **Resource Pool** — a pool of dice; clicking rolls them and drops any die at or below the discard range, posting a compact chat card and rolling real 3D dice via **Dice So Nice** when installed (the dock count holds until the 3D dice settle). Empty the pool and it shows a bold **EMPTY**. Optionally lets players roll it.
   - **Task** — a row of boxes that fill toward **COMPLETED**, with a title & subtitle.
   - **Hazard** — a doom clock in danger-red with a persistent dread glow & ember flicker.
+  - **Separator** — a slim, label-bearing divider to group the dock into sections (purely visual).
   - Full CRUD per tracker (incl. **player visibility**); drag the grip to reorder — changes sync to players instantly.
 
 ---

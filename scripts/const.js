@@ -33,7 +33,7 @@ export const SETTINGS = {
 };
 
 /** The tracker types the dock can render. */
-export const TRACKER_TYPES = ["point", "clock", "pool", "task", "hazard"];
+export const TRACKER_TYPES = ["point", "clock", "pool", "task", "hazard", "separator"];
 
 /**
  * The four daily watches (YZE shifts), chronological from midnight.

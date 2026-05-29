@@ -17,7 +17,8 @@ const DEFAULTS = {
   clock: { name: "Clock", slices: 6, value: 0 },
   pool:  { name: "Pool", size: 6, count: 5, discard: 2, current: 5, playerRoll: false },
   task:  { title: "Task", subtitle: "", boxes: 6, value: 0 },
-  hazard:{ title: "Hazard", subtitle: "", boxes: 8, value: 0 }
+  hazard:{ title: "Hazard", subtitle: "", boxes: 8, value: 0 },
+  separator: { label: "" }
 };
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
@@ -170,16 +171,38 @@ export class TrackerStore {
     const roll = await new Roll(`${n}d${size}`).evaluate();
     const faces = roll.dice[0]?.results?.map(r => r.result) ?? [];
     const kept = faces.filter(v => v > discard);
-    t.current = kept.length;
-    await this.save(all);
+    const remaining = kept.length;
 
-    await this._postPoolCard({ tracker: t, faces, discard, size, requestedBy, roll });
+    // Post the card first so Dice So Nice animates the attached roll for everyone…
+    const msg = await this._postPoolCard({ tracker: t, faces, discard, size, remaining, requestedBy, roll });
+    // …then hold the dock's pool count until the 3D dice have finished tumbling.
+    await this._awaitDice(msg);
+
+    // Commit the new pool state — this is what repaints the dock for all clients.
+    const fresh = this.all;
+    const t2 = fresh.find(x => x.id === id);
+    if (t2 && t2.type === "pool") { t2.current = remaining; await this.save(fresh); }
+  }
+
+  /**
+   * Resolve once Dice So Nice has finished animating the given message's roll.
+   * No-op (resolves immediately) when DSN isn't installed; a safety timeout
+   * guards against the completion hook never firing.
+   */
+  static async _awaitDice(msg) {
+    if (!game.dice3d || !msg) return;
+    await new Promise(resolve => {
+      let settled = false;
+      const finish = () => { if (settled) return; settled = true; resolve(); };
+      Hooks.once("diceSoNiceRollComplete", (messageId) => { if (messageId === msg.id) finish(); });
+      setTimeout(finish, 5000);
+    });
   }
 
   /** Compact, on-brand chat card listing kept vs discarded dice. */
-  static async _postPoolCard({ tracker, faces, discard, size, requestedBy, roll }) {
-    const empty = tracker.current === 0;
-    const keptCount = faces.filter(v => v > discard).length;
+  static async _postPoolCard({ tracker, faces, discard, size, remaining, requestedBy, roll }) {
+    const empty = remaining === 0;
+    const keptCount = remaining;
     const goneCount = faces.length - keptCount;
 
     const dice = faces.map(v => {
@@ -235,6 +258,9 @@ export class TrackerStore {
       case "hazard":
         t.boxes = clamp(int(t.boxes, 6), 1, 30);
         t.value = clamp(int(t.value), 0, t.boxes);
+        break;
+      case "separator":
+        t.label = String(t.label ?? "").trim();
         break;
     }
   }

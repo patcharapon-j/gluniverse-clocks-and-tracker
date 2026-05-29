@@ -88,6 +88,9 @@ export class TrackerEditor {
         parts.push(row(L("GLCT.tracker.field.boxes"), num("boxes", t.boxes, 1, 30)));
         parts.push(row(L("GLCT.tracker.field.value"), num("value", t.value, 0)));
         break;
+      case "separator":
+        parts.push(row(L("GLCT.tracker.field.label"), text("label", t.label)));
+        break;
     }
     parts.push(row(L("GLCT.tracker.field.visible"), check("visibleToPlayers", t.visibleToPlayers ?? true)));
     return parts.join("");
@@ -111,6 +114,7 @@ export class TrackerEditor {
         ...base, title: (v("title") || "").trim() || L(`GLCT.tracker.types.${type}`),
         subtitle: (v("subtitle") || "").trim(), boxes: nn("boxes", 6), value: nn("value")
       };
+      case "separator": return { ...base, label: (v("label") || "").trim() };
       default: return base;
     }
   }

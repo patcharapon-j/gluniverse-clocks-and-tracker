@@ -89,7 +89,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _structuralSig(t) {
-    return [t.id, t.order, t.type, t.name, t.title, t.subtitle, t.slices, t.boxes,
+    return [t.id, t.order, t.type, t.name, t.title, t.subtitle, t.label, t.slices, t.boxes,
       t.size, t.count, t.discard, t.playerRoll, t.visibleToPlayers].join("|");
   }
 
@@ -115,7 +115,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Shared row shell: grip (GM) · type body · GM tools · overlay. */
   _buildRow(t) {
     const isGM = game.user.isGM;
-    const row = this._el("div", "trow type-" + t.type + (t.type === "hazard" ? " hazard" : ""));
+    const row = this._el("div", "trow type-" + t.type + (t.type === "hazard" ? " hazard" : "") + (t.type === "separator" ? " sep" : ""));
     row.dataset.id = t.id;
     if (isGM && !t.visibleToPlayers) row.classList.add("hiddenfromplayers");
     if (t.type === "hazard") row.appendChild(this._el("div", "haz-scan"));
@@ -143,7 +143,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       row.appendChild(tools);
     }
 
-    if (t.type !== "hazard") {
+    if (t.type !== "hazard" && t.type !== "separator") {
       const ovl = this._el("div", "rovl");
       ovl.appendChild(this._el("div", "ot"));
       row.appendChild(ovl);
@@ -161,6 +161,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       case "pool": return this._bodyPool(t);
       case "task": return this._bodyTask(t);
       case "hazard": return this._bodyHazard(t);
+      case "separator": return this._bodySeparator(t);
       default: return this._bodyPoint(t);
     }
   }
@@ -178,9 +179,13 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       const v = Math.trunc(Number(tr.value) || 0);
       this._renderReel(reel, v, last);
       if (last !== null && v !== last) {
-        chev.className = "chev " + (v > last ? "up" : "down");
+        const dir = v > last ? "up" : "down";
         chev.textContent = v > last ? "▲" : "▼";
+        // Clear then re-add the direction class (with a reflow between) so the
+        // float animation replays on every step — even repeats in one direction.
+        chev.className = "chev";
         void chev.offsetWidth;
+        chev.className = "chev " + dir;
       }
       last = v;
     };
@@ -280,7 +285,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         if (cur > 8) dice.appendChild(this._el("span", "more", `+${cur - 8}`));
       }
-      cnt.innerHTML = `<b>${cur}</b>×d${size}`;
+      cnt.innerHTML = `<b>${cur}</b>d${size}`;
       this._setOverlay(c, cur === 0 ? "empty" : null, game.i18n.localize("GLCT.tracker.empty"));
       last = cur;
     };
@@ -298,6 +303,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const br = this._el("div", "boxrow");
     const cells = [];
     for (let i = 0; i < boxes; i++) { const b = this._el("div", "box"); br.appendChild(b); cells.push(b); }
+    this._sizeBoxes(br, cells, boxes);
     c.append(titles, br);
     let last = -1;
     const paint = (tr) => {
@@ -314,6 +320,14 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     return { content: c, paint };
   }
 
+  /** Shrink box cells as the count grows so a long task/hazard stays one tidy row. */
+  _sizeBoxes(br, cells, boxes) {
+    const sz = boxes <= 10 ? 14 : boxes <= 16 ? 11 : boxes <= 22 ? 8 : 6;
+    const gap = sz >= 11 ? 3 : sz >= 8 ? 2 : 1;
+    br.style.gap = `${gap}px`;
+    for (const b of cells) { b.style.width = `${sz}px`; b.style.height = `${sz}px`; }
+  }
+
   /* ---- HAZARD (red dread boxes; no overlay) ---- */
   _bodyHazard(t) {
     const c = this._el("div", "t-task haz");
@@ -325,6 +339,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const br = this._el("div", "boxrow");
     const cells = [];
     for (let i = 0; i < boxes; i++) { const b = this._el("div", "box"); br.appendChild(b); cells.push(b); }
+    this._sizeBoxes(br, cells, boxes);
     c.append(titles, br);
     let last = -1;
     const paint = (tr) => {
@@ -342,6 +357,19 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     return { content: c, paint };
   }
 
+  /* ---- SEPARATOR (purely visual divider with optional centered label) ---- */
+  _bodySeparator(t) {
+    const c = this._el("div", "t-sep");
+    const lab = this._el("span", "lab", t.label ?? "");
+    c.appendChild(lab);
+    const paint = (tr) => {
+      const txt = (tr.label ?? "").trim();
+      lab.textContent = txt;
+      lab.style.display = txt ? "" : "none";
+    };
+    return { content: c, paint };
+  }
+
   _setOverlay(bodyEl, kind, txt) {
     const ovl = bodyEl.closest(".trow")?.querySelector(".rovl");
     if (!ovl) return;
@@ -353,6 +381,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   /* ------------------------------ interactions ------------------------------ */
 
   _wireRowInteractions(row, body, type) {
+    if (type === "separator") { body.style.cursor = "default"; return; }  // purely decorative
     const isGM = game.user.isGM;
     // Players only ever interact with a pool they're allowed to roll; everything
     // else is read-only, so don't tease them with a clickable cursor.
