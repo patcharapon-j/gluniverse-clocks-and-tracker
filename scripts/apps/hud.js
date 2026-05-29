@@ -45,8 +45,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       advance: GlctHud.prototype._onAdvance,
       nextShift: GlctHud.prototype._onNextShift,
       setTime: GlctHud.prototype._onSetTime,
-      openCalendar: GlctHud.prototype._onOpenCalendar,
-      toggleCollapse: GlctHud.prototype._onToggleCollapse
+      openCalendar: GlctHud.prototype._onOpenCalendar
     }
   };
 
@@ -348,6 +347,10 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     // drag to reposition via the grip
     const grip = root.querySelector(".grip");
     if (grip) grip.addEventListener("pointerdown", this._onDragStart.bind(this));
+    // double-click the grip or the collapsed pill to switch standard <-> compact
+    root.querySelectorAll(".grip, .pill").forEach(el =>
+      el.addEventListener("dblclick", ev => { ev.preventDefault(); this._onToggleCollapse(); })
+    );
   }
 
   _applyPosition() {
@@ -380,7 +383,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const up = async () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
-      if (!moved) { this._onToggleCollapse(); return; }   // a click, not a drag
+      if (!moved) return;   // a click, not a drag — collapse is double-click now
       const r = el.getBoundingClientRect();
       try { await game.settings.set(MODULE_ID, SETTINGS.hudPosition, { left: Math.round(r.left), top: Math.round(r.top) }); } catch { /* ignore */ }
     };

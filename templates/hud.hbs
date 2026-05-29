@@ -7,7 +7,7 @@
         <i></i><i></i><i></i>
       </div>
 
-      <div class="cell pill" data-action="toggleCollapse">
+      <div class="cell pill" title="{{localize 'GLCT.hud.toggleHint'}}">
         <span class="pring" data-ring></span>
         <span class="pw" data-watch></span>
         <span class="pc reelclock" data-reelclock></span><span class="pd" data-pilldate></span>
@@ -28,12 +28,14 @@
         </span>
       </div>
 
+      <div class="cell clock-cell">
+        <span class="lbl">{{localize 'GLCT.hud.timeLabel'}}</span>
+        <span class="clock"><span class="pulse"></span><span class="reelclock" data-reelclock></span></span>
+      </div>
+
       <div class="cell meter">
-        <div class="top">
-          <span class="clock" data-clk><span class="pulse"></span><span class="reelclock" data-reelclock></span></span>
-          <span class="rem"><span data-rem></span></span>
-        </div>
         <div class="track" data-track></div>
+        <span class="rem"><span data-rem></span></span>
       </div>
 
       <div class="cell event-cell" data-action="openCalendar">
