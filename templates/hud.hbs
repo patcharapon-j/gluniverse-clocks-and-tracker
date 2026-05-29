@@ -1,0 +1,59 @@
+<div class="hud-root {{#if collapsed}}is-collapsed{{/if}}">
+  <div class="bar {{#if collapsed}}collapsed{{/if}}" data-bar>
+    <div class="sweep"></div>
+    <div class="main">
+
+      <div class="cell grip" title="{{localize 'GLCT.hud.dragHint'}}">
+        <i></i><i></i><i></i>
+      </div>
+
+      <div class="cell pill" data-action="toggleCollapse">
+        <span class="pring" data-ring></span>
+        <span class="pw" data-watch></span>
+        <span class="pc reelclock" data-reelclock></span><span class="pd" data-pilldate></span>
+      </div>
+
+      <div class="cell date">
+        <span class="wd" data-wd></span>
+        <span class="m"><span data-dy></span><sup data-ord></sup> <span data-moshort></span></span>
+        <span class="mo" data-mo></span>
+      </div>
+
+      <div class="cell watch">
+        <span class="name" data-watch></span>
+        <span class="row">
+          <span class="shifts" data-shifts></span>
+          <span class="moon"><span class="shadow" data-moon></span></span>
+          <span class="season" data-season></span>
+        </span>
+      </div>
+
+      <div class="cell meter">
+        <div class="top">
+          <span class="clock" data-clk><span class="pulse"></span><span class="reelclock" data-reelclock></span></span>
+          <span class="rem"><span data-rem></span></span>
+        </div>
+        <div class="track" data-track></div>
+      </div>
+
+      <div class="cell event-cell" data-action="openCalendar">
+        <span class="lbl">{{localize 'GLCT.calendarView.title'}}</span>
+        <span class="event" data-event><span class="dot"></span><span data-eventtxt></span></span>
+      </div>
+
+    </div>
+  </div>
+
+  {{#if isGM}}
+  <div class="gmwrap" data-gmwrap>
+    <div class="gmdock">
+      <span class="c" data-step="stretch" data-action="advance">{{localize 'GLCT.controls.advanceStretch'}}</span>
+      <span class="c" data-step="hour"    data-action="advance">{{localize 'GLCT.controls.advanceHour'}}</span>
+      <span class="c" data-step="shift"   data-action="advance">{{localize 'GLCT.controls.advanceShift'}}</span>
+      <span class="c" data-step="day"     data-action="advance">{{localize 'GLCT.controls.advanceDay'}}</span>
+      <span class="c sep" data-action="nextShift">&#8618; {{localize 'GLCT.shifts.0'}}</span>
+      <span class="c sep" data-action="setTime" title="{{localize 'GLCT.controls.setTime'}}">&#8986;</span>
+    </div>
+  </div>
+  {{/if}}
+</div>

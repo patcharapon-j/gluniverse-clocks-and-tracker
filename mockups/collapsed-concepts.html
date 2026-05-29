@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Collapsed View — 6 Concepts</title>
+<style>
+  :root{--ink:#eef1f7;--muted:#98a2b6;--hair:rgba(255,255,255,.09);
+    --tint:#6b86d6;--glow:rgba(120,150,225,.55);--glowsoft:rgba(120,150,225,.2);}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 "Segoe UI",system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(1100px 700px at 50% -5%,#1b2336,transparent 55%),#06080c;padding:30px 18px 90px}
+  h1{font-size:19px;font-weight:650;margin:0;text-align:center}
+  .hint{color:var(--muted);font-size:12.5px;text-align:center;max-width:620px;margin:8px auto 0}
+  .deck{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin:18px auto}
+  .tgl{border:1px solid var(--hair);background:#161b25;color:var(--ink);padding:7px 12px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer}
+  .tgl:hover{background:#1e2533}.tgl.active{background:var(--tint);border-color:transparent;box-shadow:0 0 16px var(--glowsoft)}
+  .readout{text-align:center;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;margin-bottom:22px}
+  .readout b{color:var(--ink)}
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto}
+  @media(max-width:880px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+
+  .card{border:1px solid var(--hair);border-radius:16px;padding:18px 16px 16px;
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+    display:flex;flex-direction:column;align-items:center;gap:14px}
+  .card .tag{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .card .cap{font-size:11px;color:var(--muted);text-align:center;min-height:28px}
+
+  /* the collapsed-pill mock that holds each glyph */
+  .pill{display:flex;align-items:center;gap:11px;padding:8px 15px;border-radius:12px;
+    background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.015)),linear-gradient(180deg,#161d2c,#0a0e15);
+    border:1px solid rgba(255,255,255,.12);box-shadow:0 14px 36px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12),0 0 26px var(--glowsoft);
+    transition:box-shadow .9s ease}
+  .pw{font-size:11.5px;font-weight:740;letter-spacing:.04em;white-space:nowrap}
+  .pc{font-variant-numeric:tabular-nums;font-size:13.5px;font-weight:740}
+  svg{display:block;overflow:visible}
+
+  /* C quadrant */
+  .quad{width:26px;height:26px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px}
+  .quad .q{position:relative;border-radius:3px;background:rgba(255,255,255,.10);overflow:hidden}
+  .quad .q .f{position:absolute;left:0;right:0;bottom:0;height:0;background:var(--tint);box-shadow:0 0 8px var(--glow);transition:height .4s ease}
+  .quad .q.done{background:rgba(255,255,255,.32)}
+  .quad .q.on{box-shadow:0 0 9px var(--glow)}
+
+  /* F equalizer */
+  .eq{display:flex;gap:4px;align-items:flex-end;height:26px}
+  .eq .b{width:6px;border-radius:2px;background:rgba(255,255,255,.12);position:relative;overflow:hidden;transition:height .4s cubic-bezier(.34,1.3,.4,1),background .4s}
+  .eq .b .f{position:absolute;left:0;right:0;bottom:0;background:var(--tint);box-shadow:0 0 7px var(--glow);transition:height .4s ease}
+  .eq .b.done{background:rgba(255,255,255,.3)}
+  .eq .b.on{box-shadow:0 0 9px var(--glow)}
+</style>
+</head>
+<body>
+  <h1>Collapsed View — 6 Concepts</h1>
+  <p class="hint">Compact ways to show <b>current watch + stretch progress</b> in the collapsed pill — no long bar. Advance time or auto-play to compare the motion, then pick one.</p>
+  <div class="deck">
+    <button class="tgl" onclick="advance(1)">+ Stretch</button>
+    <button class="tgl" onclick="advance(6)">+ Hour</button>
+    <button class="tgl" onclick="advance(36)">+ Shift</button>
+    <button class="tgl" onclick="advance(144)">+ Day</button>
+    <button class="tgl" id="playbtn" onclick="togglePlay()">▶ auto-play</button>
+  </div>
+  <div class="readout">Now: <b id="ro"></b></div>
+
+  <div class="grid">
+    <div class="card"><span class="tag">1 · Radial Gauge</span>
+      <div class="pill"><svg id="A" width="30" height="30" viewBox="0 0 30 30"></svg><span class="pw" data-watch></span><span class="pc" data-clock></span></div>
+      <span class="cap">Ring split into 4 watches; active arc fills with stretch progress.</span></div>
+
+    <div class="card"><span class="tag">2 · Orbital</span>
+      <div class="pill"><svg id="B" width="30" height="30" viewBox="0 0 30 30"></svg><span class="pw" data-watch></span><span class="pc" data-clock></span></div>
+      <span class="cap">A glowing token orbits the day; 4 notches mark the watches.</span></div>
+
+    <div class="card"><span class="tag">3 · Quadrant Fill</span>
+      <div class="pill"><div class="quad" id="C"></div><span class="pw" data-watch></span><span class="pc" data-clock></span></div>
+      <span class="cap">2×2 of the day's watches; current cell fills like liquid.</span></div>
+
+    <div class="card"><span class="tag">4 · Horizon</span>
+      <div class="pill"><svg id="D" width="42" height="26" viewBox="0 0 42 26"></svg><span class="pw" data-watch></span><span class="pc" data-clock></span></div>
+      <span class="cap">Sun/moon travels a sky arc across the whole day.</span></div>
+
+    <div class="card"><span class="tag">5 · Dual Ring</span>
+      <div class="pill"><svg id="E" width="30" height="30" viewBox="0 0 30 30"></svg><span class="pw" data-watch></span><span class="pc" data-clock></span></div>
+      <span class="cap">Outer ring = watch; inner ring = stretch progress.</span></div>
+
+    <div class="card"><span class="tag">6 · Equalizer</span>
+      <div class="pill"><div class="eq" id="F"></div><span class="pw" data-watch></span><span class="pc" data-clock></span></div>
+      <span class="cap">4 bars for the watches; current bar rises with stretch.</span></div>
+  </div>
+
+<script>
+  const SPS=36,SHIFTS=4,SPD=144;let stretch=44,timer=null;
+  const WATCHES=[
+    {name:"Night Watch",short:"Night",tint:"#6b86d6",glow:"rgba(120,150,225,.55)",soft:"rgba(120,150,225,.2)",sun:false},
+    {name:"Dawn Watch", short:"Dawn", tint:"#e0a368",glow:"rgba(230,170,100,.55)",soft:"rgba(230,170,100,.2)",sun:true},
+    {name:"Day Watch",  short:"Day",  tint:"#6fb8d8",glow:"rgba(110,184,216,.55)",soft:"rgba(110,184,216,.2)",sun:true},
+    {name:"Dusk Watch", short:"Dusk", tint:"#b884d0",glow:"rgba(184,132,208,.55)",soft:"rgba(184,132,208,.2)",sun:false},
+  ];
+  const NS="http://www.w3.org/2000/svg";
+  const polar=(cx,cy,r,deg)=>{const a=(deg-90)*Math.PI/180;return{x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};};
+  const arcPath=(cx,cy,r,s,e)=>{const A=polar(cx,cy,r,s),B=polar(cx,cy,r,e);const large=((e-s)%360+360)%360>180?1:0;
+    return`M ${A.x.toFixed(2)} ${A.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${B.x.toFixed(2)} ${B.y.toFixed(2)}`;};
+  const mk=(tag,attrs)=>{const el=document.createElementNS(NS,tag);for(const k in attrs)el.setAttribute(k,attrs[k]);return el;};
+
+  // ---- build static structures ----
+  const A=document.getElementById('A');                       // radial gauge
+  for(let i=0;i<4;i++)A.appendChild(mk('path',{d:arcPath(15,15,11,i*90+7,(i+1)*90-7),stroke:'rgba(255,255,255,.14)','stroke-width':3,fill:'none','stroke-linecap':'round'}));
+  const Aprog=mk('path',{stroke:'var(--tint)','stroke-width':3.5,fill:'none','stroke-linecap':'round',filter:'drop-shadow(0 0 3px var(--glow))'});A.appendChild(Aprog);
+  const Adot=mk('circle',{cx:15,cy:15,r:2.2,fill:'var(--tint)'});A.appendChild(Adot);
+
+  const B=document.getElementById('B');                       // orbital
+  B.appendChild(mk('circle',{cx:15,cy:15,r:11,stroke:'rgba(255,255,255,.12)','stroke-width':1.5,fill:'none'}));
+  for(let i=0;i<4;i++){const p=polar(15,15,11,i*90);B.appendChild(mk('circle',{cx:p.x,cy:p.y,r:1.4,fill:'rgba(255,255,255,.3)'}));}
+  const Btok=mk('circle',{r:3,fill:'#fff',filter:'drop-shadow(0 0 5px var(--glow))'});B.appendChild(Btok);
+
+  const C=document.getElementById('C');                       // quadrant fill (clockwise TL,TR,BR,BL)
+  const cOrder=[0,1,3,2];const cCells=[];
+  for(let i=0;i<4;i++){const q=document.createElement('div');q.className='q';const f=document.createElement('div');f.className='f';q.appendChild(f);C.appendChild(q);}
+  Array.from(C.children).forEach((q,domIdx)=>{cCells[cOrder.indexOf(domIdx)]=q;});
+
+  const D=document.getElementById('D');                       // horizon
+  D.appendChild(mk('path',{d:'M 4 20 Q 21 2 38 20',stroke:'rgba(255,255,255,.16)','stroke-width':1.5,fill:'none'}));
+  D.appendChild(mk('line',{x1:2,y1:20.5,x2:40,y2:20.5,stroke:'rgba(255,255,255,.12)','stroke-width':1}));
+  const Dtok=mk('circle',{r:3.2,fill:'#fff',filter:'drop-shadow(0 0 5px var(--glow))'});D.appendChild(Dtok);
+
+  const E=document.getElementById('E');                       // dual ring
+  const Eseg=[];for(let i=0;i<4;i++){const s=mk('path',{d:arcPath(15,15,12,i*90+7,(i+1)*90-7),stroke:'rgba(255,255,255,.14)','stroke-width':2.5,fill:'none','stroke-linecap':'round'});E.appendChild(s);Eseg.push(s);}
+  const Einner=mk('path',{stroke:'var(--tint)','stroke-width':2.5,fill:'none','stroke-linecap':'round',filter:'drop-shadow(0 0 3px var(--glow))'});E.appendChild(Einner);
+
+  const F=document.getElementById('F');                       // equalizer
+  const fBars=[];for(let i=0;i<4;i++){const b=document.createElement('div');b.className='b';const f=document.createElement('div');f.className='f';b.appendChild(f);F.appendChild(b);fBars.push(b);}
+
+  function advance(n){stretch=Math.max(0,stretch+n);render();}
+  function togglePlay(){const b=document.getElementById('playbtn');
+    if(timer){clearInterval(timer);timer=null;b.classList.remove('active');b.textContent='▶ auto-play';}
+    else{timer=setInterval(()=>advance(1),600);b.classList.add('active');b.textContent='⏸ pause';}}
+  function setAll(s,t){document.querySelectorAll(s).forEach(e=>e.textContent=t);}
+
+  function render(){
+    const sOfDay=stretch%SPD,shiftIdx=Math.floor(sOfDay/SPS),sInShift=sOfDay%SPS;
+    const totMin=sOfDay*10,clock=String(Math.floor(totMin/60)).padStart(2,'0')+":"+String(totMin%60).padStart(2,'0');
+    const w=WATCHES[shiftIdx],prog=(sInShift+1)/SPS;
+    const r=document.documentElement.style;r.setProperty('--tint',w.tint);r.setProperty('--glow',w.glow);r.setProperty('--glowsoft',w.soft);
+    setAll('[data-watch]',w.short);setAll('[data-clock]',clock);
+    document.getElementById('ro').textContent=`${w.name} · stretch ${sInShift+1}/36 · ${clock}`;
+
+    // A radial gauge
+    const a0=shiftIdx*90+7;Aprog.setAttribute('d',arcPath(15,15,11,a0,a0+prog*76));Adot.setAttribute('fill',w.tint);
+
+    // B orbital
+    const bp=polar(15,15,11,(sOfDay/SPD)*360);Btok.setAttribute('cx',bp.x);Btok.setAttribute('cy',bp.y);
+
+    // C quadrant
+    cCells.forEach((q,i)=>{q.classList.toggle('done',i<shiftIdx);q.classList.toggle('on',i===shiftIdx);
+      q.querySelector('.f').style.height=(i===shiftIdx?prog*100:0)+'%';});
+
+    // D horizon — token along the dome by full-day fraction
+    const t=sOfDay/SPD,dx=4+t*34,dy=20-Math.sin(t*Math.PI)*16;
+    Dtok.setAttribute('cx',dx);Dtok.setAttribute('cy',dy);Dtok.setAttribute('fill',w.sun?'#ffe9b0':'#dfe6f5');
+
+    // E dual ring
+    Eseg.forEach((s,i)=>s.setAttribute('stroke', i===shiftIdx?w.tint : i<shiftIdx?'rgba(255,255,255,.4)':'rgba(255,255,255,.13)'));
+    Einner.setAttribute('d', sInShift>0?arcPath(15,15,8,-2,-2+prog*358):'');
+
+    // F equalizer
+    fBars.forEach((b,i)=>{b.classList.toggle('done',i<shiftIdx);b.classList.toggle('on',i===shiftIdx);
+      const h=i<shiftIdx?26:i===shiftIdx?26:9;b.style.height=h+'px';
+      b.querySelector('.f').style.height=(i===shiftIdx?prog*100:0)+'%';});
+  }
+  render();
+</script>
+</body>
+</html>

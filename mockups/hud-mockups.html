@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Clocks &amp; Tracker — HUD Direction Previews</title>
+<style>
+  :root{
+    --bg:#0a0c10;
+    --panel:#12151c;
+    --ink:#e7ecf3;
+    --muted:#8a93a6;
+    --hair:rgba(255,255,255,.08);
+    /* ambient shift tints (set per-shift via JS on .stage) */
+    --tint:#3b5bdb;
+    --tint2:#1b2a4a;
+    --glow:rgba(59,91,219,.55);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,.04), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font:14px/1.4 "Segoe UI",system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:28px 24px 80px;
+  }
+  h1{font-size:20px;font-weight:650;letter-spacing:.2px;margin:0 0 2px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 22px;max-width:880px}
+  .sub b{color:#cdd6e6;font-weight:600}
+
+  /* ---------- shared control deck ---------- */
+  .deck{
+    position:sticky;top:0;z-index:50;
+    display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+    padding:12px 16px;margin:0 0 26px;
+    background:linear-gradient(180deg, rgba(18,21,28,.96), rgba(18,21,28,.86));
+    border:1px solid var(--hair);border-radius:14px;
+    backdrop-filter:blur(10px);
+  }
+  .deck .now{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted)}
+  .deck .now b{color:var(--ink);font-weight:600}
+  .btn{
+    appearance:none;border:1px solid var(--hair);background:#1a1f29;color:var(--ink);
+    padding:8px 12px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;
+    transition:transform .08s ease, background .15s ease, border-color .15s ease;
+  }
+  .btn:hover{background:#222937;border-color:rgba(255,255,255,.18)}
+  .btn:active{transform:translateY(1px) scale(.98)}
+  .btn.warn{color:#ffb4a8}
+  input[type=range]{width:220px;accent-color:#6f8cff}
+  .deck label{color:var(--muted);font-size:12px;display:flex;gap:8px;align-items:center}
+
+  /* ---------- layout of the four stages ---------- */
+  .grid{
+    display:grid;gap:22px;
+    grid-template-columns:repeat(4,minmax(220px,1fr));
+    align-items:start;
+  }
+  @media (max-width:1180px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:620px){.grid{grid-template-columns:1fr}}
+
+  .stage{
+    border-radius:18px;padding:18px 16px 20px;
+    border:1px solid var(--hair);
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    transition:background .9s ease, box-shadow .9s ease, border-color .9s ease;
+  }
+  .stage .name{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .stage .desc{font-size:11.5px;color:var(--muted);text-align:center;min-height:30px;margin:-6px 0 2px}
+
+  /* common HUD inner pieces */
+  .pill{
+    width:46px;height:6px;border-radius:99px;background:var(--hair);margin:2px 0 0;
+  }
+  .date{
+    text-align:center;line-height:1.25;
+  }
+  .date .wd{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .date .dy{font-size:30px;font-weight:700;letter-spacing:.5px;margin:1px 0 0}
+  .date .mo{font-size:12.5px;color:#c4cde0}
+  .shiftname{font-size:15px;font-weight:700;letter-spacing:.06em}
+  .clock{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);letter-spacing:.04em}
+  .event{
+    font-size:11px;color:#ffe1a8;background:rgba(255,196,84,.10);
+    border:1px solid rgba(255,196,84,.28);border-radius:99px;padding:4px 10px;
+    display:flex;gap:6px;align-items:center;
+  }
+  .event .dot{width:6px;height:6px;border-radius:99px;background:#ffc454;box-shadow:0 0 8px #ffc454}
+  .shiftrow{display:flex;gap:7px}
+  .shiftrow .s{
+    width:9px;height:9px;border-radius:99px;background:rgba(255,255,255,.14);
+    transition:background .5s ease, box-shadow .5s ease, transform .5s ease;
+  }
+  .shiftrow .s.on{background:var(--tint);box-shadow:0 0 12px var(--glow);transform:scale(1.25)}
+  .controls{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:2px}
+  .controls .c{
+    font-size:11px;font-weight:700;padding:6px 9px;border-radius:8px;cursor:pointer;
+    border:1px solid var(--hair);background:rgba(255,255,255,.04);color:var(--ink);
+    transition:background .12s, transform .08s;
+  }
+  .controls .c:hover{background:rgba(255,255,255,.1)}
+  .controls .c:active{transform:translateY(1px)}
+
+  /* ===========================================================
+     A — ARCANE GLASS
+     =========================================================== */
+  #A.stage{
+    background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.015)),
+               linear-gradient(180deg, var(--tint2), #0c0f15 70%);
+    box-shadow:0 18px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08),
+               0 0 0 1px rgba(255,255,255,.04);
+    backdrop-filter:blur(8px);
+  }
+  #A .glasswrap{position:relative;display:flex;gap:14px;align-items:center}
+  #A .col{
+    display:flex;flex-direction:column-reverse;gap:3px;
+    padding:8px;border-radius:12px;background:rgba(0,0,0,.25);
+    border:1px solid rgba(255,255,255,.07);
+  }
+  #A .seg{
+    width:14px;height:5px;border-radius:3px;background:rgba(255,255,255,.08);
+    transition:background .4s ease, box-shadow .4s ease;
+  }
+  #A .seg.fill{background:var(--tint);box-shadow:0 0 8px var(--glow)}
+  #A .seg.head{background:#fff;box-shadow:0 0 12px #fff, 0 0 18px var(--glow)}
+  #A .readout{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+  #A .big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+  #A .hourbar{display:flex;gap:3px;margin-top:4px}
+  #A .hourbar i{width:14px;height:4px;border-radius:2px;background:rgba(255,255,255,.12)}
+  #A .hourbar i.on{background:var(--tint);box-shadow:0 0 6px var(--glow)}
+
+  /* ===========================================================
+     B — BRASS ORRERY
+     =========================================================== */
+  #B.stage{
+    background:
+      radial-gradient(120% 90% at 50% 0%, rgba(255,210,140,.10), transparent 55%),
+      linear-gradient(180deg,#1a140c,#0c0a07);
+    border-color:rgba(196,150,80,.35);
+    box-shadow:0 18px 50px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,220,160,.12);
+  }
+  #B .dial{position:relative;width:168px;height:168px}
+  #B .dial svg{position:absolute;inset:0;transform:rotate(-90deg)}
+  #B .face{
+    position:absolute;inset:22px;border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, #3a2c18, #1d150b);
+    border:2px solid #6b5326;box-shadow:inset 0 2px 8px rgba(0,0,0,.7), 0 0 0 4px rgba(120,90,40,.25);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  }
+  #B .face .big{font-size:24px;font-weight:700;color:#f4dca0;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #000}
+  #B .face .lbl{font-size:9px;letter-spacing:.12em;color:#b89968;text-transform:uppercase}
+  #B .hand{
+    position:absolute;left:50%;top:50%;width:3px;height:62px;background:linear-gradient(#ffe6a8,#c9962f);
+    transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(0deg);border-radius:2px;
+    box-shadow:0 0 8px rgba(255,200,120,.6);transition:transform .7s cubic-bezier(.34,1.4,.5,1);
+  }
+  #B .tick{fill:#6b5326}
+  #B .tick.on{fill:#ffce7a}
+
+  /* ===========================================================
+     C — OBSIDIAN MINIMAL
+     =========================================================== */
+  #C.stage{
+    background:#0e1014;border-color:rgba(255,255,255,.06);
+    box-shadow:0 14px 40px rgba(0,0,0,.5);
+  }
+  #C .mbig{font-size:30px;font-weight:680;font-variant-numeric:tabular-nums;letter-spacing:1px}
+  #C .ladder{display:flex;flex-direction:column-reverse;gap:2px;width:100%;padding:0 14px}
+  #C .rung{height:3px;border-radius:1px;background:rgba(255,255,255,.07);transition:background .35s ease, transform .35s ease}
+  #C .rung.fill{background:var(--tint)}
+  #C .rung.head{background:#fff;transform:scaleX(1.04)}
+  #C .accentline{width:36px;height:2px;background:var(--tint);border-radius:2px;box-shadow:0 0 8px var(--glow)}
+
+  /* ===========================================================
+     D — AETHERIC HOLO
+     =========================================================== */
+  #D.stage{
+    background:linear-gradient(180deg, rgba(20,40,55,.6), rgba(6,10,14,.9));
+    border-color:rgba(90,200,255,.25);
+    box-shadow:0 0 40px rgba(40,160,220,.12), inset 0 0 30px rgba(40,160,220,.06);
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%);
+  }
+  #D .holoframe{
+    position:relative;padding:10px;border:1px solid rgba(120,220,255,.35);border-radius:8px;
+    background:rgba(10,30,40,.4);overflow:hidden;
+  }
+  #D .holoframe::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(120,220,255,.05) 0 1px, transparent 1px 3px);
+  }
+  #D .bars{display:flex;gap:2px;align-items:flex-end;height:120px}
+  #D .bar{width:5px;background:rgba(120,220,255,.14);align-self:flex-end;border-radius:1px;transition:height .4s ease, background .4s ease, box-shadow .4s ease}
+  #D .bar.fill{background:var(--tint);box-shadow:0 0 6px var(--glow)}
+  #D .bar.head{background:#dffaff;box-shadow:0 0 10px #aef0ff}
+  #D .hbig{font-size:24px;font-weight:700;color:#cdeeff;font-variant-numeric:tabular-nums;text-shadow:0 0 10px rgba(120,220,255,.5)}
+  #D .tag{font-size:9px;letter-spacing:.2em;color:#7fd4f0;text-transform:uppercase}
+
+  .legend{margin-top:30px;color:var(--muted);font-size:12px;max-width:900px}
+  .legend code{background:#1a1f29;padding:1px 6px;border-radius:5px;color:#cdd6e6}
+</style>
+</head>
+<body>
+  <h1>Clocks &amp; Tracker — HUD Direction Previews</h1>
+  <p class="sub">
+    Four visual languages for the same data. Use the deck to <b>advance time</b> and watch each animate.
+    Every HUD shows: weekday + day number + month + year, the active <b>shift</b> (with ambient tint),
+    a <b>tactile stretch meter</b> (36 stretches per shift — no x/y readout), the hour, and a next-event chip.
+    Default day model: 4 shifts × 6h, 10-min stretches.
+  </p>
+
+  <div class="deck">
+    <span class="now">Time: <b id="nowtxt">—</b></span>
+    <button class="btn" onclick="advance(1)">+ Stretch</button>
+    <button class="btn" onclick="advance(36)">+ Shift</button>
+    <button class="btn" onclick="advance(144)">+ Day</button>
+    <button class="btn" onclick="nextShift()">↪ Next Watch</button>
+    <button class="btn warn" onclick="advance(-1)">– Stretch</button>
+    <label>Scrub <input id="scrub" type="range" min="0" max="431" value="40" oninput="setStretch(+this.value)"></label>
+    <label><input type="checkbox" id="play" onchange="togglePlay(this.checked)"> auto-play</label>
+  </div>
+
+  <div class="grid">
+    <!-- A: ARCANE GLASS -->
+    <div class="stage" id="A">
+      <div class="name">A · Arcane Glass</div>
+      <div class="pill"></div>
+      <div class="date"><div class="wd" data-wd></div><div class="dy" data-dy></div><div class="mo" data-mo></div></div>
+      <div class="shiftname" data-shift></div>
+      <div class="shiftrow" data-shiftrow></div>
+      <div class="glasswrap">
+        <div class="col" data-col></div>
+        <div class="readout">
+          <div class="big" data-clock></div>
+          <div class="clock">stretch meter</div>
+          <div class="hourbar" data-hourbar></div>
+        </div>
+      </div>
+      <div class="event" data-event><span class="dot"></span><span data-eventtxt></span></div>
+      <div class="controls"><span class="c" onclick="advance(1)">+Stretch</span><span class="c" onclick="advance(36)">+Shift</span><span class="c" onclick="advance(144)">+Day</span></div>
+      <div class="desc">Frosted glass, soft glow, accent recolors per shift.</div>
+    </div>
+
+    <!-- B: BRASS ORRERY -->
+    <div class="stage" id="B">
+      <div class="name">B · Brass Orrery</div>
+      <div class="pill"></div>
+      <div class="date"><div class="wd" data-wd></div><div class="dy" data-dy></div><div class="mo" data-mo></div></div>
+      <div class="shiftname" data-shift></div>
+      <div class="dial">
+        <svg viewBox="0 0 168 168" data-ticks></svg>
+        <div class="hand" data-hand></div>
+        <div class="face"><div class="big" data-clock></div><div class="lbl" data-shiftshort></div></div>
+      </div>
+      <div class="shiftrow" data-shiftrow></div>
+      <div class="event" data-event><span class="dot"></span><span data-eventtxt></span></div>
+      <div class="controls"><span class="c" onclick="advance(1)">+Stretch</span><span class="c" onclick="advance(36)">+Shift</span><span class="c" onclick="advance(144)">+Day</span></div>
+      <div class="desc">Clockwork dial, engraved ticks, mechanical hand sweep.</div>
+    </div>
+
+    <!-- C: OBSIDIAN MINIMAL -->
+    <div class="stage" id="C">
+      <div class="name">C · Obsidian Minimal</div>
+      <div class="pill"></div>
+      <div class="date"><div class="wd" data-wd></div><div class="dy" data-dy></div><div class="mo" data-mo></div></div>
+      <div class="accentline"></div>
+      <div class="shiftname" data-shift></div>
+      <div class="mbig" data-clock></div>
+      <div class="ladder" data-col></div>
+      <div class="shiftrow" data-shiftrow></div>
+      <div class="event" data-event><span class="dot"></span><span data-eventtxt></span></div>
+      <div class="controls"><span class="c" onclick="advance(1)">+Stretch</span><span class="c" onclick="advance(36)">+Shift</span><span class="c" onclick="advance(144)">+Day</span></div>
+      <div class="desc">Flat matte, one accent, razor-clean segmented ladder.</div>
+    </div>
+
+    <!-- D: AETHERIC HOLO -->
+    <div class="stage" id="D">
+      <div class="name">D · Aetheric Holo</div>
+      <div class="pill"></div>
+      <div class="date"><div class="wd" data-wd></div><div class="dy" data-dy></div><div class="mo" data-mo></div></div>
+      <div class="tag" data-shift></div>
+      <div class="holoframe">
+        <div class="hbig" data-clock></div>
+        <div class="bars" data-col></div>
+      </div>
+      <div class="shiftrow" data-shiftrow></div>
+      <div class="event" data-event><span class="dot"></span><span data-eventtxt></span></div>
+      <div class="controls"><span class="c" onclick="advance(1)">+Stretch</span><span class="c" onclick="advance(36)">+Shift</span><span class="c" onclick="advance(144)">+Day</span></div>
+      <div class="desc">Holographic frame, scanlines, energy-fill columns.</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <p>Mock calendar: <b>Golarion-style</b> — month <b>Calistril</b>, year <b>4724 AR</b>, weekday names Moonday…Sunday.
+    Stretch meter fills bottom→top across the active watch (36 stretches). The bright head = current stretch.
+    Try <code>+Shift</code> to see the meter reset &amp; the ambient tint cross-fade between watches.</p>
+  </div>
+
+<script>
+  // ---- time model ----
+  const SPS = 36;          // stretches per shift
+  const SHIFTS = 4;        // shifts per day
+  const SPD = SPS * SHIFTS;// 144 stretches per day
+  let stretch = 40;        // global stretch index (can exceed a day)
+
+  const WATCHES = [
+    {name:"Night Watch", short:"Night",  tint:"#3b5bdb", tint2:"#141d33", glow:"rgba(80,120,255,.55)"},
+    {name:"Dawn Watch",  short:"Dawn",   tint:"#f0a84a", tint2:"#3a2810", glow:"rgba(255,190,90,.55)"},
+    {name:"Day Watch",   short:"Day",    tint:"#46c0ff", tint2:"#123040", glow:"rgba(90,200,255,.55)"},
+    {name:"Dusk Watch",  short:"Dusk",   tint:"#c65cff", tint2:"#2c1238", glow:"rgba(190,100,255,.55)"},
+  ];
+  const WEEKDAYS = ["Moonday","Toilday","Wealday","Oathday","Fireday","Starday","Sunday"];
+  const EVENTS = { // stretch-of-day-independent: keyed by day number
+    14:"Festival of Night's Return (today)",
+  };
+
+  // build static sub-structures once
+  document.querySelectorAll('[data-col]').forEach(col=>{
+    const id = col.closest('.stage').id;
+    col.innerHTML = '';
+    for(let i=0;i<SPS;i++){
+      const e=document.createElement('div');
+      if(id==='A') e.className='seg';
+      else if(id==='C') e.className='rung';
+      else if(id==='D') e.className='bar';
+      col.appendChild(e);
+    }
+  });
+  // orrery ticks
+  document.querySelectorAll('[data-ticks]').forEach(svg=>{
+    let s='';
+    for(let i=0;i<SPS;i++){
+      const a=(i/SPS)*Math.PI*2, r1=78, r2=(i%6===0?68:72), cx=84,cy=84;
+      const x1=cx+Math.cos(a)*r1, y1=cy+Math.sin(a)*r1, x2=cx+Math.cos(a)*r2, y2=cy+Math.sin(a)*r2;
+      s+=`<line class="tickline" data-i="${i}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#6b5326" stroke-width="${i%6===0?3:1.5}" stroke-linecap="round"/>`;
+    }
+    svg.innerHTML=s;
+  });
+  document.querySelectorAll('[data-shiftrow]').forEach(row=>{
+    row.innerHTML='';
+    for(let i=0;i<SHIFTS;i++){const d=document.createElement('div');d.className='s';row.appendChild(d);}
+  });
+  document.querySelectorAll('[data-hourbar]').forEach(hb=>{
+    hb.innerHTML='';
+    for(let i=0;i<6;i++){const d=document.createElement('i');hb.appendChild(d);}
+  });
+
+  function setStretch(v){ stretch=v; render(); }
+  function advance(n){ stretch=Math.max(0, stretch+n); document.getElementById('scrub').value=Math.min(431,stretch); render(); }
+  function nextShift(){ const into=stretch%SPS; advance(SPS-into); }
+
+  let timer=null;
+  function togglePlay(on){ if(on){timer=setInterval(()=>advance(1),650);} else {clearInterval(timer);} }
+
+  function render(){
+    const dayIndex = Math.floor(stretch/SPD);      // 0-based day offset
+    const sOfDay = ((stretch%SPD)+SPD)%SPD;          // 0..143
+    const shiftIdx = Math.floor(sOfDay/SPS);         // 0..3
+    const sInShift = sOfDay%SPS;                      // 0..35
+    const totalMin = sOfDay*10;
+    const hh = Math.floor(totalMin/60), mm = totalMin%60;
+    const w = WATCHES[shiftIdx];
+    const dayNum = 14 + dayIndex;                     // mock start day 14
+    const weekday = WEEKDAYS[(2+dayNum)%7];
+    const clock = String(hh).padStart(2,'0')+":"+String(mm).padStart(2,'0');
+
+    document.getElementById('nowtxt').textContent =
+      `${weekday} ${dayNum} Calistril 4724 AR · ${w.name} · ${clock} · stretch ${sInShift+1}/36`;
+
+    document.querySelectorAll('.stage').forEach(stage=>{
+      stage.style.setProperty('--tint', w.tint);
+      stage.style.setProperty('--tint2', w.tint2);
+      stage.style.setProperty('--glow', w.glow);
+
+      stage.querySelector('[data-wd]') && (stage.querySelector('[data-wd]').textContent = weekday);
+      stage.querySelector('[data-dy]') && (stage.querySelector('[data-dy]').textContent = dayNum);
+      stage.querySelector('[data-mo]') && (stage.querySelector('[data-mo]').textContent = "Calistril · 4724 AR");
+      stage.querySelector('[data-shift]') && (stage.querySelector('[data-shift]').textContent = w.name);
+      stage.querySelector('[data-shiftshort]') && (stage.querySelector('[data-shiftshort]').textContent = w.short);
+      stage.querySelector('[data-clock]') && (stage.querySelector('[data-clock]').textContent = clock);
+
+      // shift dots
+      stage.querySelectorAll('[data-shiftrow] .s').forEach((d,i)=>d.classList.toggle('on', i===shiftIdx));
+
+      // stretch meter
+      const col = stage.querySelector('[data-col]');
+      if(col){
+        const kids = col.children;
+        for(let i=0;i<kids.length;i++){
+          const k=kids[i];
+          k.classList.toggle('fill', i< sInShift);
+          k.classList.toggle('head', i===sInShift);
+          if(stage.id==='D'){ // holo bars: height by position for a waveform feel
+            const base=14+ (Math.sin(i*0.5)*0.5+0.5)*8;
+            const h = (i<=sInShift)? 30+ (i/SPS)*90 : base;
+            k.style.height = h+'px';
+          }
+        }
+      }
+
+      // orrery hand + ticks
+      const hand = stage.querySelector('[data-hand]');
+      if(hand){ hand.style.transform = `translate(-50%,-100%) rotate(${(sInShift/SPS)*360}deg)`; }
+      stage.querySelectorAll('.tickline').forEach((t,i)=>{
+        t.setAttribute('stroke', i<=sInShift ? '#ffce7a' : '#6b5326');
+      });
+
+      // hour bar (A)
+      stage.querySelectorAll('[data-hourbar] i').forEach((h,i)=>h.classList.toggle('on', i <= (hh%6)));
+
+      // event chip
+      const ev = EVENTS[dayNum];
+      const chip = stage.querySelector('[data-event]');
+      if(chip){
+        if(ev){ chip.style.display='flex'; stage.querySelector('[data-eventtxt]').textContent = ev; }
+        else { stage.querySelector('[data-eventtxt]').textContent = "Next: Festival, in "+(14+ (dayNum<14?0:0) - dayNum + ((dayNum<=14)?0:0)>=0? (14-dayNum) : 0)+"d";
+               // simple fallback text
+               stage.querySelector('[data-eventtxt]').textContent = (dayNum<14? `Next: Festival of Night's Return in ${14-dayNum}d` : `Next: Spring Equinox in ${ (90-dayNum%90) }d`);
+        }
+      }
+    });
+  }
+  render();
+</script>
+</body>
+</html>

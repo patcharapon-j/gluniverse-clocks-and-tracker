@@ -1,0 +1,39 @@
+name: Release
+
+# Publish a Foundry-installable release whenever a GitHub Release is created.
+# Tag the release "x.y.z" (or "vx.y.z"); the tag becomes the module version.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stamp version & URLs into module.json
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          REPO="${{ github.repository }}"
+          jq \
+            --arg v   "$VERSION" \
+            --arg url "https://github.com/$REPO" \
+            --arg man "https://github.com/$REPO/releases/latest/download/module.json" \
+            --arg dl  "https://github.com/$REPO/releases/download/$TAG/module.zip" \
+            '.version=$v | .url=$url | .manifest=$man | .download=$dl' \
+            module.json > module.tmp.json && mv module.tmp.json module.json
+
+      - name: Build module.zip
+        run: zip -r module.zip module.json scripts styles templates lang
+
+      - name: Attach assets to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            module.json
+            module.zip

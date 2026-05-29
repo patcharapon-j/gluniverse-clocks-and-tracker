@@ -1,0 +1,25 @@
+<div class="glct-cal">
+  <header class="cal-head">
+    <button type="button" class="cal-nav" data-action="prevMonth" title="Previous">&#8249;</button>
+    <div class="cal-title">{{monthName}} &middot; {{year}}{{#if yearLabel}} {{yearLabel}}{{/if}}</div>
+    <button type="button" class="cal-nav" data-action="nextMonth" title="Next">&#8250;</button>
+    <button type="button" class="cal-today" data-action="today">{{localize "GLCT.controls.toolTitle"}}</button>
+    {{#if isGM}}<button type="button" class="cal-today" data-action="manageEvents" title="{{localize 'GLCT.events.title'}}"><i class="fa-solid fa-star"></i></button>{{/if}}
+  </header>
+
+  <div class="cal-grid">
+    {{#each weekdayNames}}<div class="cal-wd">{{this}}</div>{{/each}}
+    {{#each cells}}
+      <div class="cal-cell{{#unless this.inMonth}} blank{{/unless}}{{#if this.isToday}} today{{/if}}">
+        {{#if this.inMonth}}
+          <span class="cal-day">{{this.day}}</span>
+          {{#if this.events.length}}
+            <span class="cal-evs">
+              {{#each this.events}}<span class="cal-ev" title="{{this.name}}"></span>{{/each}}
+            </span>
+          {{/if}}
+        {{/if}}
+      </div>
+    {{/each}}
+  </div>
+</div>

@@ -1,0 +1,58 @@
+{
+  "GLCT.module.title": "GLUniverse — Clocks & Tracker",
+
+  "GLCT.hud.collapse": "Collapse",
+  "GLCT.hud.expand": "Expand",
+  "GLCT.hud.dragHint": "Drag to reposition",
+  "GLCT.hud.stretchesLeft": "{n} stretches left",
+
+  "GLCT.controls.advanceStretch": "+ Stretch",
+  "GLCT.controls.advanceHour": "+ Hour",
+  "GLCT.controls.advanceShift": "+ Shift",
+  "GLCT.controls.advanceDay": "+ Day",
+  "GLCT.controls.nextShift": "Next Watch",
+  "GLCT.controls.setTime": "Set exact date & time",
+  "GLCT.controls.rewindHint": "Left-click to advance · Right-click to rewind",
+
+  "GLCT.shifts.0": "Night Watch",
+  "GLCT.shifts.1": "Dawn Watch",
+  "GLCT.shifts.2": "Day Watch",
+  "GLCT.shifts.3": "Dusk Watch",
+
+  "GLCT.settings.calendar.name": "Active Calendar Definition",
+  "GLCT.settings.calendar.hint": "The stored custom calendar used by this world.",
+  "GLCT.settings.events.name": "Calendar Events & Holidays",
+  "GLCT.settings.events.hint": "Stored events and holidays for the active calendar.",
+  "GLCT.settings.hudPosition.name": "HUD Position",
+  "GLCT.settings.hudPosition.hint": "Saved screen position of the HUD.",
+  "GLCT.settings.hudCollapsed.name": "HUD Collapsed",
+  "GLCT.settings.hudCollapsed.hint": "Whether the HUD starts collapsed.",
+  "GLCT.settings.sceneLight.name": "Tint Scene With Shift",
+  "GLCT.settings.sceneLight.hint": "Opt-in per scene: tint the canvas to match the current watch.",
+  "GLCT.settings.stepMode.name": "Default Step Snapping",
+  "GLCT.settings.stepMode.hint": "When advancing, snap to the nearest stretch or shift boundary.",
+
+  "GLCT.editor.title": "Calendar Editor",
+  "GLCT.editor.preset": "Load Preset",
+  "GLCT.editor.import": "Import JSON",
+  "GLCT.editor.export": "Export JSON",
+  "GLCT.editor.save": "Save Calendar",
+
+  "GLCT.events.title": "Events & Holidays",
+  "GLCT.events.add": "Add Event",
+  "GLCT.events.name": "Name",
+  "GLCT.events.visibleToPlayers": "Visible to players",
+  "GLCT.events.scope.day": "Single day",
+  "GLCT.events.scope.range": "Day range",
+  "GLCT.events.scope.month": "Whole month",
+  "GLCT.events.today": "Today: {name}",
+  "GLCT.events.next": "Next: {name} · {days}d",
+
+  "GLCT.calendarView.title": "Calendar",
+
+  "GLCT.keybindings.toggleHud": "Toggle HUD",
+  "GLCT.keybindings.advanceStretch": "Advance one stretch",
+  "GLCT.keybindings.openCalendar": "Open calendar view",
+
+  "GLCT.controls.toolTitle": "Clocks & Tracker"
+}
