@@ -169,6 +169,14 @@ export class TimeEngine {
 
   /** Set an absolute time from calendar components (used by the set-time dialog). */
   static async setExact(components) {
-    return game.time.set(components);
+    const cal = this.calendar;
+    // Resolve components (year/month/dayOfMonth/hour/minute) to an absolute
+    // world time via the calendar — matching CalendarView — instead of handing
+    // a raw components object to game.time.set, which expects a number of
+    // seconds and would otherwise silently fail to change the date.
+    const time = (typeof cal?.componentsToTime === "function")
+      ? cal.componentsToTime(components)
+      : components;
+    return game.time.set(time);
   }
 }
