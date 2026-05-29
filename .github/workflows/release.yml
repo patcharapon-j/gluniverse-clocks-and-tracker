@@ -1,13 +1,11 @@
 name: Release
 
-# Publish a Foundry-installable release. There are three ways to trigger this:
-#   1. Manually from the Actions tab ("Run workflow") choosing a bump type
-#      (patch / minor / major). The version in module.json is auto-incremented,
-#      committed back, tagged, and released — no manual version editing needed.
-#   2. Pushing a version tag ("x.y.z" / "vx.y.z"); the tag becomes the version.
-#   3. Publishing a GitHub Release; its tag becomes the version.
+# Publish a Foundry-installable release. This workflow is MANUAL ONLY:
+# run it from the Actions tab ("Run workflow") and choose a bump type
+# (patch / minor / major). The version in module.json is auto-incremented,
+# committed back, tagged, and released — no manual version editing needed.
 #
-# In every case the manifest at
+# The manifest at
 #   https://github.com/<owner>/<repo>/releases/latest/download/module.json
 # is updated so existing installs can auto-update from that link.
 on:
@@ -22,11 +20,6 @@ on:
           - patch
           - minor
           - major
-  push:
-    tags:
-      - "*"
-  release:
-    types: [published]
 
 permissions:
   contents: write
@@ -44,21 +37,16 @@ jobs:
       - name: Determine version & tag
         id: ver
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            CURRENT="$(jq -r '.version' module.json)"
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-            MAJOR="${MAJOR:-0}"; MINOR="${MINOR:-0}"; PATCH="${PATCH:-0}"
-            case "${{ github.event.inputs.bump }}" in
-              major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
-              minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
-              patch) PATCH=$((PATCH + 1)) ;;
-            esac
-            VERSION="${MAJOR}.${MINOR}.${PATCH}"
-            TAG="v${VERSION}"
-          else
-            TAG="${{ github.event.release.tag_name || github.ref_name }}"
-            VERSION="${TAG#v}"
-          fi
+          CURRENT="$(jq -r '.version' module.json)"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          MAJOR="${MAJOR:-0}"; MINOR="${MINOR:-0}"; PATCH="${PATCH:-0}"
+          case "${{ github.event.inputs.bump }}" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+          VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          TAG="v${VERSION}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Releasing version $VERSION (tag $TAG)"
@@ -76,7 +64,6 @@ jobs:
             module.json > module.tmp.json && mv module.tmp.json module.json
 
       - name: Commit version bump & create tag
-        if: github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
