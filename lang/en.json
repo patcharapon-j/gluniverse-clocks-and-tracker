@@ -3,7 +3,8 @@
 
   "GLCT.hud.collapse": "Collapse",
   "GLCT.hud.expand": "Expand",
-  "GLCT.hud.dragHint": "Drag to reposition",
+  "GLCT.hud.dragHint": "Drag to reposition · double-click to switch standard / compact",
+  "GLCT.hud.toggleHint": "Double-click to switch standard / compact",
   "GLCT.hud.stretchesLeft": "{n} stretches left",
   "GLCT.hud.timeLabel": "Time",
 
