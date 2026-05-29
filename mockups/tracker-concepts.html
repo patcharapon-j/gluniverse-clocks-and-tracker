@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GLUniverse — Tracker HUD : Design Brainstorm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700;800&display=swap');
+:root{
+  --ink:#eef1f7; --muted:#98a2b6; --hair:rgba(255,255,255,.08);
+  --tint:#6b86d6; --tint2:#1a2233; --glow:rgba(120,150,225,.5); --glowsoft:rgba(120,150,225,.18);
+  --edge:rgba(255,255,255,.13);
+  --clock-font:"Oxanium","Segoe UI",system-ui,sans-serif;
+  --danger:#e0584f; --dangerglow:rgba(224,88,79,.55); --dangersoft:rgba(224,88,79,.2);
+  --gold:#ffc454; --good:#67d39b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font:14px/1.45 "Segoe UI",system-ui,sans-serif;color:var(--ink);
+  background:
+    radial-gradient(1100px 700px at 50% -5%, #1b2336, transparent 55%),
+    radial-gradient(900px 500px at 85% 110%, #2a1731, transparent 60%),
+    radial-gradient(700px 500px at 12% 60%, #15212e, transparent 60%), #06080c;
+  -webkit-font-smoothing:antialiased; padding:26px 0 120px;}
+h1{font-size:20px;font-weight:700;margin:0;text-align:center;letter-spacing:.01em}
+h1 .sub{display:block;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;margin-top:6px}
+.intro{color:var(--muted);font-size:13px;max-width:760px;text-align:center;margin:12px auto 0;line-height:1.6}
+.intro b{color:#cdd6e6}
+.section-title{max-width:1100px;margin:46px auto 0;padding:0 24px;display:flex;align-items:center;gap:14px}
+.section-title h2{font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:#aeb8cc;font-weight:700;margin:0;white-space:nowrap}
+.section-title .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--hair),transparent)}
+.section-title .note{color:#69748c;font-size:11.5px;max-width:420px}
+
+/* ---------- shared glass panel (the tracker card chrome) ---------- */
+.tcard{position:relative;border-radius:15px;overflow:hidden;isolation:isolate;width:248px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 34%),
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.22)),
+    linear-gradient(160deg, var(--tint2), #080b11 70%);
+  border:1px solid var(--edge);
+  box-shadow:0 22px 56px rgba(0,0,0,.55), 0 2px 0 rgba(0,0,0,.4),
+    inset 0 1px 0 rgba(255,255,255,.15), inset 0 -12px 26px rgba(0,0,0,.36), 0 0 38px var(--glowsoft);
+  backdrop-filter:blur(16px) saturate(1.15);
+  transition:box-shadow .6s ease, transform .18s cubic-bezier(.34,1.4,.5,1);}
+.tcard::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:radial-gradient(80% 120% at 50% -30%, var(--glow), transparent 64%);opacity:.18;transition:.8s}
+.tcard .thead{display:flex;align-items:center;gap:7px;padding:9px 11px 4px;position:relative;z-index:3}
+.tcard .grip{display:flex;gap:3px;cursor:grab;padding:3px 1px;opacity:.5;transition:.25s}
+.tcard:hover .grip{opacity:.9}
+.tcard .grip i{width:3px;height:3px;border-radius:99px;background:rgba(255,255,255,.4)}
+.tcard .name{flex:1;font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:#8893a8;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tcard .gmtools{display:flex;gap:2px;opacity:0;transition:.22s;pointer-events:none}
+.tcard:hover .gmtools{opacity:1;pointer-events:auto}
+.tcard .gmtools button{width:19px;height:19px;display:grid;place-items:center;border:none;border-radius:6px;cursor:pointer;
+  background:rgba(255,255,255,.06);color:#aab4c8;font-size:10px;transition:.15s;line-height:1}
+.tcard .gmtools button:hover{background:rgba(255,255,255,.16);color:#fff}
+.tcard .gmtools button.eye.off{color:#5b6478}
+.tcard .tbody{padding:6px 14px 16px;position:relative;z-index:2}
+.tcard.hiddenfromplayers{outline:1px dashed rgba(255,196,84,.35);outline-offset:-1px}
+.tcard.dragging{transform:scale(1.04) rotate(-.6deg);box-shadow:0 30px 70px rgba(0,0,0,.7),0 0 50px var(--glow);z-index:50}
+
+/* big state overlay (EMPTY / COMPLETED) */
+.overlay{position:absolute;inset:0;z-index:6;display:grid;place-items:center;pointer-events:none;
+  opacity:0;transition:opacity .45s ease;backdrop-filter:blur(1.5px)}
+.overlay.show{opacity:1}
+.overlay .otxt{font-family:var(--clock-font);font-weight:800;letter-spacing:.14em;font-size:30px;
+  text-transform:uppercase;transform:scale(.7);transition:transform .5s cubic-bezier(.34,1.6,.5,1)}
+.overlay.show .otxt{transform:scale(1)}
+.overlay.empty{background:radial-gradient(circle at 50% 50%,rgba(20,6,6,.66),rgba(8,4,4,.82))}
+.overlay.empty .otxt{color:#ff7a6f;text-shadow:0 0 24px rgba(224,88,79,.9),0 2px 0 rgba(0,0,0,.5)}
+.overlay.done{background:radial-gradient(circle at 50% 50%,rgba(8,28,18,.62),rgba(4,12,9,.8))}
+.overlay.done .otxt{color:#8af0bd;text-shadow:0 0 24px rgba(103,211,155,.9),0 2px 0 rgba(0,0,0,.5)}
+.overlay.done.show .otxt{animation:stamp .55s cubic-bezier(.34,1.6,.5,1)}
+@keyframes stamp{0%{transform:scale(1.5);opacity:0}55%{transform:scale(.92)}100%{transform:scale(1);opacity:1}}
+
+/* ============================ 1. POINT ============================ */
+.point{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 2px;user-select:none;cursor:pointer}
+.point .val{font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-weight:800;font-size:50px;line-height:.92;
+  background:linear-gradient(180deg,#fff,#c6d1ea);-webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 22px var(--glowsoft);transition:transform .12s}
+.point.bump .val{animation:bump .42s cubic-bezier(.34,1.56,.5,1)}
+@keyframes bump{0%{transform:scale(.8)}45%{transform:scale(1.22)}100%{transform:scale(1)}}
+.point .chev{font-size:13px;height:14px;opacity:0;font-weight:700}
+.point .chev.up{color:var(--good);animation:floatUp .6s ease}
+.point .chev.down{color:#ff8a7e;animation:floatDown .6s ease}
+@keyframes floatUp{0%{opacity:0;transform:translateY(4px)}30%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+@keyframes floatDown{0%{opacity:0;transform:translateY(-4px)}30%{opacity:1}100%{opacity:0;transform:translateY(8px)}}
+.point .hint{font-size:8px;color:#5b6478;letter-spacing:.1em;text-transform:uppercase}
+
+/* ============================ 2. BITD CLOCK ============================ */
+.bitd{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.bitd svg{display:block;overflow:visible}
+.bitd .seg{fill:rgba(255,255,255,.05);stroke:#0a0e15;stroke-width:1.4;transition:fill .4s ease,filter .4s ease}
+.bitd .seg.fill{fill:var(--tint);filter:drop-shadow(0 0 5px var(--glow))}
+.bitd .seg.justfilled{animation:segpop .55s ease}
+@keyframes segpop{0%{fill:#fff;filter:drop-shadow(0 0 12px #fff)}100%{}}
+.bitd .ring{fill:none;stroke:rgba(255,255,255,.18);stroke-width:1.4}
+.bitd.complete svg{animation:ringpulse 1.6s ease-in-out infinite}
+@keyframes ringpulse{0%,100%{filter:drop-shadow(0 0 4px var(--glow))}50%{filter:drop-shadow(0 0 16px var(--glow))}}
+.bitd .ctxt{font-size:9px;color:var(--muted);letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.bitd .ctxt b{color:#fff}
+
+/* ============================ 3. RESOURCE POOL ============================ */
+.pool{display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.dice{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;min-height:34px;align-items:center;perspective:420px}
+.die{width:30px;height:30px;border-radius:7px;position:relative;transform-style:preserve-3d;
+  background:linear-gradient(150deg,#eef2fb,#aeb9d2);box-shadow:0 3px 7px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.8),inset 0 -3px 6px rgba(0,0,0,.18);
+  display:grid;place-items:center;transition:transform .2s}
+.die .face{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+  padding:4px;gap:1px}
+.die .face .pip{width:5px;height:5px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#3a4252,#0c0f16);place-self:center;visibility:hidden}
+.die .num{font-family:var(--clock-font);font-weight:800;font-size:16px;color:#10141d}
+.die.rolling{animation:tumble .62s cubic-bezier(.3,.7,.3,1)}
+@keyframes tumble{0%{transform:rotateX(0) rotateY(0)}100%{transform:rotateX(720deg) rotateY(540deg)}}
+.die.dropped{animation:dropout .55s cubic-bezier(.5,0,.7,1) forwards}
+@keyframes dropout{0%{opacity:1}100%{opacity:0;transform:translateY(26px) rotate(34deg) scale(.7);filter:grayscale(1) brightness(.6)}}
+.die.kept{box-shadow:0 3px 7px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.8),0 0 12px var(--glow)}
+.pool .meta{font-size:9px;color:var(--muted);letter-spacing:.05em;text-align:center}
+.pool .meta b{color:#fff}
+.pool .playchip{font-size:7.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--good);
+  border:1px solid rgba(103,211,155,.4);border-radius:99px;padding:2px 7px;background:rgba(103,211,155,.08)}
+
+/* compact chat card */
+.chatcard{width:300px;border-radius:12px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.01)),linear-gradient(160deg,#161d2c,#0a0e15);
+  border:1px solid var(--edge);box-shadow:0 16px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.1),0 0 26px var(--glowsoft)}
+.chatcard .cc-head{display:flex;align-items:center;gap:8px;padding:8px 11px;border-bottom:1px solid var(--hair)}
+.chatcard .cc-ico{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;background:rgba(120,150,225,.18);
+  color:var(--tint);font-size:12px}
+.chatcard .cc-title{flex:1}
+.chatcard .cc-title .n{font-size:12px;font-weight:700}
+.chatcard .cc-title .s{font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.chatcard .cc-body{padding:10px 11px}
+.chatcard .cc-dice{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.cc-d{width:22px;height:22px;border-radius:5px;display:grid;place-items:center;font:800 12px var(--clock-font);
+  background:linear-gradient(150deg,#eef2fb,#aeb9d2);color:#10141d;box-shadow:0 2px 4px rgba(0,0,0,.4)}
+.cc-d.drop{background:linear-gradient(150deg,#3a2422,#241413);color:#ff8a7e;box-shadow:none;opacity:.85;position:relative}
+.cc-d.drop::after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,transparent 44%,rgba(255,138,126,.7) 46% 54%,transparent 56%)}
+.chatcard .cc-sum{display:flex;justify-content:space-between;font-size:11px}
+.chatcard .cc-sum .keep{color:var(--good);font-weight:700}
+.chatcard .cc-sum .gone{color:#ff8a7e;font-weight:700}
+.chatcard.empty .cc-sum{justify-content:center}
+.chatcard.empty .cc-empty{color:#ff7a6f;font-weight:800;letter-spacing:.18em;font-family:var(--clock-font);font-size:15px;text-shadow:0 0 14px var(--dangerglow)}
+
+/* ============================ 4. TASK ============================ */
+.boxrow{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:4px 0 2px;cursor:pointer;user-select:none}
+.box{width:24px;height:24px;border-radius:6px;border:1.6px solid rgba(255,255,255,.22);background:rgba(255,255,255,.03);
+  position:relative;overflow:hidden;transition:border-color .35s,background .35s,box-shadow .35s}
+.box.fill{border-color:transparent;background:linear-gradient(180deg,color-mix(in srgb,var(--tint) 80%,#fff),var(--tint));
+  box-shadow:0 0 9px var(--glow),inset 0 1px 0 rgba(255,255,255,.4)}
+.box.justfill{animation:boxpop .45s cubic-bezier(.34,1.5,.5,1)}
+@keyframes boxpop{0%{transform:scale(.6);box-shadow:0 0 22px #fff}55%{transform:scale(1.18)}100%{transform:scale(1)}}
+.task .titles{text-align:center;margin-bottom:9px}
+.task .titles .tt{font-size:13px;font-weight:740;letter-spacing:.01em;
+  background:linear-gradient(180deg,#fff,#cdd6e8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.task .titles .st{font-size:9.5px;color:var(--muted);margin-top:1px}
+
+/* ============================ 5. HAZARD ============================ */
+.tcard.hazard{--tint:var(--danger);--glow:var(--dangerglow);--glowsoft:var(--dangersoft);--tint2:#2a1413;
+  animation:dread 3.4s ease-in-out infinite}
+@keyframes dread{0%,100%{box-shadow:0 22px 56px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.12),0 0 26px rgba(224,88,79,.16)}
+  50%{box-shadow:0 22px 56px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.12),0 0 50px rgba(224,88,79,.42)}}
+.tcard.hazard .name{color:#e8a39d}
+.tcard.hazard::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(224,88,79,.05) 0 2px,transparent 2px 5px);
+  mix-blend-mode:screen;opacity:.5;animation:scan 7s linear infinite}
+@keyframes scan{0%{background-position:0 0}100%{background-position:0 60px}}
+.haz .box{border-color:rgba(224,88,79,.4)}
+.haz .box.fill{background:linear-gradient(180deg,#ff7d72,var(--danger));box-shadow:0 0 12px var(--dangerglow),inset 0 1px 0 rgba(255,255,255,.3);
+  animation:emberbox 1.9s ease-in-out infinite}
+@keyframes emberbox{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.35)}}
+.haz .box.head{animation:hazhead 1s ease-in-out infinite}
+@keyframes hazhead{0%,100%{box-shadow:0 0 8px var(--dangerglow)}50%{box-shadow:0 0 22px #ff9a8f,0 0 4px #fff inset}}
+.tcard.hazard.full{animation:dreadfull 1.1s ease-in-out infinite}
+@keyframes dreadfull{0%,100%{box-shadow:0 22px 56px rgba(0,0,0,.6),0 0 30px rgba(224,88,79,.5)}
+  50%{box-shadow:0 22px 56px rgba(0,0,0,.6),0 0 72px rgba(224,88,79,.95)}}
+.haz .label{text-align:center;margin-bottom:9px}
+.haz .label .tt{font-size:13px;font-weight:760;color:#ffd2cc;letter-spacing:.04em;text-shadow:0 0 14px var(--dangersoft)}
+.haz .label .st{font-size:9.5px;color:#c98e89;margin-top:1px}
+
+/* ---------------- layout: the floating dock demo ---------------- */
+.stage{max-width:1100px;margin:22px auto 0;padding:0 24px;position:relative}
+.dockwrap{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.scene{position:relative;flex:1;min-width:300px;min-height:360px;border-radius:16px;
+  border:1px dashed rgba(255,255,255,.1);
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.014) 0 16px,transparent 16px 32px);
+  display:grid;place-items:center}
+.scene .scenelabel{color:#3b4254;font-size:11px;letter-spacing:.2em}
+.dock{display:flex;flex-direction:column;gap:12px}
+.dock .dock-cap{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#69748c;font-weight:700;text-align:center;margin-bottom:2px}
+
+/* gallery grid */
+.gallery{max-width:1100px;margin:20px auto 0;padding:0 24px;display:flex;flex-wrap:wrap;gap:26px;justify-content:center;align-items:flex-start}
+.specimen{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:300px}
+.specimen .desc{font-size:11.5px;color:var(--muted);text-align:center;line-height:1.55}
+.specimen .desc b{color:#cdd6e6}
+.btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.btn{font-size:10.5px;font-weight:650;padding:5px 10px;border-radius:7px;cursor:pointer;
+  color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--hair);transition:.13s}
+.btn:hover{background:rgba(255,255,255,.14);box-shadow:0 0 10px var(--glowsoft)}
+.btn.danger:hover{box-shadow:0 0 10px var(--dangersoft)}
+.kbd{font:600 10px/1.5 inherit;background:#1a2030;border:1px solid var(--hair);border-radius:4px;padding:0 5px;color:#cdd6e6}
+.footer{max-width:760px;margin:60px auto 0;padding:0 24px;color:#69748c;font-size:11.5px;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+  <h1>GLUniverse — Tracker HUD<span class="sub">Design Brainstorm · matches the Arcane Glass aesthetic</span></h1>
+  <p class="intro">A <b>separate floating HUD</b> from the clock bar. The GM controls everything; players see it
+    <b>read-only</b> (the resource pool can optionally let players roll). Every tracker supports full CRUD —
+    including <b>per-player visibility</b> — and the GM can <b>drag to rearrange</b>, which syncs to the players' side.
+    Left-click is the primary action; <span class="kbd">right-click</span> reverses it.</p>
+
+  <!-- ====================== THE DOCK ====================== -->
+  <div class="section-title"><h2>The floating dock</h2><span class="rule"></span>
+    <span class="note">A stack of tracker cards anchored to a screen edge. Hover a card to reveal GM tools (visibility&nbsp;·&nbsp;edit&nbsp;·&nbsp;delete). Drag the grip to reorder.</span></div>
+  <div class="stage">
+    <div class="dockwrap">
+      <div class="dock" id="liveDock">
+        <span class="dock-cap">GM view — live &amp; interactive</span>
+      </div>
+      <div class="scene"><span class="scenelabel">PLAY AREA / CANVAS</span></div>
+    </div>
+  </div>
+
+  <!-- ====================== GALLERY ====================== -->
+  <div class="section-title"><h2>The five tracker types</h2><span class="rule"></span>
+    <span class="note">Each is interactive — click the tracker or use the buttons to drive its states &amp; animations.</span></div>
+  <div class="gallery" id="gallery"></div>
+
+  <!-- ====================== CHAT CARD ====================== -->
+  <div class="section-title"><h2>Resource-pool chat card</h2><span class="rule"></span>
+    <span class="note">A compact card posted to chat on every roll — same glass aesthetic — listing kept vs discarded dice.</span></div>
+  <div class="gallery">
+    <div class="specimen">
+      <div id="chatNormal"></div>
+      <div class="desc">A normal roll: discarded dice (≤ discard range) are struck through in red.</div>
+    </div>
+    <div class="specimen">
+      <div id="chatEmpty"></div>
+      <div class="desc">The roll that empties the pool — the card calls it out plainly.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Brainstorm preview · nothing here is wired into Foundry yet. Tell me which treatments to keep, tweak, or drop —
+    then I'll build it as a real ApplicationV2 tracker HUD synced through world settings (Foundry VTT v14), with Dice So Nice 3D dice when present.
+  </div>
+
+<script>
+const NS='http://www.w3.org/2000/svg';
+const svg=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e;};
+const TINTS={blue:'#6b86d6',green:'#67d39b',gold:'#ffc454',violet:'#b884d0',cyan:'#6fb8d8'};
+const TINT2={blue:'#1a2233',green:'#13261d',gold:'#2f2616',violet:'#241430',cyan:'#162a36'};
+function applyTint(card,key){const t=TINTS[key]||key;card.style.setProperty('--tint',t);
+  card.style.setProperty('--tint2',TINT2[key]||'#161d2c');
+  card.style.setProperty('--glow',hexA(t,.55));card.style.setProperty('--glowsoft',hexA(t,.2));}
+function hexA(hex,a){const h=hex.replace('#','');const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;}
+
+/* ---- card shell with header + body ---- */
+function makeCard({name,type,tint,hidden,hazard}){
+  const card=el('div','tcard'+(hazard?' hazard':''));
+  if(tint&&!hazard)applyTint(card,tint);
+  if(hidden)card.classList.add('hiddenfromplayers');
+  const head=el('div','thead');
+  const grip=el('div','grip');grip.append(el('i'),el('i'),el('i'),el('i'),el('i'),el('i'));
+  const nm=el('div','name',name);
+  const tools=el('div','gmtools');
+  const eye=el('button','eye'+(hidden?' off':''));eye.innerHTML=hidden?'&#128584;':'&#128065;';eye.title='Toggle player visibility';
+  eye.onclick=e=>{e.stopPropagation();const off=eye.classList.toggle('off');eye.innerHTML=off?'&#128584;':'&#128065;';card.classList.toggle('hiddenfromplayers',off);};
+  const edit=el('button');edit.innerHTML='&#9881;';edit.title='Edit';
+  const del=el('button');del.innerHTML='&#10005;';del.title='Delete';
+  tools.append(eye,edit,del);
+  head.append(grip,nm,tools);
+  const body=el('div','tbody');
+  card.append(head,body);
+  return {card,body};
+}
+
+/* ===================== POINT ===================== */
+function buildPoint(host,{name,value=3,tint='blue'}){
+  const {card,body}=makeCard({name,type:'point',tint});
+  const wrap=el('div','point');
+  const chev=el('div','chev');
+  const val=el('div','val',value);
+  const hint=el('div','hint','L-click +1 · R-click −1');
+  wrap.append(chev,val,hint);body.append(wrap);host.append(card);
+  let v=value;
+  function change(d){v+=d;val.textContent=v;
+    wrap.classList.remove('bump');void wrap.offsetWidth;wrap.classList.add('bump');
+    chev.className='chev '+(d>0?'up':'down');chev.textContent=d>0?'▲':'▼';
+    void chev.offsetWidth;}
+  wrap.onclick=()=>change(1);
+  wrap.oncontextmenu=e=>{e.preventDefault();change(-1);};
+  return {card,api:{change}};
+}
+
+/* ===================== BITD CLOCK ===================== */
+function buildClock(host,{name,slices=6,value=0,tint='violet'}){
+  const {card,body}=makeCard({name,type:'clock',tint});
+  const overlay=el('div','overlay done');overlay.append(Object.assign(el('div','otxt'),{textContent:'DONE'}));
+  const wrap=el('div','bitd');
+  const size=104,cx=52,cy=52,r=42;
+  const s=svg('svg',{viewBox:'0 0 104 104',width:size,height:size});
+  const segs=[];
+  for(let i=0;i<slices;i++){
+    const a0=(i/slices)*360-90,a1=((i+1)/slices)*360-90;
+    const p0=polar(cx,cy,r,a0),p1=polar(cx,cy,r,a1);
+    const lg=(a1-a0)<=180?0:1;
+    const d=`M${cx} ${cy} L${p0[0].toFixed(2)} ${p0[1].toFixed(2)} A${r} ${r} 0 ${lg} 1 ${p1[0].toFixed(2)} ${p1[1].toFixed(2)} Z`;
+    const seg=svg('path',{d,class:'seg'});s.appendChild(seg);segs.push(seg);
+  }
+  s.appendChild(svg('circle',{cx,cy,r,class:'ring'}));
+  const ctxt=el('div','ctxt');
+  wrap.append(s,ctxt);body.append(wrap);card.append(overlay);host.append(card);
+  let v=value;
+  function paint(prev){segs.forEach((sg,i)=>{const f=i<v;sg.classList.toggle('fill',f);
+      if(f&&i>=prev){sg.classList.remove('justfilled');void sg.offsetWidth;sg.classList.add('justfilled');}});
+    ctxt.innerHTML=`<b>${v}</b> / ${slices}`;
+    const done=v>=slices;card.querySelector('.bitd').classList.toggle('complete',done);
+    overlay.classList.toggle('show',done);overlay.querySelector('.otxt').textContent='FILLED';}
+  function change(d){const prev=v;v=Math.max(0,Math.min(slices,v+d));paint(d>0?prev:slices+1);}
+  paint(0);
+  wrap.onclick=()=>change(1);
+  wrap.oncontextmenu=e=>{e.preventDefault();change(-1);};
+  return {card,api:{change}};
+}
+function polar(cx,cy,r,deg){const a=deg*Math.PI/180;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];}
+
+/* ===================== RESOURCE POOL ===================== */
+const PIPMAP={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function dieFace(size,val){const d=el('div','die');
+  if(size===6){const f=el('div','face');for(let i=0;i<9;i++){const p=el('div','pip');if(PIPMAP[val]?.includes(i))p.style.visibility='visible';f.appendChild(p);}d.appendChild(f);}
+  else{d.appendChild(el('div','num',val));}
+  return d;}
+function buildPool(host,{name,count=5,size=6,discard=2,tint='cyan',playerRoll=true}){
+  const {card,body}=makeCard({name,type:'pool',tint});
+  const overlay=el('div','overlay empty');overlay.append(Object.assign(el('div','otxt'),{textContent:'EMPTY'}));
+  const wrap=el('div','pool');
+  const dice=el('div','dice');
+  const meta=el('div','meta');
+  wrap.append(dice,meta);
+  if(playerRoll)wrap.append(el('div','playchip','▶ players may roll'));
+  body.append(wrap);card.append(overlay);host.append(card);
+  let pool=count;
+  function show(){dice.replaceChildren();
+    meta.innerHTML=`<b>${pool}</b>×d${size} pool · drop ≤ ${discard}`;
+    for(let i=0;i<pool;i++)dice.appendChild(dieFace(size, Math.min(size,discard+2)));
+    overlay.classList.remove('show');}
+  function roll(){
+    if(pool<=0){pool=count;show();return;}
+    overlay.classList.remove('show');
+    dice.replaceChildren();
+    const results=[];
+    const faces=[];
+    for(let i=0;i<pool;i++){const v=1+Math.floor(Math.random()*size);results.push(v);
+      const d=dieFace(size,v);d.classList.add('rolling');faces.push(d);dice.appendChild(d);}
+    setTimeout(()=>{
+      let kept=0;
+      results.forEach((v,i)=>{faces[i].classList.remove('rolling');
+        if(v<=discard)faces[i].classList.add('dropped');else{faces[i].classList.add('kept');kept++;}});
+      setTimeout(()=>{
+        pool=kept;
+        meta.innerHTML=`<b>${kept}</b>×d${size} remain · drop ≤ ${discard}`;
+        if(kept===0){overlay.classList.add('show');meta.innerHTML=`pool exhausted`;}
+      },560);
+    },620);
+  }
+  show();
+  wrap.onclick=roll;
+  wrap.oncontextmenu=e=>{e.preventDefault();pool=count;show();};
+  return {card,api:{roll,reset:()=>{pool=count;show();}}};
+}
+
+/* ===================== TASK ===================== */
+function buildTask(host,{name,title,subtitle,boxes=6,value=0,tint='green'}){
+  const {card,body}=makeCard({name,type:'task',tint});
+  const overlay=el('div','overlay done');overlay.append(Object.assign(el('div','otxt'),{textContent:'COMPLETED'}));
+  const wrap=el('div','task');
+  const titles=el('div','titles');
+  titles.append(el('div','tt',title),el('div','st',subtitle));
+  const row=el('div','boxrow');
+  const cells=[];
+  for(let i=0;i<boxes;i++){const b=el('div','box');row.appendChild(b);cells.push(b);}
+  wrap.append(titles,row);body.append(wrap);card.append(overlay);host.append(card);
+  let v=value;
+  function paint(prev){cells.forEach((c,i)=>{const f=i<v;c.classList.toggle('fill',f);
+      if(f&&i>=prev){c.classList.remove('justfill');void c.offsetWidth;c.classList.add('justfill');}});
+    overlay.classList.toggle('show',v>=boxes);}
+  function change(d){const prev=v;v=Math.max(0,Math.min(boxes,v+d));paint(d>0?prev:boxes+1);}
+  paint(0);
+  row.onclick=()=>change(1);
+  row.oncontextmenu=e=>{e.preventDefault();change(-1);};
+  return {card,api:{change}};
+}
+
+/* ===================== HAZARD ===================== */
+function buildHazard(host,{name,title,subtitle,boxes=8,value=0}){
+  const {card,body}=makeCard({name,type:'hazard',hazard:true});
+  const wrap=el('div','haz');
+  const label=el('div','label');
+  label.append(el('div','tt',title),el('div','st',subtitle));
+  const row=el('div','boxrow');
+  const cells=[];
+  for(let i=0;i<boxes;i++){const b=el('div','box');row.appendChild(b);cells.push(b);}
+  wrap.append(label,row);body.append(wrap);host.append(card);
+  let v=value;
+  function paint(prev){cells.forEach((c,i)=>{const f=i<v;c.classList.toggle('fill',f);
+      c.classList.toggle('head',f&&i===v-1&&v<boxes);
+      if(f&&i>=prev){c.classList.remove('justfill');void c.offsetWidth;c.classList.add('justfill');}});
+    card.classList.toggle('full',v>=boxes);}
+  function change(d){const prev=v;v=Math.max(0,Math.min(boxes,v+d));paint(d>0?prev:boxes+1);}
+  paint(0);
+  row.onclick=()=>change(1);
+  row.oncontextmenu=e=>{e.preventDefault();change(-1);};
+  return {card,api:{change}};
+}
+
+/* ===================== CHAT CARD ===================== */
+function buildChat(host,{name,size=6,results,discard}){
+  const c=el('div','chatcard');
+  const empty=results.every(v=>v<=discard);
+  if(empty)c.classList.add('empty');
+  const head=el('div','cc-head');
+  head.append(Object.assign(el('div','cc-ico'),{innerHTML:'&#9858;'}));
+  const t=el('div','cc-title');t.append(el('div','n',name),el('div','s',`resource pool · d${size} · drop ≤ ${discard}`));
+  head.append(t);
+  const bodyc=el('div','cc-body');
+  const drow=el('div','cc-dice');
+  results.forEach(v=>{const d=el('div','cc-d'+(v<=discard?' drop':''),v);drow.appendChild(d);});
+  const sum=el('div','cc-sum');
+  const kept=results.filter(v=>v>discard).length,gone=results.length-kept;
+  if(empty){sum.append(Object.assign(el('div','cc-empty'),{textContent:'POOL EMPTY'}));}
+  else{sum.append(el('div','keep',`${kept} kept`),el('div','gone',`${gone} discarded`));}
+  bodyc.append(drow,sum);
+  c.append(head,bodyc);host.append(c);
+}
+
+/* ===================== BUILD THE PAGE ===================== */
+const dock=document.getElementById('liveDock');
+buildPoint(dock,{name:'Town Alarm',value:2,tint:'gold'});
+buildClock(dock,{name:'Ritual Progress',slices:6,value:3,tint:'violet'});
+const dockPool=buildPool(dock,{name:'Supply Cache',count:5,size:6,discard:2,tint:'cyan',playerRoll:true});
+buildTask(dock,{name:'Objective',title:'Decode the Cipher',subtitle:'Investigation · 6 clues',boxes:6,value:2,tint:'green'});
+buildHazard(dock,{name:'Doom',title:'The Walls Close In',subtitle:'Each failure advances',boxes:8,value:5});
+
+// drag-to-reorder on the live dock (visual only)
+enableDragReorder(dock);
+
+const gallery=document.getElementById('gallery');
+function specimen(label,desc,buildFn,buttons){
+  const s=el('div','specimen');
+  const holder=el('div');s.appendChild(holder);
+  const built=buildFn(holder);
+  const d=el('div','desc');d.innerHTML=desc;s.appendChild(d);
+  const bw=el('div','btns');
+  (buttons||[]).forEach(([t,fn,cls])=>{const b=el('div','btn'+(cls?' '+cls:''));b.textContent=t;b.onclick=()=>fn(built.api);bw.appendChild(b);});
+  s.appendChild(bw);gallery.appendChild(s);
+}
+specimen('point','<b>POINT</b> — a big, prominent integer. Left-click&nbsp;+1, right-click&nbsp;−1, with a pop &amp; direction flash.',
+  h=>buildPoint(h,{name:'Reputation',value:7,tint:'gold'}),
+  [['+1',a=>a.change(1)],['−1',a=>a.change(-1)]]);
+specimen('clock','<b>BITD CLOCK</b> — a segmented progress clock. GM sets the slice count. Advance fills a wedge; right-click steps back.',
+  h=>buildClock(h,{name:'Reinforcements',slices:8,value:2,tint:'violet'}),
+  [['advance',a=>a.change(1)],['back',a=>a.change(-1)],['fill',a=>a.change(8)]]);
+specimen('pool','<b>RESOURCE POOL</b> — a pool of dice. Each roll drops any die ≤ the discard range. Empty the pool → <b>EMPTY</b> overlay. Uses 3D dice (Dice So Nice) in-game.',
+  h=>buildPool(h,{name:'Torches',count:6,size:6,discard:2,tint:'cyan',playerRoll:true}),
+  [['roll',a=>a.roll()],['reset',a=>a.reset()]]);
+specimen('task','<b>TASK</b> — a row of boxes that fill up. When full → <b>COMPLETED</b> overlay. Has a title &amp; subtitle.',
+  h=>buildTask(h,{name:'Objective',title:'Repair the Engine',subtitle:'Crafting · 5 steps',boxes:5,value:1,tint:'green'}),
+  [['+1',a=>a.change(1)],['−1',a=>a.change(-1)],['complete',a=>a.change(5)]]);
+specimen('hazard','<b>HAZARD</b> — a doom clock. Same boxes, but red with a persistent dread glow &amp; ember flicker. No overlay when full — it just intensifies.',
+  h=>buildHazard(h,{name:'Collapse',title:'Cave-In Imminent',subtitle:'Dread rises',boxes:6,value:3}),
+  [['advance',a=>a.change(1)],['back',a=>a.change(-1)],['max',a=>a.change(6),'danger']]);
+
+buildChat(document.getElementById('chatNormal'),{name:'Supply Cache',size:6,discard:2,results:[5,1,4,2,6]});
+buildChat(document.getElementById('chatEmpty'),{name:'Torches',size:6,discard:2,results:[1,2,1]});
+
+/* simple drag reorder */
+function enableDragReorder(container){
+  let dragging=null,placeholder=null;
+  container.querySelectorAll('.tcard .grip').forEach(grip=>{
+    grip.addEventListener('pointerdown',e=>{
+      e.preventDefault();
+      const card=grip.closest('.tcard');dragging=card;
+      const rect=card.getBoundingClientRect();
+      const oy=e.clientY-rect.top;
+      placeholder=el('div');placeholder.style.height=rect.height+'px';
+      card.after(placeholder);
+      card.style.position='fixed';card.style.width=rect.width+'px';card.style.left=rect.left+'px';card.style.zIndex=99;
+      card.classList.add('dragging');
+      const move=ev=>{card.style.top=(ev.clientY-oy)+'px';
+        const after=[...container.querySelectorAll('.tcard:not(.dragging)')].find(c=>{
+          const r=c.getBoundingClientRect();return ev.clientY<r.top+r.height/2;});
+        if(after)container.insertBefore(placeholder,after);else container.appendChild(placeholder);};
+      const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);
+        card.classList.remove('dragging');card.style.position='';card.style.top='';card.style.left='';card.style.width='';card.style.zIndex='';
+        placeholder.replaceWith(card);dragging=null;};
+      window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);
+    });
+  });
+}
+
+// expose for screenshot driver
+window.__demo={dockPool};
+</script>
+</body>
+</html>
