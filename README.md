@@ -58,13 +58,20 @@ Each event has a name, a scope (single **day**, **day range**, or whole **month*
 
 ## Releasing (for maintainers)
 
-Releases are automated by [`.github/workflows/release.yml`](.github/workflows/release.yml):
+Releases are automated by [`.github/workflows/release.yml`](.github/workflows/release.yml). There are three ways to cut a release:
 
-1. Bump `version` in `module.json` (optional — the workflow stamps it from the tag).
-2. Create a **GitHub Release** with a tag like `0.2.0` (or `v0.2.0`).
-3. The workflow stamps the version and URLs into `module.json`, zips the module, and attaches `module.json` + `module.zip` to the release.
+**Recommended — auto-increment from the Actions tab:**
 
-The `manifest` field always points at `releases/latest/download/module.json`, so existing installs see updates automatically.
+1. Go to **Actions → Release → Run workflow**.
+2. Pick the bump type: **patch** (`0.1.0 → 0.1.1`), **minor** (`0.1.0 → 0.2.0`), or **major** (`0.1.0 → 1.0.0`).
+3. The workflow reads the current `version` in `module.json`, increments it, commits the bump back, creates the matching tag, zips the module, and publishes a GitHub Release with `module.json` + `module.zip` attached.
+
+**Manual alternatives** (still supported):
+
+- Push a version tag like `0.2.0` or `v0.2.0`; the tag becomes the version.
+- Create a **GitHub Release** with such a tag.
+
+In all cases the workflow stamps the version and URLs into `module.json`. The `manifest` field always points at `releases/latest/download/module.json`, so existing installs see and apply updates automatically.
 
 ---
 
