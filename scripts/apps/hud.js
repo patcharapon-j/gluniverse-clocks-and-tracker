@@ -164,9 +164,22 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _setReel(reel, d) {
-    const strip = reel.firstChild, cur = +reel.dataset.cur, curDigit = cur % 10;
-    if (d === curDigit && cur < 10) return;
-    const target = (d === 0 && curDigit !== 0) ? 10 : d;
+    const strip = reel.firstChild;
+    let cur = +reel.dataset.cur;
+    // If a prior forward-wrap left us parked on the duplicate 0 (index 10),
+    // collapse to the real 0 and cancel its pending snap before retargeting —
+    // otherwise that stale timeout fires mid-tween and resets the digit to 0.
+    if (cur === 10) {
+      clearTimeout(reel._t);
+      strip.style.transition = "none";
+      strip.style.transform = "translateY(0)";
+      void strip.offsetWidth;
+      strip.style.transition = "";
+      cur = 0;
+      reel.dataset.cur = "0";
+    }
+    if (d === cur) return;
+    const target = (d === 0) ? 10 : d;   // roll forward through the duplicate 0
     strip.style.transform = `translateY(-${target * (100 / 11)}%)`;
     reel.dataset.cur = String(target);
     if (target === 10) {

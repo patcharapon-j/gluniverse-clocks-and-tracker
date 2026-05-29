@@ -36,7 +36,7 @@ export function registerSettings() {
   });
 
   game.settings.register(MODULE_ID, SETTINGS.yearLabel, {
-    scope: "world", config: false, type: String, default: "AR",
+    scope: "world", config: false, type: String, default: "A.S.",
     onChange: () => GlctHud.refreshState()
   });
 

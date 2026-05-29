@@ -110,10 +110,61 @@ export const HARPTOS = {
   }
 };
 
+/**
+ * Ourolyn — the homebrew calendar (era: After Sundering, "A.S.").
+ *
+ * 8-day weeks, 12 months ("First Shadow" … "Twelfth Shadow") of 32 days each
+ * (= 4 weeks/month, 48 weeks/year). After the 12th month comes a single
+ * intercalary "Day of Renewal" that sits outside the weekday cycle before the
+ * year rolls back to day 1 — so every year begins on the same weekday.
+ * Total: 12 × 32 + 1 = 385 days/year.
+ */
+const OUROLYN_MONTH_WORDS = [
+  "First", "Second", "Third", "Fourth", "Fifth", "Sixth",
+  "Seventh", "Eighth", "Ninth", "Tenth", "Eleventh", "Twelfth"
+];
+
+export const OUROLYN = {
+  name: "Ourolyn (After Sundering)",
+  description: "The calendar of the world of Ourolyn, reckoned in years After Sundering (A.S.).",
+  years: { yearZero: 0, firstWeekday: 0, leapYear: { leapStart: 0, leapInterval: 0 } },
+  days: {
+    values: [
+      { name: "Earthday",  ordinal: 1 },
+      { name: "Tideday",   ordinal: 2 },
+      { name: "Waveday",   ordinal: 3 },
+      { name: "Skyday",    ordinal: 4, isRestDay: true },
+      { name: "Stormday",  ordinal: 5 },
+      { name: "Starday",   ordinal: 6 },
+      { name: "Sunday",    ordinal: 7, isRestDay: true },
+      { name: "Flameday",  ordinal: 8, isRestDay: true }
+    ],
+    daysPerYear: 385, ...STD_DAY
+  },
+  months: {
+    values: [
+      ...OUROLYN_MONTH_WORDS.map((w, i) => ({
+        name: `${w} Shadow`, ordinal: i + 1, days: 32, abbreviation: `${i + 1}Sh`
+      })),
+      { name: "Day of Renewal", ordinal: 13, days: 1, intercalary: true, abbreviation: "Ren" }
+    ]
+  },
+  seasons: {
+    // Placeholder names — rename freely in the calendar editor.
+    values: [
+      { name: "Spring", monthStart: 1, monthEnd: 3 },
+      { name: "Summer", monthStart: 4, monthEnd: 6 },
+      { name: "Autumn", monthStart: 7, monthEnd: 9 },
+      { name: "Winter", monthStart: 10, monthEnd: 12 }
+    ]
+  }
+};
+
 export const PRESETS = {
+  ourolyn: OUROLYN,
   gregorian: GREGORIAN,
   golarion: GOLARION,
   harptos: HARPTOS
 };
 
-export const DEFAULT_PRESET = "golarion";
+export const DEFAULT_PRESET = "ourolyn";
