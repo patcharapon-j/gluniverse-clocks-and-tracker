@@ -28,12 +28,14 @@
         </span>
       </div>
 
+      <div class="cell clock-cell">
+        <span class="lbl">{{localize 'GLCT.hud.timeLabel'}}</span>
+        <span class="clock"><span class="pulse"></span><span class="reelclock" data-reelclock></span></span>
+      </div>
+
       <div class="cell meter">
-        <div class="top">
-          <span class="clock" data-clk><span class="pulse"></span><span class="reelclock" data-reelclock></span></span>
-          <span class="rem"><span data-rem></span></span>
-        </div>
         <div class="track" data-track></div>
+        <span class="rem"><span data-rem></span></span>
       </div>
 
       <div class="cell event-cell" data-action="openCalendar">

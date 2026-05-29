@@ -5,6 +5,7 @@
   "GLCT.hud.expand": "Expand",
   "GLCT.hud.dragHint": "Drag to reposition",
   "GLCT.hud.stretchesLeft": "{n} stretches left",
+  "GLCT.hud.timeLabel": "Time",
 
   "GLCT.controls.advanceStretch": "+ Stretch",
   "GLCT.controls.advanceHour": "+ Hour",
