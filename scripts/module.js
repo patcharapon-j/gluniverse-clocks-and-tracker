@@ -5,6 +5,8 @@ import { registerSettings } from "./settings.js";
 import { applyCalendar } from "./calendar/calendar.js";
 import { TimeEngine } from "./engine.js";
 import { GlctHud } from "./apps/hud.js";
+import { TrackerHud } from "./apps/tracker-hud.js";
+import { TrackerStore } from "./trackers/trackers.js";
 
 function setting(key, fallback) {
   try { return game.settings.get(MODULE_ID, key); } catch { return fallback; }
@@ -18,11 +20,13 @@ Hooks.once("init", () => {
 
   // Public API for macros / other modules.
   const mod = game.modules.get(MODULE_ID);
-  if (mod) mod.api = { TimeEngine, GlctHud, HOOKS };
+  if (mod) mod.api = { TimeEngine, GlctHud, TrackerHud, TrackerStore, HOOKS };
 });
 
 Hooks.once("ready", async () => {
   await GlctHud.open();
+  TrackerStore.registerSocket();
+  if (!setting(SETTINGS.trackerHudHidden, false)) await TrackerHud.open();
   applySceneTint(TimeEngine.getState());
 });
 
@@ -48,6 +52,13 @@ Hooks.on("getSceneControlButtons", controls => {
     button: true,
     onChange: () => toggleHud()
   };
+  group.tools["glct-tracker-toggle"] = {
+    name: "glct-tracker-toggle",
+    title: "GLCT.keybindings.toggleTracker",
+    icon: "fa-solid fa-list-check",
+    button: true,
+    onChange: () => toggleTrackerHud()
+  };
 });
 
 function registerKeybindings() {
@@ -71,11 +82,25 @@ function registerKeybindings() {
     onDown: async () => { const { CalendarView } = await import("./apps/calendar-view.js"); CalendarView.show(); return true; },
     restricted: false
   });
+
+  game.keybindings.register(MODULE_ID, "toggleTracker", {
+    name: "GLCT.keybindings.toggleTracker",
+    editable: [{ key: "KeyR", modifiers: ["Alt"] }],
+    onDown: () => { toggleTrackerHud(); return true; },
+    restricted: false
+  });
 }
 
 async function toggleHud() {
   if (!GlctHud.instance?.rendered) { await GlctHud.open(); return; }
   await GlctHud.instance.close();
+}
+
+async function toggleTrackerHud() {
+  const open = TrackerHud.instance?.rendered;
+  if (!open) { await TrackerHud.open(); }
+  else { await TrackerHud.instance.close(); }
+  try { await game.settings.set(MODULE_ID, SETTINGS.trackerHudHidden, !!open); } catch { /* ignore */ }
 }
 
 /** Subtle full-board tint matching the current watch (opt-in). */

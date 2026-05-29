@@ -16,6 +16,14 @@ A premium, tactile in-game **calendar and time HUD** for Foundry VTT, built on F
 - **Events & holidays** — single day, day range, or whole month. Mark each event visible or hidden to players. Players get a read-only calendar view.
 - **Combat aware** — reflects combat state on the HUD (time only advances when the GM advances it).
 - **Per-shift theming** — subtle color tint and an optional full-scene glow that shifts with the time of day.
+- **Tracker dock** — a *separate* compact floating HUD where the GM keeps live, at-a-glance trackers and shows them to players (read-only). Six types, each a single tidy row:
+  - **Point** — a prominent numeral with a bold label; left-click +1, right-click −1.
+  - **Clock** — a Blades-in-the-Dark segmented progress clock; left-click advances a slice, right-click steps back.
+  - **Resource Pool** — a pool of dice; clicking rolls them and drops any die at or below the discard range, posting a compact chat card and rolling real 3D dice via **Dice So Nice** when installed (the dock count holds until the 3D dice settle). Empty the pool and it shows a bold **EMPTY**. Optionally lets players roll it.
+  - **Task** — a row of boxes that fill toward **COMPLETED**, with a title & subtitle.
+  - **Hazard** — a doom clock in danger-red with a persistent dread glow & ember flicker.
+  - **Separator** — a slim, label-bearing divider to group the dock into sections (purely visual).
+  - Full CRUD per tracker (incl. **player visibility**); drag the grip to reorder — changes sync to players instantly.
 
 ---
 
@@ -45,6 +53,11 @@ This always installs the latest release. Then enable **GLUniverse — Clocks & T
 | Set an exact date/time (GM) | Set-time button on the dock |
 | Open the calendar | `Alt+C`, or click the event chip |
 | Manage events (GM) | From the calendar view → Manage Events |
+| Toggle the tracker dock | `Alt+R`, or the checklist button in the scene controls |
+| Add a tracker (GM) | The **+** on the dock header |
+| Advance / rewind a tracker (GM) | **Left-click** a row to advance, **right-click** to step back (pool: left-click rolls, right-click resets) |
+| Edit / hide / delete a tracker (GM) | Hover a row → gear / eye / ✕ |
+| Reorder trackers (GM) | Drag a row's grip |
 
 ### Configuring a calendar (GM)
 
