@@ -170,37 +170,29 @@ export class TrackerStore {
 
     const roll = await new Roll(`${n}d${size}`).evaluate();
     const faces = roll.dice[0]?.results?.map(r => r.result) ?? [];
-    const kept = faces.filter(v => v > discard);
-    const remaining = kept.length;
+    const remaining = faces.filter(v => v > discard).length;
 
-    // Post the card first so Dice So Nice animates the attached roll for everyone…
-    const msg = await this._postPoolCard({ tracker: t, faces, discard, size, remaining, requestedBy, roll });
-    // …then hold the dock's pool count until the 3D dice have finished tumbling.
-    await this._awaitDice(msg);
+    // Roll the 3D dice for everyone and WAIT for them to finish before the dock
+    // count changes or the result card lands. showForRoll(...synchronize=true)
+    // broadcasts the animation to all clients and resolves when it settles; we
+    // attribute it to the requesting user so the dice show in their colours.
+    if (game.dice3d) {
+      const author = game.users.get(requestedBy) ?? game.user;
+      try { await game.dice3d.showForRoll(roll, author, true); }
+      catch (err) { console.warn(`${MODULE_ID} | Dice So Nice roll failed`, err); }
+    }
 
-    // Commit the new pool state — this is what repaints the dock for all clients.
+    // Post the result card (no Roll attached → Foundry won't also render its own
+    // default dice box, which is what made the card look nested)…
+    await this._postPoolCard({ tracker: t, faces, discard, size, remaining, requestedBy });
+    // …and reveal the new pool count at the same moment.
     const fresh = this.all;
     const t2 = fresh.find(x => x.id === id);
     if (t2 && t2.type === "pool") { t2.current = remaining; await this.save(fresh); }
   }
 
-  /**
-   * Resolve once Dice So Nice has finished animating the given message's roll.
-   * No-op (resolves immediately) when DSN isn't installed; a safety timeout
-   * guards against the completion hook never firing.
-   */
-  static async _awaitDice(msg) {
-    if (!game.dice3d || !msg) return;
-    await new Promise(resolve => {
-      let settled = false;
-      const finish = () => { if (settled) return; settled = true; resolve(); };
-      Hooks.once("diceSoNiceRollComplete", (messageId) => { if (messageId === msg.id) finish(); });
-      setTimeout(finish, 5000);
-    });
-  }
-
   /** Compact, on-brand chat card listing kept vs discarded dice. */
-  static async _postPoolCard({ tracker, faces, discard, size, remaining, requestedBy, roll }) {
+  static async _postPoolCard({ tracker, faces, discard, size, remaining, requestedBy }) {
     const empty = remaining === 0;
     const keptCount = remaining;
     const goneCount = faces.length - keptCount;
@@ -229,9 +221,10 @@ export class TrackerStore {
       </div>`;
 
     const speaker = ChatMessage.implementation.getSpeaker({ alias: tracker.name ?? "Resource Pool" });
-    // Attaching the Roll lets Dice So Nice animate the 3D dice for everyone.
-    await ChatMessage.implementation.create({
-      speaker, content, rolls: roll ? [roll] : [],
+    // The 3D dice were already shown via game.dice3d.showForRoll, so we post a
+    // plain content message (no rolls) to avoid a duplicate default dice box.
+    return ChatMessage.implementation.create({
+      speaker, content,
       flags: { [MODULE_ID]: { poolRoll: true, requestedBy } }
     });
   }

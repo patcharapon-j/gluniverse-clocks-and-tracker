@@ -8,7 +8,7 @@
 
 /* Display face for the clock — a clean, techy numeral that suits the
    "Arcane Glass" look. Falls back gracefully if the webfont can't load. */
-@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&display=swap');
 
 /* ---- frameless ApplicationV2 reset + top-center anchoring ---- */
 #glct-hud{
@@ -19,7 +19,7 @@
   background:none;border:none;box-shadow:none;padding:0;margin:0;
   width:auto;height:auto;min-width:0;min-height:0;
   pointer-events:none;                 /* clicks fall through transparent gaps */
-  font:14px/1.45 "Segoe UI",system-ui,sans-serif;color:var(--ink);
+  font:14px/1.45 "Oxanium","Segoe UI",system-ui,sans-serif;color:var(--ink);
   -webkit-font-smoothing:antialiased;
 }
 #glct-hud .window-content{background:none;padding:0;color:var(--ink);overflow:visible}
@@ -147,6 +147,9 @@
 #glct-hud .ring .sq{transform-box:fill-box;transform-origin:50% 100%;fill:rgba(255,255,255,.14);
   transition:transform .42s cubic-bezier(.34,1.5,.5,1),fill .35s ease,filter .35s ease}
 
+/* Shared display typeface for the popout calendar/events/editor windows. */
+.glct-calendar,.glct-events,.glct-caledit{font-family:"Oxanium","Segoe UI",system-ui,sans-serif}
+
 /* ===================== read-only calendar view ===================== */
 .glct-calendar .glct-cal{--tint:#6b86d6;padding:4px 6px 10px;color:#eef1f7}
 .glct-calendar .cal-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
@@ -211,13 +214,14 @@
   --danger:#e0584f; --dangerglow:rgba(224,88,79,.55); --dangersoft:rgba(224,88,79,.22); --good:#67d39b;
   --clock-font:"Oxanium","Segoe UI",system-ui,sans-serif;
   background:none;border:none;box-shadow:none;padding:0;margin:0;width:auto;height:auto;min-width:0;min-height:0;
-  pointer-events:none;font:14px/1.45 "Segoe UI",system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;}
+  pointer-events:none;font:14px/1.45 "Oxanium","Segoe UI",system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;}
 #glct-tracker-hud .window-content{background:none;padding:0;color:var(--ink);overflow:visible}
 #glct-tracker-hud *{box-sizing:border-box}
 #glct-tracker-hud .glct-trk-root{pointer-events:none}
 #glct-tracker-hud .glct-trk-root > *{pointer-events:auto}
 
-#glct-tracker-hud .trk-dock{width:296px;border-radius:14px;overflow:hidden;isolation:isolate;position:relative;
+#glct-tracker-hud .trk-dock{min-width:296px;width:max-content;max-width:calc(100vw - 28px);
+  border-radius:14px;overflow:hidden;isolation:isolate;position:relative;
   background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 30%),
     linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.22)),linear-gradient(160deg,#161d2c,#080b11 72%);
   border:1px solid var(--edge);
@@ -244,7 +248,7 @@
 #glct-tracker-hud .trow:hover .grip{opacity:.85}
 #glct-tracker-hud .trow .grip i{width:3px;height:3px;border-radius:99px;background:rgba(255,255,255,.45)}
 #glct-tracker-hud .trow .nm{font-size:13px;letter-spacing:.03em;text-transform:uppercase;font-weight:700;
-  color:#eaeffa;text-shadow:0 0 10px var(--glowsoft);min-width:0;
+  color:#eaeffa;text-shadow:0 0 10px var(--glowsoft);min-width:0;max-width:200px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #glct-tracker-hud .trow .tools{display:flex;gap:2px;opacity:0;transition:.18s;pointer-events:none;flex:none;position:relative;z-index:4}
 #glct-tracker-hud .trow:hover .tools{opacity:1;pointer-events:auto}
@@ -298,7 +302,7 @@
 
 /* POOL */
 #glct-tracker-hud .t-pool{flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
-#glct-tracker-hud .t-pool .nm{flex:1 1 auto;min-width:0}
+#glct-tracker-hud .t-pool .nm{flex:1 1 auto;min-width:0;max-width:180px}
 #glct-tracker-hud .t-pool .dice{flex:none;display:flex;gap:4px;align-items:center;justify-content:flex-end;overflow:hidden}
 #glct-tracker-hud .t-pool .die{width:18px;height:18px;border-radius:5px;flex:none;display:grid;place-items:center;
   background:linear-gradient(150deg,#eef2fb,#aeb9d2);box-shadow:0 2px 4px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.8),0 0 8px var(--glowsoft)}
@@ -310,12 +314,13 @@
 
 /* TASK + HAZARD shared box layout */
 #glct-tracker-hud .t-task{flex:1;display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
-#glct-tracker-hud .t-task .titles{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;line-height:1.05}
+#glct-tracker-hud .t-task .titles{flex:1;min-width:0;max-width:200px;display:flex;flex-direction:column;justify-content:center;line-height:1.05}
 #glct-tracker-hud .t-task .titles .tt{font-size:13px;font-weight:740;letter-spacing:.02em;text-transform:uppercase;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   background:linear-gradient(180deg,#fff,#cdd6e8);-webkit-background-clip:text;background-clip:text;color:transparent}
 #glct-tracker-hud .t-task .titles .st{font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:#7c869c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#glct-tracker-hud .boxrow{display:flex;gap:3px;align-items:center;flex:0 1 auto;min-width:0;justify-content:flex-end}
+/* Boxes keep their full size; the dock grows wider to fit a long row. */
+#glct-tracker-hud .boxrow{display:flex;gap:3px;align-items:center;flex:none}
 #glct-tracker-hud .box{width:14px;height:14px;flex:none;border-radius:4px;border:1.5px solid rgba(255,255,255,.24);background:rgba(255,255,255,.03);
   position:relative;transition:border-color .35s,background .35s,box-shadow .35s}
 #glct-tracker-hud .box.fill{border-color:transparent;background:linear-gradient(180deg,#fff,var(--tint));
@@ -358,12 +363,16 @@
 #glct-tracker-hud .t-sep .lab{flex:none;font-size:7.5px;letter-spacing:.26em;text-transform:uppercase;font-weight:700;
   color:#7c869c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%}
 
-/* ===== resource-pool chat card (rendered in the chat log, global scope) ===== */
-.glct-chatcard{border-radius:12px;overflow:hidden;font:13px/1.45 "Segoe UI",system-ui,sans-serif;
+/* ===== resource-pool chat card (rendered in the chat log, global scope) =====
+   Full-bleed within the chat message so it reads as the message body itself,
+   not a rounded panel nested inside the standard message frame. The negative
+   margins cancel the chat message's own padding (~8px in Foundry v13+). */
+.glct-chatcard{margin:0 -8px -8px;border:none;border-top:1px solid rgba(255,255,255,.10);border-radius:0 0 6px 6px;
+  overflow:hidden;box-shadow:none;font:13px/1.45 "Oxanium","Segoe UI",system-ui,sans-serif;
   --tint:#6b86d6;--glow:rgba(120,150,225,.5);--glowsoft:rgba(120,150,225,.18);--good:#67d39b;
   --clock-font:"Oxanium","Segoe UI",system-ui,sans-serif;
   background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.01)),linear-gradient(160deg,#161d2c,#0a0e15);
-  border:1px solid rgba(255,255,255,.13);box-shadow:0 8px 22px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.1);color:#eef1f7}
+  color:#eef1f7}
 .glct-chatcard .glct-cc-head{display:flex;align-items:center;gap:8px;padding:8px 11px;border-bottom:1px solid rgba(255,255,255,.08)}
 .glct-chatcard .glct-cc-ico{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;background:rgba(120,150,225,.18);color:var(--tint);font-size:13px}
 .glct-chatcard .glct-cc-title{display:flex;flex-direction:column;line-height:1.2}

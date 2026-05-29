@@ -303,7 +303,6 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const br = this._el("div", "boxrow");
     const cells = [];
     for (let i = 0; i < boxes; i++) { const b = this._el("div", "box"); br.appendChild(b); cells.push(b); }
-    this._sizeBoxes(br, cells, boxes);
     c.append(titles, br);
     let last = -1;
     const paint = (tr) => {
@@ -320,14 +319,6 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     return { content: c, paint };
   }
 
-  /** Shrink box cells as the count grows so a long task/hazard stays one tidy row. */
-  _sizeBoxes(br, cells, boxes) {
-    const sz = boxes <= 10 ? 14 : boxes <= 16 ? 11 : boxes <= 22 ? 8 : 6;
-    const gap = sz >= 11 ? 3 : sz >= 8 ? 2 : 1;
-    br.style.gap = `${gap}px`;
-    for (const b of cells) { b.style.width = `${sz}px`; b.style.height = `${sz}px`; }
-  }
-
   /* ---- HAZARD (red dread boxes; no overlay) ---- */
   _bodyHazard(t) {
     const c = this._el("div", "t-task haz");
@@ -339,7 +330,6 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const br = this._el("div", "boxrow");
     const cells = [];
     for (let i = 0; i < boxes; i++) { const b = this._el("div", "box"); br.appendChild(b); cells.push(b); }
-    this._sizeBoxes(br, cells, boxes);
     c.append(titles, br);
     let last = -1;
     const paint = (tr) => {
