@@ -1,8 +1,12 @@
 name: Release
 
-# Publish a Foundry-installable release whenever a GitHub Release is created.
-# Tag the release "x.y.z" (or "vx.y.z"); the tag becomes the module version.
+# Publish a Foundry-installable release. Triggered either by creating a GitHub
+# Release, or by pushing a version tag ("x.y.z" / "vx.y.z") — the tag becomes
+# the module version and the release (with assets) is created automatically.
 on:
+  push:
+    tags:
+      - "*"
   release:
     types: [published]
 
@@ -17,7 +21,7 @@ jobs:
 
       - name: Stamp version & URLs into module.json
         run: |
-          TAG="${{ github.event.release.tag_name }}"
+          TAG="${{ github.event.release.tag_name || github.ref_name }}"
           VERSION="${TAG#v}"
           REPO="${{ github.repository }}"
           jq \
