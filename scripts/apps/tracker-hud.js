@@ -49,12 +49,17 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     hud: { template: `modules/${MODULE_ID}/templates/tracker-hud.hbs` }
   };
 
-  _rows = new Map();   // id -> { el, paint, last }
+  _rows = new Map();   // id -> { el, paint, flash, vsig }
   _sig = null;         // last structural signature array
+
+  /** Compact ("playing-card") mode is a per-client preference. */
+  get compact() {
+    try { return !!game.settings.get(MODULE_ID, SETTINGS.trackerHudCompact); } catch { return false; }
+  }
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    return Object.assign(context, { isGM: game.user?.isGM ?? false });
+    return Object.assign(context, { isGM: game.user?.isGM ?? false, compact: this.compact });
   }
 
   async _onRender(context, options) {
@@ -76,7 +81,18 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const same = this._sig && sig.length === this._sig.length && sig.every((s, i) => s === this._sig[i]);
     if (!same) { this._buildRows(list); this._sig = sig; }
 
-    for (const t of list) this._rows.get(t.id)?.paint(t);
+    const compact = this.compact;
+    for (const t of list) {
+      const rec = this._rows.get(t.id);
+      if (!rec) continue;
+      // When collapsed to minis, a GM-driven value change momentarily pops the
+      // affected card back out to its full horizontal row so the change reads.
+      const vsig = this._valueSig(t);
+      const changed = rec.vsig !== undefined && rec.vsig !== vsig;
+      rec.vsig = vsig;
+      if (changed && compact && t.type !== "separator") rec.flash();
+      rec.paint(t);
+    }
 
     // header count + empty hint + dock auto-hide for players with nothing to see
     const root = this.element;
@@ -91,6 +107,12 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _structuralSig(t) {
     return [t.id, t.order, t.type, t.name, t.title, t.subtitle, t.label, t.slices, t.boxes,
       t.size, t.count, t.discard, t.playerRoll, t.visibleToPlayers].join("|");
+  }
+
+  /** The live value that, when it changes, should pop a compact card open. */
+  _valueSig(t) {
+    if (t.type === "pool") return String(Math.trunc(Number(t.current) || 0));
+    return String(Math.trunc(Number(t.value) || 0));
   }
 
   _buildRows(list) {
@@ -150,8 +172,23 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       body.overlay = ovl;
     }
 
+    // Compact "playing-card" face — shown only while the dock is collapsed.
+    const mini = this._buildMini(t);
+    row.appendChild(mini.el);
+
     this._wireRowInteractions(row, body.content, t.type);
-    return { el: row, paint: body.paint, last: undefined };
+
+    // flash(): pop this row out to its full size, then settle back to a mini.
+    let timer = null;
+    const flash = () => {
+      clearTimeout(timer);
+      row.classList.add("expanded");
+      void row.offsetWidth;                 // restart the morph if already out
+      timer = setTimeout(() => row.classList.remove("expanded"), 2800);
+    };
+
+    const paint = (tr) => { body.paint(tr); mini.paint(tr); };
+    return { el: row, paint, flash, vsig: undefined };
   }
 
   _buildBody(t) {
@@ -227,11 +264,9 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     });
   }
 
-  /* ---- CLOCK (segmented pie) ---- */
-  _bodyClock(t) {
-    const c = this._el("div", "t-clock");
-    const slices = Math.max(1, Math.trunc(Number(t.slices) || 6));
-    const s = this._svg("svg", { viewBox: "0 0 104 104", width: 30, height: 30, class: "pie" });
+  /** Build a segmented clock pie at the given pixel size; returns {svg, segs}. */
+  _makePie(slices, size) {
+    const s = this._svg("svg", { viewBox: "0 0 104 104", width: size, height: size, class: "pie" });
     const segs = [];
     for (let i = 0; i < slices; i++) {
       const a0 = (i / slices) * 360 - 90, a1 = ((i + 1) / slices) * 360 - 90;
@@ -241,7 +276,15 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       s.appendChild(seg); segs.push(seg);
     }
     s.appendChild(this._svg("circle", { cx: 52, cy: 52, r: 42, class: "ring" }));
-    const pie = this._el("div", "pie"); pie.appendChild(s);
+    return { svg: s, segs };
+  }
+
+  /* ---- CLOCK (segmented pie) ---- */
+  _bodyClock(t) {
+    const c = this._el("div", "t-clock");
+    const slices = Math.max(1, Math.trunc(Number(t.slices) || 6));
+    const { svg: s, segs } = this._makePie(slices, 45);
+    const pie = this._el("div", "piewrap"); pie.appendChild(s);
     const nm = this._el("div", "nm", t.name ?? "");
     const frac = this._el("div", "frac");
     c.append(pie, nm, frac);
@@ -360,6 +403,72 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     return { content: c, paint };
   }
 
+  /* ---- COMPACT MINI (vertical "playing-card" face for collapsed mode) ---- */
+  _buildMini(t) {
+    const el = this._el("div", "tmini t-" + t.type);
+    const name = this._el("div", "tm-name");
+    const core = this._el("div", "tm-core");
+    el.append(name, core);
+
+    let paint;
+    switch (t.type) {
+      case "clock": {
+        const slices = Math.max(1, Math.trunc(Number(t.slices) || 6));
+        const { svg, segs } = this._makePie(slices, 34);
+        core.appendChild(svg);
+        const sub = this._el("div", "tm-sub"); el.appendChild(sub);
+        paint = (tr) => {
+          name.textContent = tr.name ?? "";
+          const v = Math.max(0, Math.min(slices, Math.trunc(Number(tr.value) || 0)));
+          segs.forEach((sg, i) => sg.classList.toggle("fill", i < v));
+          sub.textContent = `${v}/${slices}`;
+          el.classList.toggle("complete", v >= slices);
+        };
+        break;
+      }
+      case "pool": {
+        const die = this._el("div", "tm-die"); die.appendChild(this._el("span", "dot"));
+        core.appendChild(die);
+        const sub = this._el("div", "tm-sub"); el.appendChild(sub);
+        paint = (tr) => {
+          name.textContent = tr.name ?? "";
+          const cur = Math.max(0, Math.trunc(Number(tr.current) || 0));
+          const size = Math.max(2, Math.trunc(Number(tr.size) || 6));
+          sub.innerHTML = `<b>${cur}</b>d${size}`;
+          el.classList.toggle("empty", cur === 0);
+        };
+        break;
+      }
+      case "task":
+      case "hazard": {
+        const boxes = Math.max(1, Math.trunc(Number(t.boxes) || (t.type === "hazard" ? 8 : 6)));
+        const val = this._el("div", "tm-val");
+        core.appendChild(val);
+        paint = (tr) => {
+          name.textContent = tr.title ?? "";
+          const v = Math.max(0, Math.min(boxes, Math.trunc(Number(tr.value) || 0)));
+          val.innerHTML = `<b>${v}</b><i>/${boxes}</i>`;
+          el.classList.toggle("full", v >= boxes);
+        };
+        break;
+      }
+      case "separator": {
+        el.classList.add("sep");
+        paint = (tr) => { name.textContent = (tr.label ?? "").trim(); };
+        break;
+      }
+      default: { // point
+        const val = this._el("div", "tm-val big");
+        core.appendChild(val);
+        paint = (tr) => {
+          name.textContent = tr.name ?? "";
+          val.textContent = String(Math.trunc(Number(tr.value) || 0));
+        };
+      }
+    }
+    return { el, paint };
+  }
+
   _setOverlay(bodyEl, kind, txt) {
     const ovl = bodyEl.closest(".trow")?.querySelector(".rovl");
     if (!ovl) return;
@@ -418,7 +527,30 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _wireDockChrome() {
     const head = this.element.querySelector("[data-drag]");
-    if (head) head.addEventListener("pointerdown", this._onDragDock.bind(this));
+    if (head) {
+      head.addEventListener("pointerdown", this._onDragDock.bind(this));
+      // Double-tap the header to switch standard <-> compact (mirrors the calendar HUD).
+      head.addEventListener("dblclick", ev => {
+        if (ev.target.closest("button")) return;
+        ev.preventDefault();
+        this._onToggleCompact();
+      });
+    }
+    // While collapsed, double-tapping a card expands the whole dock again.
+    this.element.querySelector("[data-rows]")?.addEventListener("dblclick", ev => {
+      if (!this.compact || !ev.target.closest(".tmini")) return;
+      ev.preventDefault();
+      this._onToggleCompact();
+    });
+  }
+
+  async _onToggleCompact() {
+    const next = !this.compact;
+    try { await game.settings.set(MODULE_ID, SETTINGS.trackerHudCompact, next); } catch { /* ignore */ }
+    const dock = this.element.querySelector("[data-dock]");
+    dock?.classList.toggle("compact", next);
+    // Drop any in-flight "pop-out" so toggling lands in a clean state.
+    if (!next) dock?.querySelectorAll(".trow.expanded").forEach(r => r.classList.remove("expanded"));
   }
 
   _onDragDock(ev) {

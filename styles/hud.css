@@ -220,26 +220,26 @@
 #glct-tracker-hud .glct-trk-root{pointer-events:none}
 #glct-tracker-hud .glct-trk-root > *{pointer-events:auto}
 
-#glct-tracker-hud .trk-dock{min-width:296px;width:max-content;max-width:calc(100vw - 28px);
-  border-radius:14px;overflow:hidden;isolation:isolate;position:relative;
+#glct-tracker-hud .trk-dock{min-width:232px;width:max-content;max-width:calc(100vw - 28px);
+  border-radius:13px;overflow:hidden;isolation:isolate;position:relative;
   background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 30%),
     linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.22)),linear-gradient(160deg,#161d2c,#080b11 72%);
   border:1px solid var(--edge);
   box-shadow:0 24px 60px rgba(0,0,0,.6),0 2px 0 rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.15),inset 0 -12px 26px rgba(0,0,0,.36);
-  backdrop-filter:blur(16px) saturate(1.15);}
-#glct-tracker-hud .trk-head{display:flex;align-items:center;gap:8px;height:28px;padding:0 8px 0 11px;position:relative;z-index:5;
-  border-bottom:1px solid var(--hair);cursor:grab}
+  backdrop-filter:blur(16px) saturate(1.15);transition:min-width .3s ease}
+#glct-tracker-hud .trk-head{display:flex;align-items:center;gap:7px;height:23px;padding:0 6px 0 9px;position:relative;z-index:5;
+  border-bottom:1px solid var(--hair);cursor:grab;user-select:none}
 #glct-tracker-hud .dh-grip{display:flex;gap:3px}
 #glct-tracker-hud .dh-grip i{width:3px;height:3px;border-radius:99px;background:rgba(255,255,255,.32)}
 #glct-tracker-hud .dh-title{flex:1;font-size:8.5px;letter-spacing:.24em;text-transform:uppercase;color:#7c869c;font-weight:700}
 #glct-tracker-hud .dh-count{font-size:9px;color:#5b6478;font-variant-numeric:tabular-nums}
-#glct-tracker-hud .dh-add{width:20px;height:20px;border:none;border-radius:6px;cursor:pointer;display:grid;place-items:center;
-  background:rgba(255,255,255,.07);color:#aab4c8;font-size:13px;line-height:1;transition:.15s}
+#glct-tracker-hud .dh-add{width:18px;height:18px;border:none;border-radius:5px;cursor:pointer;display:grid;place-items:center;
+  background:rgba(255,255,255,.07);color:#aab4c8;font-size:12px;line-height:1;transition:.15s}
 #glct-tracker-hud .dh-add:hover{background:rgba(255,255,255,.16);color:#fff}
-#glct-tracker-hud .trk-empty{padding:14px 12px;text-align:center;color:#5b6478;font-size:10.5px;line-height:1.5}
+#glct-tracker-hud .trk-empty{padding:11px 12px;text-align:center;color:#5b6478;font-size:10.5px;line-height:1.5}
 
-#glct-tracker-hud .trow{position:relative;display:flex;align-items:center;gap:9px;height:40px;padding:0 9px 0 8px;
-  isolation:isolate;transition:background .25s}
+#glct-tracker-hud .trow{position:relative;display:flex;align-items:center;gap:7px;min-height:38px;padding:2px 7px 2px 6px;
+  isolation:isolate;transition:background .25s,width .42s cubic-bezier(.4,0,.2,1),height .42s cubic-bezier(.4,0,.2,1)}
 #glct-tracker-hud .trow + .trow{border-top:1px solid var(--hair)}
 #glct-tracker-hud .trow:hover{background:rgba(255,255,255,.025)}
 #glct-tracker-hud .trow::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
@@ -289,8 +289,9 @@
 #glct-tracker-hud .reeldig .sign{padding-right:.04em}
 
 /* CLOCK */
-#glct-tracker-hud .t-clock{flex:1;display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
-#glct-tracker-hud .t-clock .pie{flex:none}
+#glct-tracker-hud .t-clock{flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
+#glct-tracker-hud .t-clock .piewrap{flex:none;display:grid;place-items:center;width:45px;height:45px}
+#glct-tracker-hud .t-clock svg.pie{display:block}
 #glct-tracker-hud .t-clock .pie .seg{fill:rgba(255,255,255,.06);stroke:#0a0e15;stroke-width:1.6;transition:fill .4s ease,filter .4s ease}
 #glct-tracker-hud .t-clock .pie .seg.fill{fill:var(--tint);filter:drop-shadow(0 0 3px var(--glow))}
 #glct-tracker-hud .t-clock .pie .seg.justfilled{animation:glct-segpop .55s ease}
@@ -304,9 +305,9 @@
 #glct-tracker-hud .t-pool{flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
 #glct-tracker-hud .t-pool .nm{flex:1 1 auto;min-width:0;max-width:180px}
 #glct-tracker-hud .t-pool .dice{flex:none;display:flex;gap:4px;align-items:center;justify-content:flex-end;overflow:hidden}
-#glct-tracker-hud .t-pool .die{width:18px;height:18px;border-radius:5px;flex:none;display:grid;place-items:center;
+#glct-tracker-hud .t-pool .die{width:27px;height:27px;border-radius:7px;flex:none;display:grid;place-items:center;
   background:linear-gradient(150deg,#eef2fb,#aeb9d2);box-shadow:0 2px 4px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.8),0 0 8px var(--glowsoft)}
-#glct-tracker-hud .t-pool .die .dot{width:4px;height:4px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#39424f,#0c0f16)}
+#glct-tracker-hud .t-pool .die .dot{width:6px;height:6px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#39424f,#0c0f16)}
 #glct-tracker-hud .t-pool .more{font-size:9px;color:#aab4c8;font-weight:700}
 #glct-tracker-hud .t-pool .cnt{flex:none;font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;color:#dfe6f3}
 #glct-tracker-hud .t-pool .cnt b{color:#fff}
@@ -320,8 +321,8 @@
   background:linear-gradient(180deg,#fff,#cdd6e8);-webkit-background-clip:text;background-clip:text;color:transparent}
 #glct-tracker-hud .t-task .titles .st{font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:#7c869c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Boxes keep their full size; the dock grows wider to fit a long row. */
-#glct-tracker-hud .boxrow{display:flex;gap:3px;align-items:center;flex:none}
-#glct-tracker-hud .box{width:14px;height:14px;flex:none;border-radius:4px;border:1.5px solid rgba(255,255,255,.24);background:rgba(255,255,255,.03);
+#glct-tracker-hud .boxrow{display:flex;gap:4px;align-items:center;flex:none}
+#glct-tracker-hud .box{width:21px;height:21px;flex:none;border-radius:6px;border:2px solid rgba(255,255,255,.24);background:rgba(255,255,255,.03);
   position:relative;transition:border-color .35s,background .35s,box-shadow .35s}
 #glct-tracker-hud .box.fill{border-color:transparent;background:linear-gradient(180deg,#fff,var(--tint));
   box-shadow:0 0 7px var(--glow),inset 0 1px 0 rgba(255,255,255,.5)}
@@ -350,7 +351,7 @@
 @keyframes glct-dreadfull{0%,100%{box-shadow:inset 0 0 26px rgba(224,88,79,.32)}50%{box-shadow:inset 0 0 46px rgba(224,88,79,.6)}}
 
 /* SEPARATOR — a purely visual divider, ~1/3 the height of a normal row */
-#glct-tracker-hud .trow.sep{height:15px;gap:6px}
+#glct-tracker-hud .trow.sep{min-height:0;height:15px;gap:6px}
 #glct-tracker-hud .trow.sep::before{display:none}
 #glct-tracker-hud .trow.sep:hover{background:none}
 #glct-tracker-hud .trow.sep .grip{opacity:.25;padding:0}
@@ -362,6 +363,61 @@
   background:linear-gradient(90deg,transparent,var(--hair) 40%,var(--hair) 60%,transparent)}
 #glct-tracker-hud .t-sep .lab{flex:none;font-size:7.5px;letter-spacing:.26em;text-transform:uppercase;font-weight:700;
   color:#7c869c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%}
+
+/* ============================================================
+   COMPACT MODE — double-tap the header to collapse every tracker
+   into a small vertical "playing card". When the GM changes a
+   tracker's value it pops back to its full horizontal row, plays
+   the change, dwells, then settles back into its card.
+   ============================================================ */
+#glct-tracker-hud .tmini{display:none}                         /* hidden until the dock is compact */
+#glct-tracker-hud .trk-dock.compact{min-width:0}
+#glct-tracker-hud .trk-dock.compact .trk-rows{display:flex;flex-wrap:wrap;gap:6px;padding:7px;max-width:336px}
+/* Each row becomes a vertical card; its full content fades out and the mini shows. */
+#glct-tracker-hud .trk-dock.compact .trow{flex:none;width:50px;height:70px;min-height:0;padding:0;gap:0;border-radius:9px;
+  overflow:hidden;border:1px solid var(--edge);
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,0) 42%),linear-gradient(160deg,#1a2233,#0b0f17);
+  box-shadow:0 5px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12)}
+#glct-tracker-hud .trk-dock.compact .trow + .trow{border-top:1px solid var(--edge)}
+#glct-tracker-hud .trk-dock.compact .trow:hover{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 42%),linear-gradient(160deg,#1f283a,#0b0f17)}
+#glct-tracker-hud .trk-dock.compact .trow::before{opacity:.32}
+#glct-tracker-hud .trk-dock.compact .trow > *:not(.tmini){opacity:0;pointer-events:none;transition:opacity .18s ease}
+#glct-tracker-hud .trk-dock.compact .trow .tmini{display:flex}
+#glct-tracker-hud .trk-dock.compact .trow.sep{width:18px;height:70px}
+
+/* The momentary pop-out: a single card springs back to a full-width row. */
+#glct-tracker-hud .trk-dock.compact .trow.expanded{order:-1;flex:1 0 100%;width:100%;min-width:222px;height:auto;min-height:38px;
+  padding:2px 7px 2px 6px;gap:7px;border:none;border-radius:0;background:none;box-shadow:none}
+#glct-tracker-hud .trk-dock.compact .trow.expanded + .trow{border-top:none}
+#glct-tracker-hud .trk-dock.compact .trow.expanded > *:not(.tmini){opacity:1;pointer-events:auto}
+#glct-tracker-hud .trk-dock.compact .trow.expanded .tmini{display:none}
+
+/* Card face. */
+#glct-tracker-hud .tmini{position:absolute;inset:0;z-index:8;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:6px 4px;text-align:center;pointer-events:auto;cursor:pointer}
+#glct-tracker-hud .tmini .tm-name{flex:none;font-size:7px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#aab4c8;
+  line-height:1.1;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#glct-tracker-hud .tmini .tm-core{display:grid;place-items:center;flex:0 1 auto;min-height:0}
+#glct-tracker-hud .tmini .tm-val{font-family:var(--clock-font);font-weight:800;font-size:16px;line-height:1;color:#fff;text-shadow:0 0 12px var(--glowsoft)}
+#glct-tracker-hud .tmini .tm-val.big{font-size:22px}
+#glct-tracker-hud .tmini .tm-val i{font-style:normal;color:#8b94a8;font-size:.62em}
+#glct-tracker-hud .tmini .tm-sub{flex:none;font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:9px;font-weight:700;color:#cfd7e6;line-height:1}
+#glct-tracker-hud .tmini .tm-sub b{color:#fff}
+#glct-tracker-hud .tmini svg.pie{display:block}
+#glct-tracker-hud .tmini .tm-die{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;
+  background:linear-gradient(150deg,#eef2fb,#aeb9d2);box-shadow:0 2px 4px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.8)}
+#glct-tracker-hud .tmini .tm-die .dot{width:6px;height:6px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#39424f,#0c0f16)}
+#glct-tracker-hud .tmini.empty .tm-die{filter:grayscale(1) brightness(.55)}
+#glct-tracker-hud .tmini.empty .tm-sub b{color:#ff7a6f}
+#glct-tracker-hud .tmini.complete .tm-sub,#glct-tracker-hud .tmini.full .tm-val b{color:var(--good)}
+/* Separator card: a slim vertical hairline. */
+#glct-tracker-hud .tmini.sep{justify-content:center}
+#glct-tracker-hud .tmini.sep .tm-name,#glct-tracker-hud .tmini.sep .tm-core{display:none}
+#glct-tracker-hud .tmini.sep::before{content:"";width:2px;flex:1;border-radius:99px;
+  background:linear-gradient(180deg,transparent,var(--hair) 28%,var(--hair) 72%,transparent)}
+/* Hazard card keeps its red identity. */
+#glct-tracker-hud .trow.hazard .tmini .tm-name{color:#e8a39d}
+#glct-tracker-hud .trow.hazard .tmini.full .tm-val b{color:#ff9a8f}
 
 /* ===== resource-pool chat card (rendered in the chat log, global scope) =====
    Full-bleed within the chat message so it reads as the message body itself,
