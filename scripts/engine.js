@@ -40,6 +40,54 @@ export class TimeEngine {
     return doy + dayOfMonth0;
   }
 
+  /**
+   * Weekday index for a calendar position, treating intercalary days as
+   * sitting *outside* the weekday cycle.
+   *
+   * Foundry's native `dayOfWeek` counts every elapsed day, including
+   * intercalary ones. For a calendar like Ourolyn — whose year is 12 × 32 days
+   * plus a single intercalary "Day of Renewal" — that extra day shifts the
+   * starting weekday by one every year, so months drift away from always
+   * beginning on Earthday. By excluding intercalary days from the count we
+   * honour the design intent: every year (and every 4-week month) begins on the
+   * same weekday. Calendars whose months all align to the week defer to
+   * Foundry's native computation, which already handles leap years correctly.
+   *
+   * A month counts as "outside the cycle" if it's flagged `intercalary` or is
+   * shorter than a full week (e.g. festival days) — the flag alone is not
+   * reliable because Foundry can drop it from the live calendar data.
+   */
+  static weekdayOf(year, monthIndex, dayOfMonth0 = 0) {
+    const cal = this.calendar;
+    const days = cal?.days?.values ?? [];
+    const wdCount = days.length || 7;
+    const months = cal?.months?.values ?? [];
+    const outOfCycle = m => m.intercalary || (m.days ?? 0) < wdCount;
+    const hasOutOfCycle = months.some(outOfCycle);
+
+    if (!hasOutOfCycle) {
+      // Native handles leap years; pass an explicit day-of-year because
+      // componentsToTime resolves position from `day`, not month/dayOfMonth.
+      try {
+        const day = this.dayOfYear(monthIndex, dayOfMonth0);
+        const t = cal.componentsToTime({ year, month: monthIndex, dayOfMonth: dayOfMonth0, day, hour: 0, minute: 0, second: 0 });
+        const wd = cal.timeToComponents(t).dayOfWeek;
+        if (Number.isInteger(wd)) return ((wd % wdCount) + wdCount) % wdCount;
+      } catch { /* fall through to arithmetic */ }
+    }
+
+    const firstWeekday = cal?.years?.firstWeekday ?? 0;
+    const yearZero = cal?.years?.yearZero ?? 0;
+    const perYear = months.reduce((a, m) => a + (outOfCycle(m) ? 0 : (m.days ?? 0)), 0) || wdCount;
+    let before = 0;
+    for (let i = 0; i < monthIndex && i < months.length; i++) {
+      if (!outOfCycle(months[i])) before += months[i].days ?? 0;
+    }
+    const inMonth = outOfCycle(months[monthIndex] ?? {}) ? 0 : dayOfMonth0;
+    const total = (year - yearZero) * perYear + before + inMonth;
+    return ((firstWeekday + total) % wdCount + wdCount) % wdCount;
+  }
+
   static get daysPerYear() {
     return this.calendar?.days?.daysPerYear
       ?? (this.calendar?.months?.values ?? []).reduce((a, m) => a + (m.days ?? 0), 0)
@@ -66,7 +114,7 @@ export class TimeEngine {
     const days = cal?.days?.values ?? [];
     const seasons = cal?.seasons?.values ?? [];
     const month = months[c.month] ?? null;
-    const weekday = days[c.dayOfWeek] ?? null;
+    const weekday = days[this.weekdayOf(c.year, c.month, c.dayOfMonth ?? 0)] ?? days[c.dayOfWeek] ?? null;
     const season = seasons[c.season] ?? null;
 
     const dayNum = (c.dayOfMonth ?? 0) + 1;

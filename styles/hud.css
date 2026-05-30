@@ -151,16 +151,19 @@
    World-wide GM toggle. The HH:MM clock + stretch meter + watch strip step
    aside; a 4-quadrant dial promotes the current watch to hero. game.time still
    advances in stretches underneath — this only changes presentation. */
-#glct-hud .shift-hero{display:none;flex-direction:row;align-items:center;gap:12px;padding:0 18px}
+#glct-hud .shift-hero{display:none;flex-direction:row;align-items:center;gap:12px;padding:8px 18px 7px}
 #glct-hud .hud-root.shift-mode .shift-hero{display:flex}
+/* let the bar grow to fit the (taller) watch hero so the name never clips the top edge */
+#glct-hud .hud-root.shift-mode .main{height:auto;min-height:58px}
 #glct-hud .hud-root.shift-mode .clock-cell,
 #glct-hud .hud-root.shift-mode .meter,
 #glct-hud .hud-root.shift-mode .watch{display:none}
 #glct-hud .shift-hero .sdial svg{display:block;overflow:visible;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
-#glct-hud .shift-hero .sinfo{display:flex;flex-direction:column;gap:3px}
-#glct-hud .shift-hero .name{font-size:16.5px;font-weight:780;letter-spacing:.03em;white-space:nowrap;line-height:1;
+#glct-hud .shift-hero .sinfo{display:flex;flex-direction:column;gap:2px}
+#glct-hud .shift-hero .name{font-family:"Oxanium","Segoe UI",system-ui,sans-serif;
+  font-size:15.5px;font-weight:780;letter-spacing:.03em;white-space:nowrap;line-height:1.1;
   text-shadow:0 0 16px var(--glowsoft);background:linear-gradient(180deg,#fff,#d6deec);
-  -webkit-background-clip:text;background-clip:text;color:transparent}
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
 #glct-hud .shift-hero .row{display:flex;align-items:center;gap:8px;margin-top:1px}
 #glct-hud .shift-hero .of{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#69748c;font-weight:700}
 /* GM-only compact time readout: exact clock + a slim stretch-progress bar.
@@ -209,24 +212,86 @@
 .glct-calendar,.glct-events,.glct-caledit{font-family:"Oxanium","Segoe UI",system-ui,sans-serif}
 
 /* ===================== read-only calendar view ===================== */
-.glct-calendar .glct-cal{--tint:#6b86d6;padding:4px 6px 10px;color:#eef1f7}
+.glct-calendar .glct-cal{--tint:#6b86d6;--accent:#ffc454;padding:4px 6px 10px;color:#eef1f7}
 .glct-calendar .cal-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .glct-calendar .cal-title{flex:1;text-align:center;font-size:15px;font-weight:700;letter-spacing:.02em}
 .glct-calendar .cal-nav,.glct-calendar .cal-today{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
   color:#eef1f7;border-radius:8px;cursor:pointer;font-weight:600;padding:4px 10px;line-height:1}
 .glct-calendar .cal-nav{font-size:16px;width:30px}
 .glct-calendar .cal-nav:hover,.glct-calendar .cal-today:hover{background:rgba(255,255,255,.12)}
+/* whole-month events: badges above the grid instead of a band on every day */
+.glct-calendar .cal-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.glct-calendar .cal-badge{display:inline-flex;align-items:center;gap:5px;max-width:100%;
+  background:linear-gradient(180deg,rgba(255,196,84,.22),rgba(255,196,84,.10));
+  border:1px solid rgba(255,196,84,.35);color:#ffe6b5;border-radius:999px;cursor:pointer;
+  font-weight:650;font-size:10.5px;padding:3px 10px;line-height:1.2}
+.glct-calendar .cal-badge:hover{background:linear-gradient(180deg,rgba(255,196,84,.32),rgba(255,196,84,.16))}
+.glct-calendar .cal-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.glct-calendar .cal-badge.gm-only{opacity:.72;border-style:dashed}
+.glct-calendar .cal-badge-note{font-size:8px;opacity:.8}
 .glct-calendar .cal-grid{display:grid;gap:4px}
 .glct-calendar .cal-wd{text-align:center;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
   color:#98a2b6;font-weight:700;padding-bottom:4px}
-.glct-calendar .cal-cell{position:relative;min-height:46px;border-radius:8px;padding:5px 6px;
+.glct-calendar .cal-wd.weekend{color:#d9b066}
+.glct-calendar .cal-cell{position:relative;min-height:58px;border-radius:8px;padding:5px 6px;cursor:pointer;
+  display:flex;flex-direction:column;gap:3px;overflow:visible;
   background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
-  border:1px solid rgba(255,255,255,.06)}
-.glct-calendar .cal-cell.blank{background:none;border-color:transparent}
+  border:1px solid rgba(255,255,255,.06);transition:background .15s,border-color .15s}
+.glct-calendar .cal-cell:not(.blank):hover{background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));
+  border-color:rgba(255,255,255,.16)}
+.glct-calendar .cal-cell.blank{background:none;border-color:transparent;cursor:default}
+.glct-calendar .cal-cell.weekend{background:linear-gradient(180deg,rgba(217,176,102,.10),rgba(217,176,102,.02));
+  border-color:rgba(217,176,102,.16)}
 .glct-calendar .cal-cell.today{border-color:var(--tint);box-shadow:0 0 12px rgba(120,150,225,.35) inset}
-.glct-calendar .cal-day{font-size:12px;font-weight:650}
-.glct-calendar .cal-evs{position:absolute;left:6px;right:6px;bottom:5px;display:flex;gap:3px;flex-wrap:wrap}
-.glct-calendar .cal-ev{width:6px;height:6px;border-radius:99px;background:#ffc454;box-shadow:0 0 6px #ffc454}
+.glct-calendar .cal-cell.selected{border-color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.5) inset}
+.glct-calendar .cal-day{font-size:12px;font-weight:650;line-height:1}
+.glct-calendar .cal-cell.weekend .cal-day{color:#e7c98a}
+/* event names render as compact bands; multi-day events join across cells */
+.glct-calendar .cal-evs{display:flex;flex-direction:column;gap:2px;margin:1px -6px 0}
+.glct-calendar .cal-ev{position:relative;min-height:13px;line-height:13px;border-radius:4px;margin:0 6px;padding:0 5px;
+  background:linear-gradient(180deg,rgba(255,196,84,.30),rgba(255,196,84,.16));
+  border-left:2px solid var(--accent);overflow:hidden}
+.glct-calendar .cal-ev.empty{background:none;border:none;box-shadow:none}
+.glct-calendar .cal-ev.has-note{box-shadow:0 0 0 1px rgba(255,196,84,.25) inset}
+.glct-calendar .cal-ev.cont-l{margin-left:0;border-top-left-radius:0;border-bottom-left-radius:0;border-left:none}
+.glct-calendar .cal-ev.cont-r{margin-right:-4px;border-top-right-radius:0;border-bottom-right-radius:0}
+.glct-calendar .cal-ev-name{display:block;font-size:9px;font-weight:650;color:#ffe6b5;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+
+/* ===================== calendar day-detail panel ===================== */
+.glct-calendar .cal-detail{margin-top:10px;padding:9px 10px;border-radius:10px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+  border:1px solid rgba(255,255,255,.10)}
+.glct-calendar .cd-head{display:flex;align-items:baseline;gap:8px;margin-bottom:7px}
+.glct-calendar .cd-date{font-size:14px;font-weight:740}
+.glct-calendar .cd-wd{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#98a2b6;font-weight:700;flex:1}
+.glct-calendar .cd-wd.weekend{color:#d9b066}
+.glct-calendar .cd-close{background:none;border:none;color:#98a2b6;cursor:pointer;font-size:13px;padding:2px 4px;line-height:1}
+.glct-calendar .cd-close:hover{color:#eef1f7}
+.glct-calendar .cd-events{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.glct-calendar .cd-ev{padding:7px 9px;border-radius:8px;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+  border:1px solid rgba(255,255,255,.07);border-left:3px solid var(--accent)}
+.glct-calendar .cd-ev-top{display:flex;align-items:center;gap:7px}
+.glct-calendar .cd-ev-name{font-weight:700;font-size:12.5px;flex:1}
+.glct-calendar .cd-ev-when{font-size:10px;color:#aab4c8;white-space:nowrap}
+.glct-calendar .cd-ev-hidden{color:#7c869c;font-size:10px}
+.glct-calendar .cd-ev-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#eef1f7;
+  border-radius:7px;cursor:pointer;padding:3px 7px;line-height:1}
+.glct-calendar .cd-ev-btn:hover{background:rgba(255,255,255,.14)}
+.glct-calendar .cd-note{margin:6px 0 0;font-size:11px;line-height:1.4;white-space:pre-wrap;color:#cdd6e6;
+  padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.04)}
+.glct-calendar .cd-note.private{color:#e7c98a;background:rgba(217,176,102,.10)}
+.glct-calendar .cd-note.private i{margin-right:4px;opacity:.8}
+.glct-calendar .cd-empty{color:#98a2b6;text-align:center;padding:10px 0;margin:0}
+.glct-calendar .cd-add{margin-top:9px;width:100%;background:rgba(120,150,225,.18);border:1px solid rgba(120,150,225,.4);
+  color:#eef1f7;border-radius:8px;cursor:pointer;font-weight:600;padding:6px 10px}
+.glct-calendar .cd-add:hover{background:rgba(120,150,225,.28)}
+
+/* shared create/edit dialog form (full-width note fields) */
+.glct-events .glct-evform .glct-evform-wide{grid-column:1 / -1}
+.glct-events .glct-evform textarea{width:100%;resize:vertical;background:#0b0f17;color:#cdd6e6;
+  border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 8px;font:inherit}
 
 /* ===================== events editor ===================== */
 .glct-events .glct-evlist{padding:4px 6px 10px;color:#eef1f7}

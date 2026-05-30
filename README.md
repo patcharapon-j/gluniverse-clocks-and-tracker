@@ -69,6 +69,8 @@ Open **Game Settings → Configure Settings → GLUniverse Clocks & Tracker → 
 
 Each event has a name, a scope (single **day**, **day range**, or whole **month**), a date, and a **visible to players** toggle. Today's events show on the HUD; the next upcoming visible event shows its countdown.
 
+Events also carry two optional notes: a **public note** every player can read and a **private note** only the GM sees. Event names appear directly in the calendar grid — multi-day events render as a single connected band across the days they span. **Click any day** to open a detail panel listing that day's events and notes; the GM can edit, delete, or add an event/note for that day right there. Rest days (weekends) are highlighted in the grid.
+
 ---
 
 ## Releasing (for maintainers)
