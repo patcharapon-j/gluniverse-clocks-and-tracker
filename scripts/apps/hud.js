@@ -129,16 +129,19 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._ringPies = []; this._ringSqs = [];
     if (ringHost) {
       ringHost.replaceChildren();
-      const svg = this._svg("svg", { viewBox: "0 0 40 40", width: 57, height: 57, class: "ring" });
+      // viewBox is tight to the content (centre 13,13; squares reach r=13) so the
+      // ring fills its box with no dead margin. Origin at 0,0 keeps the watch-mode
+      // pie's transform-origin unambiguous across browsers.
+      const svg = this._svg("svg", { viewBox: "0 0 26 26", width: 44, height: 44, class: "ring" });
       for (let i = 0; i < SHIFTS_PER_DAY; i++) {
-        const p = this._svg("path", { d: this._wedge(20, 20, 8, i * 90 - 45, (i + 1) * 90 - 45), class: "pie" });
+        const p = this._svg("path", { d: this._wedge(13, 13, 8, i * 90 - 45, (i + 1) * 90 - 45), class: "pie" });
         svg.appendChild(p); this._ringPies.push(p);
       }
-      svg.appendChild(this._svg("circle", { cx: 20, cy: 20, r: 2.3, class: "hub" }));
+      svg.appendChild(this._svg("circle", { cx: 13, cy: 13, r: 2.3, class: "hub" }));
       const dpu = 360 / 42, off = -90 + dpu;
       for (let i = 0; i < STRETCHES_PER_SHIFT; i++) {
         const ang = off + (i + Math.floor(i / 6)) * dpu;
-        const g = this._svg("g", { transform: `translate(20 20) rotate(${ang})` });
+        const g = this._svg("g", { transform: `translate(13 13) rotate(${ang})` });
         const rect = this._svg("rect", { x: -1.15, y: -13, width: 2.3, height: 3, rx: 0.6, class: "sq" });
         g.appendChild(rect); svg.appendChild(g); this._ringSqs.push(rect);
       }
