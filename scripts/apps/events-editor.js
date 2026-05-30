@@ -58,87 +58,115 @@ export class EventsEditor extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** Build the create/edit dialog form HTML. */
-  _formContent(e = {}) {
-    const months = this._months();
+  static formContent(e = {}) {
+    const months = game.time.calendar?.months?.values ?? [];
+    const esc = (s) => foundry.utils.escapeHTML?.(s ?? "") ?? (s ?? "");
     const opts = (sel) => months.map((m, i) => `<option value="${i}" ${i === sel ? "selected" : ""}>${m.name}</option>`).join("");
     return `
       <div class="glct-evform" style="display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;">
         <label>${game.i18n.localize("GLCT.events.name")}</label>
-        <input type="text" name="name" value="${foundry.utils.escapeHTML?.(e.name ?? "") ?? (e.name ?? "")}">
-        <label>Scope</label>
+        <input type="text" name="name" value="${esc(e.name)}">
+        <label>${game.i18n.localize("GLCT.events.scopeLabel")}</label>
         <select name="scope">
           <option value="day"   ${e.scope === "day"   || !e.scope ? "selected" : ""}>${game.i18n.localize("GLCT.events.scope.day")}</option>
           <option value="range" ${e.scope === "range" ? "selected" : ""}>${game.i18n.localize("GLCT.events.scope.range")}</option>
           <option value="month" ${e.scope === "month" ? "selected" : ""}>${game.i18n.localize("GLCT.events.scope.month")}</option>
         </select>
-        <label>Start month</label>  <select name="month">${opts(e.month ?? 0)}</select>
-        <label>Start day</label>    <input type="number" name="day" min="1" value="${e.day ?? 1}">
-        <label>End month</label>    <select name="endMonth">${opts(e.endMonth ?? e.month ?? 0)}</select>
-        <label>End day</label>      <input type="number" name="endDay" min="1" value="${e.endDay ?? e.day ?? 1}">
+        <label>${game.i18n.localize("GLCT.events.startMonth")}</label>  <select name="month">${opts(e.month ?? 0)}</select>
+        <label>${game.i18n.localize("GLCT.events.startDay")}</label>    <input type="number" name="day" min="1" value="${e.day ?? 1}">
+        <label>${game.i18n.localize("GLCT.events.endMonth")}</label>    <select name="endMonth">${opts(e.endMonth ?? e.month ?? 0)}</select>
+        <label>${game.i18n.localize("GLCT.events.endDay")}</label>      <input type="number" name="endDay" min="1" value="${e.endDay ?? e.day ?? 1}">
         <label>${game.i18n.localize("GLCT.events.visibleToPlayers")}</label>
         <input type="checkbox" name="visibleToPlayers" ${e.visibleToPlayers ? "checked" : ""}>
+        <label class="glct-evform-wide">${game.i18n.localize("GLCT.events.notePublic")}</label>
+        <textarea name="notePublic" rows="2" class="glct-evform-wide" placeholder="${game.i18n.localize("GLCT.events.notePublicHint")}">${esc(e.notePublic)}</textarea>
+        <label class="glct-evform-wide">${game.i18n.localize("GLCT.events.notePrivate")}</label>
+        <textarea name="notePrivate" rows="2" class="glct-evform-wide" placeholder="${game.i18n.localize("GLCT.events.notePrivateHint")}">${esc(e.notePrivate)}</textarea>
       </div>`;
   }
 
-  async _promptEvent(existing) {
+  /** Prompt the GM to create/edit one event; resolves to the data (or null). */
+  static async promptEvent(existing) {
     try {
-      return await this._promptEventInner(existing);
+      const result = await DialogV2.prompt({
+        classes: ["glct", "glct-events"],
+        window: { title: existing ? game.i18n.localize("GLCT.events.edit") : game.i18n.localize("GLCT.events.add") },
+        content: this.formContent(existing ?? {}),
+        ok: {
+          label: game.i18n.localize("GLCT.editor.save"),
+          callback: (event, button) => {
+            const f = button.form;
+            return {
+              name: f.name.value.trim() || "Event",
+              scope: f.scope.value,
+              month: Number(f.month.value),
+              day: Math.max(1, Number(f.day.value)),
+              endMonth: Number(f.endMonth.value),
+              endDay: Math.max(1, Number(f.endDay.value)),
+              visibleToPlayers: f.visibleToPlayers.checked,
+              notePublic: f.notePublic.value.trim(),
+              notePrivate: f.notePrivate.value.trim()
+            };
+          }
+        }
+      });
+      return result ?? null;
     } catch { return null; }   // dialog dismissed
   }
 
-  async _promptEventInner(existing) {
-    const result = await DialogV2.prompt({
-      window: { title: existing ? game.i18n.localize("GLCT.events.title") : game.i18n.localize("GLCT.events.add") },
-      content: this._formContent(existing ?? {}),
-      ok: {
-        label: game.i18n.localize("GLCT.editor.save"),
-        callback: (event, button) => {
-          const f = button.form;
-          return {
-            name: f.name.value.trim() || "Event",
-            scope: f.scope.value,
-            month: Number(f.month.value),
-            day: Math.max(1, Number(f.day.value)),
-            endMonth: Number(f.endMonth.value),
-            endDay: Math.max(1, Number(f.endDay.value)),
-            visibleToPlayers: f.visibleToPlayers.checked
-          };
-        }
-      }
+  /** Create a new event (optionally seeded with defaults). Returns it or null. */
+  static async createEvent(defaults = {}) {
+    if (!game.user.isGM) return null;
+    const data = await this.promptEvent({ scope: "day", ...defaults });
+    if (!data) return null;
+    const events = this.getEvents();
+    const created = { id: foundry.utils.randomID(), ...data };
+    events.push(created);
+    await this.setEvents(events);
+    this.instance?.render();
+    return created;
+  }
+
+  /** Edit an existing event by id. Returns the updated event or null. */
+  static async editEvent(id) {
+    if (!game.user.isGM) return null;
+    const events = this.getEvents();
+    const existing = events.find(e => e.id === id);
+    if (!existing) return null;
+    const data = await this.promptEvent(existing);
+    if (!data) return null;
+    Object.assign(existing, data);
+    await this.setEvents(events);
+    this.instance?.render();
+    return existing;
+  }
+
+  /** Delete an event by id (with confirmation). Returns true if removed. */
+  static async deleteEvent(id) {
+    if (!game.user.isGM) return false;
+    const confirmed = await DialogV2.confirm({
+      classes: ["glct", "glct-events"],
+      window: { title: game.i18n.localize("GLCT.events.title") },
+      content: `<p>${game.i18n.localize("GLCT.events.confirmDelete")}</p>`
     });
-    return result ?? null;
+    if (!confirmed) return false;
+    await this.setEvents(this.getEvents().filter(e => e.id !== id));
+    this.instance?.render();
+    return true;
   }
 
   async _onAdd() {
-    const data = await this._promptEvent();
-    if (!data) return;
-    const events = EventsEditor.getEvents();
-    events.push({ id: foundry.utils.randomID(), ...data });
-    await EventsEditor.setEvents(events);
-    this.render();
+    await EventsEditor.createEvent();
   }
 
   async _onEdit(ev, target) {
     const id = target.closest("[data-event-id]")?.dataset.eventId;
-    const events = EventsEditor.getEvents();
-    const existing = events.find(e => e.id === id);
-    if (!existing) return;
-    const data = await this._promptEvent(existing);
-    if (!data) return;
-    Object.assign(existing, data);
-    await EventsEditor.setEvents(events);
-    this.render();
+    await EventsEditor.editEvent(id);
   }
 
   async _onDelete(ev, target) {
     const id = target.closest("[data-event-id]")?.dataset.eventId;
-    const confirmed = await DialogV2.confirm({
-      window: { title: game.i18n.localize("GLCT.events.title") },
-      content: `<p>Delete this event?</p>`
-    });
-    if (!confirmed) return;
-    await EventsEditor.setEvents(EventsEditor.getEvents().filter(e => e.id !== id));
-    this.render();
+    await EventsEditor.deleteEvent(id);
   }
 
   async _onToggleVis(ev, target) {
