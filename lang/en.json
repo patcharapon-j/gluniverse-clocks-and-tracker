@@ -8,6 +8,7 @@
   "GLCT.hud.stretchesLeft": "{n} stretches left",
   "GLCT.hud.timeLabel": "Time",
   "GLCT.hud.watchOf": "Watch {n} of {total}",
+  "GLCT.hud.gmTimeHint": "GM only — exact time & stretch progress within this watch",
 
   "GLCT.controls.advanceStretch": "+ Stretch",
   "GLCT.controls.advanceHour": "+ Hour",

@@ -37,6 +37,13 @@
             <span class="moon"><span class="shadow" data-moon></span></span>
             <span class="season" data-season></span>
           </span>
+          {{#if isGM}}
+          <span class="minitime" title="{{localize 'GLCT.hud.gmTimeHint'}}">
+            <span class="mt-clock" data-mtclock></span>
+            <span class="mt-bar"><i data-mtfill></i></span>
+            <span class="mt-rem" data-mtrem></span>
+          </span>
+          {{/if}}
         </span>
       </div>
 

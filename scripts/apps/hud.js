@@ -36,6 +36,9 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.instance?.rendered) { this.instance._built = false; await this.instance.render(); }
   }
 
+  /** Toggle shift/watch mode live (no re-render) so the swap can animate. */
+  static applyShiftMode() { this.instance?._applyShiftMode(); }
+
   static DEFAULT_OPTIONS = {
     id: "glct-hud",
     classes: ["glct"],
@@ -56,11 +59,13 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _built = false;
   _prevShift = null;
+  _prevShiftDial = null;
   _reels = [];
   _ringPies = [];
   _ringSqs = [];
   _dialPies = [];
-  _dialMarker = null;
+  _dialPtr = null;
+  _dialRot = 0;
   _displayTime = null;  // world time currently painted on the HUD
   _anim = null;         // active step-animation interval id
 
@@ -140,9 +145,10 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     // shift-mode hero dial — the dual-ring's 4-quadrant pie grown up, no
-    // stretch squares. A static pointer marks the active watch (no sub-progress).
+    // stretch squares. A pointer rides the rim to mark the active watch (it
+    // sweeps along the arc on a watch change; no intra-shift sub-progress).
     const dialHost = root.querySelector("[data-dial]");
-    this._dialPies = []; this._dialMarker = null;
+    this._dialPies = []; this._dialPtr = null;
     if (dialHost) {
       dialHost.replaceChildren();
       const svg = this._svg("svg", { viewBox: "0 0 40 40", width: 38, height: 38, class: "ring" });
@@ -151,9 +157,13 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
         svg.appendChild(p); this._dialPies.push(p);
       }
       svg.appendChild(this._svg("circle", { cx: 20, cy: 20, r: 3, class: "hub" }));
-      this._dialMarker = this._svg("circle", { cx: 20, cy: 8, r: 2.2, class: "marker" });
-      svg.appendChild(this._dialMarker);
+      // pointer = a group rotated about the centre; the bead sits at the top
+      // (the bisector of watch 0), so rotating by shift*90° lands on each watch.
+      this._dialPtr = this._svg("g", { class: "dialptr" });
+      this._dialPtr.appendChild(this._svg("circle", { cx: 20, cy: 6.5, r: 2.3, class: "marker" }));
+      svg.appendChild(this._dialPtr);
       dialHost.appendChild(svg);
+      this._dialRot = 0;
     }
 
     // slot-reel clocks
@@ -336,17 +346,28 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       p.classList.toggle("done", sm && i < st.shiftIndex);
     });
 
-    // shift-mode hero dial: light the active quadrant, fade the past ones, and
-    // park a static pointer on the active watch's bisector (no sub-progress).
+    // shift-mode hero dial: light the active quadrant, fade the past ones.
+    const shiftChanged = this._prevShiftDial !== null && st.shiftIndex !== this._prevShiftDial;
     this._dialPies.forEach((p, i) => {
-      p.classList.toggle("on", i === st.shiftIndex);
+      const active = i === st.shiftIndex;
+      p.classList.toggle("on", active);
       p.classList.toggle("done", i < st.shiftIndex);
+      if (active && shiftChanged) { p.classList.remove("lit"); void p.getBoundingClientRect(); p.classList.add("lit"); }
     });
-    if (this._dialMarker) {
-      const [mx, my] = this._polar(20, 20, 9, st.shiftIndex * 90);
-      this._dialMarker.setAttribute("cx", mx.toFixed(2));
-      this._dialMarker.setAttribute("cy", my.toFixed(2));
+    // sweep the pointer to the active watch's bisector along the shortest arc
+    if (this._dialPtr) {
+      const base = st.shiftIndex * 90;
+      this._dialRot = base + 360 * Math.round((this._dialRot - base) / 360);
+      this._dialPtr.style.transformOrigin = "20px 20px";
+      this._dialPtr.style.transform = `rotate(${this._dialRot}deg)`;
     }
+    this._prevShiftDial = st.shiftIndex;
+
+    // GM-only compact time readout in shift mode (players keep the clean view):
+    // the exact clock plus a slim stretch-progress bar.
+    this._setText("[data-mtclock]", st.clock);
+    root.querySelectorAll("[data-mtfill]").forEach(f => { f.style.width = `${st.shiftProgress * 100}%`; });
+    this._setText("[data-mtrem]", game.i18n.format("GLCT.hud.stretchesLeft", { n: st.stretchesLeftInShift }));
 
     this._ringSqs.forEach((rect, idx) => {
       const inHour = Math.floor(idx / 6) === st.hourOfShift;
@@ -465,6 +486,24 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   async _onToggleShiftMode() {
     if (!game.user.isGM) return;
     try { await game.settings.set(MODULE_ID, SETTINGS.shiftLevelMode, !this.shiftMode); } catch { /* ignore */ }
+  }
+
+  /**
+   * Flip shift/watch mode on the live DOM (the hero, clock and meter are all
+   * already present — only their CSS visibility differs), so the swap animates
+   * instead of snapping through a re-render. A light sweep masks the change and
+   * the appearing side plays an entrance.
+   */
+  _applyShiftMode() {
+    if (!this.rendered || !this._built) return;
+    const root = this.element.querySelector(".hud-root");
+    const bar = this.element.querySelector("[data-bar]");
+    if (!root) return;
+    root.classList.toggle("shift-mode", this.shiftMode);
+    if (bar) { bar.classList.remove("swept"); void bar.offsetWidth; bar.classList.add("swept"); }
+    root.classList.remove("mode-swap"); void root.offsetWidth; root.classList.add("mode-swap");
+    setTimeout(() => root.classList.remove("mode-swap"), 650);
+    this.update();
   }
   async _onOpenCalendar() {
     const { CalendarView } = await import("./calendar-view.js");

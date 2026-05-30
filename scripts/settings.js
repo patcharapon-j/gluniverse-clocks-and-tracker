@@ -54,7 +54,7 @@ export function registerSettings() {
   game.settings.register(MODULE_ID, SETTINGS.shiftLevelMode, {
     name: "GLCT.settings.shiftMode.name", hint: "GLCT.settings.shiftMode.hint",
     scope: "world", config: true, type: Boolean, default: false,
-    onChange: () => GlctHud.refreshStructure()
+    onChange: () => GlctHud.applyShiftMode()
   });
 
   game.settings.register(MODULE_ID, SETTINGS.hudCollapsed, {
