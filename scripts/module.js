@@ -35,6 +35,15 @@ Hooks.on("updateWorldTime", () => {
   applySceneTint(TimeEngine.getState());
 });
 
+// Tag our resource-pool roll messages so the chat card can take over the whole
+// entry (the duplicate header is hidden; timestamp + delete control remain).
+function tagPoolMessage(message, html) {
+  const el = html instanceof HTMLElement ? html : html?.[0];
+  if (el && message?.flags?.[MODULE_ID]?.poolRoll) el.classList.add("glct-pool-msg");
+}
+Hooks.on("renderChatMessageHTML", tagPoolMessage);   // Foundry v13+
+Hooks.on("renderChatMessage", tagPoolMessage);       // legacy fallback
+
 // Combat awareness: reflect combat state on the HUD (no auto-advance — a combat
 // round is far shorter than a stretch, so time only moves when the GM advances).
 for (const hook of ["combatStart", "deleteCombat", "combatTurn", "combatRound"]) {

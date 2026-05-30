@@ -68,4 +68,8 @@ export function registerSettings() {
   game.settings.register(MODULE_ID, SETTINGS.trackerHudHidden, {
     scope: "client", config: false, type: Boolean, default: false
   });
+
+  game.settings.register(MODULE_ID, SETTINGS.trackerHudCompact, {
+    scope: "client", config: false, type: Boolean, default: false
+  });
 }

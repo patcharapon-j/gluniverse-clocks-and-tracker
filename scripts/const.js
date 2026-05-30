@@ -29,7 +29,8 @@ export const SETTINGS = {
   yearLabel: "yearLabel",          // String: era suffix shown after the year, e.g. "AR"
   trackers: "trackers",            // Array: GM-managed tracker definitions (world)
   trackerHudPosition: "trackerHudPosition", // Object {top,left} (client)
-  trackerHudHidden: "trackerHudHidden"      // Boolean (client): dock hidden on this screen
+  trackerHudHidden: "trackerHudHidden",     // Boolean (client): dock hidden on this screen
+  trackerHudCompact: "trackerHudCompact"    // Boolean (client): dock collapsed to playing-card minis
 };
 
 /** The tracker types the dock can render. */
