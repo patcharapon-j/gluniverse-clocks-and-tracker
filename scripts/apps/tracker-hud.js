@@ -85,13 +85,18 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const t of list) {
       const rec = this._rows.get(t.id);
       if (!rec) continue;
-      // When collapsed to minis, a GM-driven value change momentarily pops the
-      // affected card back out to its full horizontal row so the change reads.
       const vsig = this._valueSig(t);
       const changed = rec.vsig !== undefined && rec.vsig !== vsig;
       rec.vsig = vsig;
-      if (changed && compact && t.type !== "separator") rec.flash();
-      rec.paint(t);
+      // While collapsed, a value change pops the card out to its full row first,
+      // then plays the change once it has finished expanding, so the two motions
+      // don't fight. The row keeps showing its previous value until then.
+      if (changed && compact && t.type !== "separator") {
+        rec.flash();
+        rec.paintAfterExpand(t);
+      } else {
+        rec.paint(t);
+      }
     }
 
     // header count + empty hint + dock auto-hide for players with nothing to see
@@ -118,6 +123,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _buildRows(list) {
     const host = this.element.querySelector("[data-rows]");
     if (!host) return;
+    this._rows.forEach(r => r.cancelPop?.());   // clear any pop-out timers/placeholders first
     host.replaceChildren();
     this._rows.clear();
     for (const t of list) {
@@ -178,17 +184,82 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
     this._wireRowInteractions(row, body.content, t.type);
 
-    // flash(): pop this row out to its full size, then settle back to a mini.
-    let timer = null;
+    // --- compact pop-out -------------------------------------------------
+    // While the dock is collapsed, a value change lifts this card out of the
+    // grid (leaving a placeholder so neighbours don't shift), morphs it into a
+    // full-width row, dwells, then morphs back into the card. JS sets the
+    // geometry; CSS eases between the values for a smooth transition.
+    const DWELL = 2400;
+    const EXPAND = 430;
+    let popTimer = null, paintTimer = null, popActive = false;
+
+    const placeholder = () => row.parentElement?.querySelector(`.tcard-ph[data-for="${t.id}"]`);
+
+    const cleanup = () => {
+      popActive = false;
+      clearTimeout(popTimer); popTimer = null;
+      clearTimeout(paintTimer); paintTimer = null;
+      row.classList.remove("popping", "expanded");
+      row.style.cssText = "";
+      placeholder()?.remove();
+    };
+
+    const settle = () => {
+      const host = row.parentElement;
+      if (!host) return cleanup();
+      const ph = placeholder();
+      const hostRect = host.getBoundingClientRect();
+      row.classList.remove("expanded");             // cross-fade content back to the mini
+      if (ph) {
+        const r = ph.getBoundingClientRect();
+        row.style.left = `${r.left - hostRect.left}px`;
+        row.style.top = `${r.top - hostRect.top}px`;
+        row.style.width = `${r.width}px`;
+        row.style.height = `${r.height}px`;
+      }
+      popTimer = setTimeout(cleanup, 460);          // after the morph-back, drop to in-flow
+    };
+
     const flash = () => {
-      clearTimeout(timer);
+      const host = row.parentElement;
+      if (!host || !this.compact) return;
+      if (popActive) { clearTimeout(popTimer); popTimer = setTimeout(settle, DWELL); return; } // extend dwell
+      popActive = true;
+
+      const hostRect = host.getBoundingClientRect();
+      const cardRect = row.getBoundingClientRect();
+
+      const ph = document.createElement("div");
+      ph.className = "tcard-ph";
+      ph.dataset.for = t.id;
+      ph.style.width = `${cardRect.width}px`;
+      ph.style.height = `${cardRect.height}px`;
+      row.after(ph);
+
+      // pin the card exactly where it sits, then expand on the next frame
+      row.classList.add("popping");
+      row.style.left = `${cardRect.left - hostRect.left}px`;
+      row.style.top = `${cardRect.top - hostRect.top}px`;
+      row.style.width = `${cardRect.width}px`;
+      row.style.height = `${cardRect.height}px`;
+      void row.offsetWidth;
+
       row.classList.add("expanded");
-      void row.offsetWidth;                 // restart the morph if already out
-      timer = setTimeout(() => row.classList.remove("expanded"), 2800);
+      row.style.left = "7px";
+      row.style.top = `${cardRect.top - hostRect.top}px`;   // stay on its own band, just stretch wide
+      row.style.width = `${host.clientWidth - 14}px`;
+      row.style.height = "40px";
+
+      popTimer = setTimeout(settle, DWELL);
     };
 
     const paint = (tr) => { body.paint(tr); mini.paint(tr); };
-    return { el: row, paint, flash, vsig: undefined };
+    // Defer the change animation until the card has finished expanding.
+    const paintAfterExpand = (tr) => {
+      clearTimeout(paintTimer);
+      paintTimer = setTimeout(() => { if (this.rendered) paint(tr); }, EXPAND);
+    };
+    return { el: row, paint, paintAfterExpand, flash, cancelPop: cleanup, vsig: undefined };
   }
 
   _buildBody(t) {
@@ -574,10 +645,11 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   async _onToggleCompact() {
     const next = !this.compact;
     try { await game.settings.set(MODULE_ID, SETTINGS.trackerHudCompact, next); } catch { /* ignore */ }
-    const dock = this.element.querySelector("[data-dock]");
-    dock?.classList.toggle("compact", next);
-    // Drop any in-flight "pop-out" so toggling lands in a clean state.
-    if (!next) dock?.querySelectorAll(".trow.expanded").forEach(r => r.classList.remove("expanded"));
+    // Tear down any in-flight pop-outs (timers, placeholders, inline geometry)
+    // so the dock lands in a clean state on either side of the toggle.
+    this._rows.forEach(r => r.cancelPop?.());
+    this.element.querySelector("[data-dock]")?.classList.toggle("compact", next);
+    this.update();   // reconcile every row to its current value after the toggle
   }
 
   _onDragDock(ev) {
