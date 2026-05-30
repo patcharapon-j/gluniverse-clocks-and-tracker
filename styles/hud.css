@@ -463,6 +463,21 @@
 .glct-chatcard .glct-cc-sum .gone{color:#ff8a7e;font-weight:700}
 .glct-chatcard.empty .glct-cc-empty{color:#ff7a6f;font-weight:800;letter-spacing:.18em;font-family:var(--clock-font);font-size:15px;text-align:center;text-shadow:0 0 14px rgba(224,88,79,.55)}
 
+/* Pool-roll messages (tagged .glct-pool-msg in a renderChatMessage hook): let
+   the custom card own the whole chat entry. Foundry's header is collapsed to
+   just its timestamp + delete control, floated over the card's top-right. */
+#chat-log .chat-message.glct-pool-msg,
+.chat-message.glct-pool-msg{padding:0;overflow:hidden;position:relative}
+.chat-message.glct-pool-msg .message-header{position:absolute;top:0;right:0;left:auto;width:auto;margin:0;padding:7px 9px;border:none;z-index:3;flex:none}
+.chat-message.glct-pool-msg .message-sender,
+.chat-message.glct-pool-msg .message-header .flavor-text{display:none}
+.chat-message.glct-pool-msg .message-metadata{margin:0;gap:7px;color:#aab4c8;font-size:10px;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.chat-message.glct-pool-msg .message-metadata .message-delete{color:#cbd3e2}
+.chat-message.glct-pool-msg .message-content{margin:0;padding:0}
+.chat-message.glct-pool-msg .glct-chatcard{margin:0;border:none;border-radius:6px}
+/* keep the floated timestamp clear of the card's own title block */
+.chat-message.glct-pool-msg .glct-cc-head{padding-right:64px}
+
 /* ===== tracker editor dialog forms ===== */
 .glct-trk-form{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;padding:4px 2px}
 .glct-trk-form label{font-weight:650}

@@ -212,10 +212,11 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       row.classList.remove("expanded");             // cross-fade content back to the mini
       if (ph) {
         const r = ph.getBoundingClientRect();
-        row.style.left = `${r.left - hostRect.left}px`;
-        row.style.top = `${r.top - hostRect.top}px`;
-        row.style.width = `${r.width}px`;
-        row.style.height = `${r.height}px`;
+        // round to whole pixels — sub-pixel offsets render text blurry at rest
+        row.style.left = `${Math.round(r.left - hostRect.left)}px`;
+        row.style.top = `${Math.round(r.top - hostRect.top)}px`;
+        row.style.width = `${Math.round(r.width)}px`;
+        row.style.height = `${Math.round(r.height)}px`;
       }
       popTimer = setTimeout(cleanup, 460);          // after the morph-back, drop to in-flow
     };
@@ -236,17 +237,20 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       ph.style.height = `${cardRect.height}px`;
       row.after(ph);
 
-      // pin the card exactly where it sits, then expand on the next frame
+      // pin the card exactly where it sits, then expand on the next frame.
+      // Round to whole pixels so the resting text isn't blurred by sub-pixels.
+      const cx = Math.round(cardRect.left - hostRect.left);
+      const cy = Math.round(cardRect.top - hostRect.top);
       row.classList.add("popping");
-      row.style.left = `${cardRect.left - hostRect.left}px`;
-      row.style.top = `${cardRect.top - hostRect.top}px`;
-      row.style.width = `${cardRect.width}px`;
-      row.style.height = `${cardRect.height}px`;
+      row.style.left = `${cx}px`;
+      row.style.top = `${cy}px`;
+      row.style.width = `${Math.round(cardRect.width)}px`;
+      row.style.height = `${Math.round(cardRect.height)}px`;
       void row.offsetWidth;
 
       row.classList.add("expanded");
       row.style.left = "7px";
-      row.style.top = `${cardRect.top - hostRect.top}px`;   // stay on its own band, just stretch wide
+      row.style.top = `${cy}px`;                             // stay on its own band, just stretch wide
       row.style.width = `${host.clientWidth - 14}px`;
       row.style.height = "40px";
 
