@@ -25,7 +25,7 @@ export const SETTINGS = {
   shiftNames: "shiftNames",        // Array<string>: customizable watch names
   shiftLevelMode: "shiftLevelMode",// Boolean (world): track/display at shift granularity only
   hudCollapsed: "hudCollapsed",    // Boolean (client)
-  hudPosition: "hudPosition",      // Object {top,left} (client)
+  hudPosition: "hudPosition",      // Object {top,cx} centre-anchored (client; legacy {top,left} migrated)
   sceneTint: "sceneTint",          // Boolean: tint canvas with the active shift
   yearLabel: "yearLabel",          // String: era suffix shown after the year, e.g. "AR"
   trackers: "trackers",            // Array: GM-managed tracker definitions (world)

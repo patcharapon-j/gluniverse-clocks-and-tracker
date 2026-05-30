@@ -68,6 +68,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _dialRot = 0;
   _displayTime = null;  // world time currently painted on the HUD
   _anim = null;         // active step-animation interval id
+  _barT = null;         // pending bar-width-tween cleanup timeout
 
   get collapsed() {
     try { return game.settings.get(MODULE_ID, SETTINGS.hudCollapsed); } catch { return false; }
@@ -424,16 +425,27 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     );
   }
 
+  /**
+   * Anchor the HUD by its horizontal centre, never its left edge: `left` holds
+   * the centre-x and `translateX(-50%)` recentres the element. This way any
+   * width change (e.g. switching watch display mode) grows/shrinks symmetrically
+   * about the same point, so a GM-placed HUD stays put instead of drifting.
+   */
   _applyPosition() {
     const el = this.element;
     el.style.position = "fixed";
     el.style.zIndex = "70";
+    el.style.transform = "translateX(-50%)";
     let pos = {};
     try { pos = game.settings.get(MODULE_ID, SETTINGS.hudPosition) ?? {}; } catch { /* ignore */ }
-    if (Number.isFinite(pos.left) && Number.isFinite(pos.top)) {
-      el.style.left = `${pos.left}px`; el.style.top = `${pos.top}px`; el.style.transform = "none";
+    // Prefer a saved centre-x; migrate legacy {left} (top-left corner) on the fly.
+    let cx = Number.isFinite(pos.cx) ? pos.cx
+      : Number.isFinite(pos.left) ? pos.left + el.getBoundingClientRect().width / 2
+      : null;
+    if (Number.isFinite(cx) && Number.isFinite(pos.top)) {
+      el.style.left = `${cx}px`; el.style.top = `${pos.top}px`;
     } else {
-      el.style.left = "50%"; el.style.top = "6px"; el.style.transform = "translateX(-50%)";
+      el.style.left = "50%"; el.style.top = "6px";
     }
   }
 
@@ -442,12 +454,14 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     ev.preventDefault();
     const el = this.element;
     const rect = el.getBoundingClientRect();
-    const ox = ev.clientX - rect.left, oy = ev.clientY - rect.top;
+    // Drag (and store) by the centre, matching how the HUD is anchored, so the
+    // placement survives later width changes (watch-mode swaps, collapse, etc).
+    const ox = ev.clientX - (rect.left + rect.width / 2), oy = ev.clientY - rect.top;
     const start = { x: ev.clientX, y: ev.clientY };
     let moved = false;
     const move = e => {
       if (!moved && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4) {
-        moved = true; el.style.transform = "none";
+        moved = true; el.style.transform = "translateX(-50%)";
       }
       if (moved) { el.style.left = `${e.clientX - ox}px`; el.style.top = `${e.clientY - oy}px`; }
     };
@@ -456,7 +470,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       window.removeEventListener("pointerup", up);
       if (!moved) return;   // a click, not a drag — collapse is double-click now
       const r = el.getBoundingClientRect();
-      try { await game.settings.set(MODULE_ID, SETTINGS.hudPosition, { left: Math.round(r.left), top: Math.round(r.top) }); } catch { /* ignore */ }
+      try { await game.settings.set(MODULE_ID, SETTINGS.hudPosition, { cx: Math.round(r.left + r.width / 2), top: Math.round(r.top) }); } catch { /* ignore */ }
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -499,7 +513,26 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const root = this.element.querySelector(".hud-root");
     const bar = this.element.querySelector("[data-bar]");
     if (!root) return;
+
+    // Tween the bar's width across the layout change. CSS can't animate to/from
+    // an auto width, so measure the old width, flip the mode to learn the new
+    // natural width, then transition between the two explicit values (the .bar's
+    // `width` transition in CSS does the easing) before releasing back to auto.
+    // The HUD is centre-anchored, so this grows/shrinks about the same point.
+    const w0 = bar?.getBoundingClientRect().width ?? 0;
     root.classList.toggle("shift-mode", this.shiftMode);
+    if (bar) {
+      bar.style.width = "auto";
+      const w1 = bar.getBoundingClientRect().width;
+      bar.style.transition = "none";
+      bar.style.width = `${w0}px`;
+      void bar.offsetWidth;            // commit the start width with no transition
+      bar.style.transition = "";       // restore the stylesheet's width easing
+      bar.style.width = `${w1}px`;
+      clearTimeout(this._barT);
+      this._barT = setTimeout(() => { bar.style.width = ""; }, 420);
+    }
+
     if (bar) { bar.classList.remove("swept"); void bar.offsetWidth; bar.classList.add("swept"); }
     root.classList.remove("mode-swap"); void root.offsetWidth; root.classList.add("mode-swap");
     setTimeout(() => root.classList.remove("mode-swap"), 650);
