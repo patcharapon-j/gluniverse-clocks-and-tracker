@@ -5,6 +5,7 @@
 
 import { MODULE_ID, SETTINGS } from "../const.js";
 import { TimeEngine } from "../engine.js";
+import { getActiveCalendarConfig } from "../calendar/calendar.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -51,6 +52,20 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _months() { return game.time.calendar?.months?.values ?? []; }
 
+  /**
+   * Per-weekday rest-day flags, indexed to line up with TimeEngine.weekdayOf().
+   * Foundry's live CalendarData drops the custom `isRestDay` flag (the same way
+   * it drops `intercalary`, see TimeEngine.weekdayOf), so the live calendar
+   * alone never marks a weekend. The raw active config — preset or editor JSON —
+   * always preserves it, so we read from there and fall back to the live data.
+   */
+  _restDays() {
+    const live = game.time.calendar?.days?.values ?? [];
+    const cfg = getActiveCalendarConfig()?.days?.values ?? [];
+    const n = Math.max(live.length, cfg.length);
+    return Array.from({ length: n }, (_, i) => !!(cfg[i]?.isRestDay ?? live[i]?.isRestDay));
+  }
+
   _visibleEvents() {
     return (game.settings.get(MODULE_ID, SETTINGS.events) ?? [])
       .filter(e => game.user.isGM || e.visibleToPlayers);
@@ -73,6 +88,7 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
     const weekdays = cal?.days?.values ?? [];
     const months = cal?.months?.values ?? [];
     const wdCount = Math.max(1, weekdays.length);
+    const restDays = this._restDays();
 
     const year = this._viewYear, monthIdx = this._viewMonth;
     const month = months[monthIdx] ?? months[0];
@@ -146,7 +162,7 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
         inMonth: true,
         day: d,
         isToday: isCurrentMonth && d === todayNum,
-        isWeekend: !!weekdays[wd]?.isRestDay,
+        isWeekend: restDays[wd],
         isSelected: this._selectedDay === d,
         events: [...lanes, ...singles]
       });
@@ -158,7 +174,7 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
       monthName: month?.name ?? "",
       year,
       yearLabel: game.settings.get(MODULE_ID, SETTINGS.yearLabel) || "",
-      weekdayNames: weekdays.map(w => ({ label: w.abbreviation ?? w.name, rest: !!w.isRestDay })),
+      weekdayNames: weekdays.map((w, i) => ({ label: w.abbreviation ?? w.name, rest: restDays[i] })),
       wdCount,
       monthBadges,
       cells,
@@ -198,6 +214,7 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
     const weekdays = cal?.days?.values ?? [];
     const wd = TimeEngine.weekdayOf(year, monthIdx, d - 1);
     const weekday = weekdays[wd];
+    const isWeekend = this._restDays()[wd];
 
     const dayEvents = this._visibleEvents()
       .filter(e => TimeEngine.matchesToday(e, monthIdx, d))
@@ -209,7 +226,7 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
       canAdd: isGM,
       heading: `${month?.name ?? ""} ${d}`,
       sub: weekday?.name ?? "",
-      isWeekend: !!weekday?.isRestDay,
+      isWeekend,
       events: dayEvents
     };
   }
