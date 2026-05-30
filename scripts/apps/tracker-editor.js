@@ -60,6 +60,8 @@ export class TrackerEditor {
     const row = (label, input) => `<label>${label}</label>${input}`;
     const text = (name, val) => `<input type="text" name="${name}" value="${esc(val)}">`;
     const num = (name, val, min, max) => `<input type="number" name="${name}" value="${val ?? 0}"${min != null ? ` min="${min}"` : ""}${max != null ? ` max="${max}"` : ""}>`;
+    // Optional number: leaves the field blank when unset, so it reads back as null.
+    const onum = (name, val) => `<input type="number" name="${name}" value="${val ?? ""}" placeholder="—">`;
     const check = (name, on) => `<input type="checkbox" name="${name}" ${on ? "checked" : ""}>`;
 
     const parts = [];
@@ -67,6 +69,8 @@ export class TrackerEditor {
       case "point":
         parts.push(row(L("GLCT.tracker.field.name"), text("name", t.name)));
         parts.push(row(L("GLCT.tracker.field.value"), num("value", t.value)));
+        parts.push(row(L("GLCT.tracker.field.min"), onum("min", t.min)));
+        parts.push(row(L("GLCT.tracker.field.max"), onum("max", t.max)));
         break;
       case "clock":
         parts.push(row(L("GLCT.tracker.field.name"), text("name", t.name)));
@@ -99,10 +103,12 @@ export class TrackerEditor {
   static _read(type, form) {
     const v = (n) => form.elements[n]?.value;
     const nn = (n, d = 0) => { const x = Math.trunc(Number(v(n))); return Number.isFinite(x) ? x : d; };
+    // Optional number field: blank reads back as null (unset bound).
+    const opt = (n) => { const s = v(n); if (s == null || String(s).trim() === "") return null; const x = Math.trunc(Number(s)); return Number.isFinite(x) ? x : null; };
     const ck = (n) => !!form.elements[n]?.checked;
     const base = { visibleToPlayers: ck("visibleToPlayers") };
     switch (type) {
-      case "point": return { ...base, name: (v("name") || "").trim() || L("GLCT.tracker.types.point"), value: nn("value") };
+      case "point": return { ...base, name: (v("name") || "").trim() || L("GLCT.tracker.types.point"), value: nn("value"), min: opt("min"), max: opt("max") };
       case "clock": return { ...base, name: (v("name") || "").trim() || L("GLCT.tracker.types.clock"), slices: nn("slices", 6), value: nn("value") };
       case "pool": return {
         ...base, name: (v("name") || "").trim() || L("GLCT.tracker.types.pool"),

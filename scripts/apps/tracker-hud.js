@@ -278,18 +278,33 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /** Read an optional point bound (min/max): blank/null stays unset (null). */
+  _bound(v) {
+    if (v === null || v === undefined || v === "") return null;
+    const n = Math.trunc(Number(v));
+    return Number.isFinite(n) ? n : null;
+  }
+
   /* ---- POINT (slot-reel digit) ---- */
   _bodyPoint(t) {
     const c = this._el("div", "t-point");
     const chev = this._el("div", "chev");
     const nm = this._el("div", "nm", t.name ?? "");
+    const val = this._el("div", "pval");
     const reel = this._el("div", "reeldig");
-    c.append(chev, nm, reel);
+    const maxlbl = this._el("div", "reelmax");      // faint "/max" suffix, only when a max is set
+    val.append(reel, maxlbl);
+    c.append(chev, nm, val);
     let last = null, sig = null;
     const paint = (tr) => {
       nm.textContent = tr.name ?? "";
+      const lo = this._bound(tr.min), hi = this._bound(tr.max);
       const v = Math.trunc(Number(tr.value) || 0);
       this._renderReel(reel, v, last);
+      maxlbl.textContent = hi !== null ? `/${hi}` : "";
+      maxlbl.style.display = hi !== null ? "" : "none";
+      val.classList.toggle("at-max", hi !== null && v >= hi);
+      val.classList.toggle("at-min", lo !== null && v <= lo);
       if (last !== null && v !== last) {
         const dir = v > last ? "up" : "down";
         chev.textContent = v > last ? "▲" : "▼";
@@ -561,10 +576,17 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       default: { // point
         const val = this._el("div", "tm-val big");
-        core.appendChild(val);
+        const maxlbl = this._el("div", "tm-max");
+        core.append(val, maxlbl);
         paint = (tr) => {
           name.textContent = tr.name ?? "";
-          val.textContent = String(Math.trunc(Number(tr.value) || 0));
+          const lo = this._bound(tr.min), hi = this._bound(tr.max);
+          const v = Math.trunc(Number(tr.value) || 0);
+          val.textContent = String(v);
+          maxlbl.textContent = hi !== null ? `/${hi}` : "";
+          maxlbl.style.display = hi !== null ? "" : "none";
+          el.classList.toggle("at-max", hi !== null && v >= hi);
+          el.classList.toggle("at-min", lo !== null && v <= lo);
         };
       }
     }
