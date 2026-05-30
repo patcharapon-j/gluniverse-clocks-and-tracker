@@ -133,7 +133,7 @@
    tidy card so the compact view fills its height instead of stranding the
    readouts on a single sparse baseline. */
 #glct-hud .bar.collapsed{width:auto;min-width:0;display:inline-flex}
-#glct-hud .bar.collapsed .main{height:auto;min-height:56px}
+#glct-hud .bar.collapsed .main{height:auto;min-height:69px}
 #glct-hud .bar.collapsed .cell:not(.pill):not(.grip){display:none}
 #glct-hud .pill{display:none}
 #glct-hud .bar.collapsed .pill{display:flex;flex-direction:row;align-items:center;gap:13px;padding:6px 18px 6px 6px}
@@ -146,7 +146,7 @@
   letter-spacing:.01em;line-height:1.04;color:#fff;text-shadow:0 0 15px var(--glowsoft),0 1px 0 rgba(0,0,0,.35)}
 #glct-hud .pill .pd{font-size:9.5px;color:#aab4c8;white-space:nowrap;letter-spacing:.04em}
 /* shift mode hides the clock line — keep the name/date pair vertically centred */
-#glct-hud .hud-root.shift-mode .bar.collapsed .main{min-height:50px}
+#glct-hud .hud-root.shift-mode .bar.collapsed .main{min-height:69px}
 /* collapsed dual-ring: inner 4-quadrant shift pie + outer stretch squares (hour-gapped) */
 #glct-hud .pring{display:inline-flex;align-items:center;justify-content:center}
 #glct-hud .ring{display:block;overflow:visible}
@@ -217,8 +217,17 @@
 @keyframes glct-dialIn{0%{opacity:0;transform:scale(.4)}100%{opacity:1;transform:scale(1)}}
 @keyframes glct-ptrIn{0%{opacity:0}60%{opacity:0}100%{opacity:1}}
 
-/* Shared display typeface for the popout calendar/events/editor windows. */
-.glct-calendar,.glct-events,.glct-caledit{font-family:"Oxanium","Segoe UI",system-ui,sans-serif}
+/* Shared display typeface for every module-owned window: the popout
+   calendar/events/editor windows plus the Set-Time and tracker dialogs.
+   Form controls don't inherit font-family on their own, so they're pulled
+   onto the Oxanium stack explicitly (the JSON editor re-sets monospace). */
+.glct-calendar,.glct-events,.glct-caledit,.glct-settime,.glct-trk-form,.glct-trk-pick{
+  font-family:"Oxanium","Segoe UI",system-ui,sans-serif}
+.glct-calendar :is(input,select,button,textarea),
+.glct-events :is(input,select,button,textarea),
+.glct-caledit :is(input,select,button,textarea),
+.glct-settime :is(input,select,button,textarea),
+.glct-trk-form :is(input,select,button,textarea){font-family:inherit}
 
 /* ===================== read-only calendar view ===================== */
 .glct-calendar .glct-cal{--tint:#6b86d6;--accent:#ffc454;padding:4px 6px 10px;color:#eef1f7}

@@ -129,7 +129,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._ringPies = []; this._ringSqs = [];
     if (ringHost) {
       ringHost.replaceChildren();
-      const svg = this._svg("svg", { viewBox: "0 0 40 40", width: 38, height: 38, class: "ring" });
+      const svg = this._svg("svg", { viewBox: "0 0 40 40", width: 57, height: 57, class: "ring" });
       for (let i = 0; i < SHIFTS_PER_DAY; i++) {
         const p = this._svg("path", { d: this._wedge(20, 20, 8, i * 90 - 45, (i + 1) * 90 - 45), class: "pie" });
         svg.appendChild(p); this._ringPies.push(p);
