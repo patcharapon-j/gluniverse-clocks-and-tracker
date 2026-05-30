@@ -32,6 +32,7 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
       today: CalendarView.prototype._onToday,
       manageEvents: CalendarView.prototype._onManageEvents,
       selectDay: CalendarView.prototype._onSelectDay,
+      selectMonthEvent: CalendarView.prototype._onSelectMonthEvent,
       closeDetail: CalendarView.prototype._onCloseDetail,
       editEvent: CalendarView.prototype._onEditEvent,
       deleteEvent: CalendarView.prototype._onDeleteEvent,
@@ -46,6 +47,7 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
   _viewYear = null;
   _viewMonth = null;
   _selectedDay = null;
+  _selectedEventId = null;
 
   _months() { return game.time.calendar?.months?.values ?? []; }
 
@@ -88,21 +90,32 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
     const events = this._visibleEvents();
     const onDay = (e, d) => d >= 1 && d <= dayCount && TimeEngine.matchesToday(e, monthIdx, d);
 
-    // Multi-day events (range/month) that touch this month get a fixed "lane"
-    // so their bands line up vertically from cell to cell; single-day events
-    // fill in beneath. This keeps spanning events reading as one continuous bar.
+    // Whole-month events show as badges above the grid rather than a band
+    // dragged across every cell (which reads as too busy).
+    const monthBadges = events
+      .filter(e => e.scope === "month" && e.month === monthIdx)
+      .map(e => ({
+        id: e.id,
+        name: e.name,
+        hasNote: !!(e.notePublic || (isGM && e.notePrivate)),
+        gmOnly: isGM && !e.visibleToPlayers
+      }));
+
+    // Day-range events get a fixed "lane" so their bands line up vertically
+    // from cell to cell; single-day events fill in beneath. This keeps a
+    // multi-day range reading as one continuous bar.
     const spanning = events.filter(e =>
-      (e.scope === "range" || e.scope === "month") &&
+      e.scope === "range" &&
       Array.from({ length: dayCount }, (_, i) => i + 1).some(d => onDay(e, d))
     );
 
     const band = (e, d, column) => {
       const continuesLeft = (d > 1)
         ? onDay(e, d - 1)
-        : (e.scope === "range" && monthIdx > (e.month ?? 0)) || e.scope === "month";
+        : (e.scope === "range" && monthIdx > (e.month ?? 0));
       const continuesRight = (d < dayCount)
         ? onDay(e, d + 1)
-        : (e.scope === "range" && monthIdx < (e.endMonth ?? 0)) || e.scope === "month";
+        : (e.scope === "range" && monthIdx < (e.endMonth ?? 0));
       return {
         id: e.id,
         name: e.name,
@@ -147,13 +160,36 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
       yearLabel: game.settings.get(MODULE_ID, SETTINGS.yearLabel) || "",
       weekdayNames: weekdays.map(w => ({ label: w.abbreviation ?? w.name, rest: !!w.isRestDay })),
       wdCount,
+      monthBadges,
       cells,
       detail: this._buildDetail(year, monthIdx, isGM)
     });
   }
 
-  /** Build the detail-panel context for the currently selected day, if any. */
+  /** Build the detail-panel context for the selected day or month-event. */
   _buildDetail(year, monthIdx, isGM) {
+    const toView = e => ({
+      id: e.id,
+      name: e.name,
+      when: this._describe(e),
+      notePublic: e.notePublic || "",
+      notePrivate: isGM ? (e.notePrivate || "") : "",
+      visibleToPlayers: !!e.visibleToPlayers
+    });
+
+    // A whole-month badge was clicked: show just that event.
+    if (this._selectedEventId) {
+      const e = this._visibleEvents().find(x => x.id === this._selectedEventId);
+      if (!e) return null;
+      return {
+        isGM,
+        heading: e.name,
+        sub: this._describe(e),
+        isWeekend: false,
+        events: [toView(e)]
+      };
+    }
+
     const d = this._selectedDay;
     if (!d) return null;
     const months = this._months();
@@ -165,20 +201,14 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const dayEvents = this._visibleEvents()
       .filter(e => TimeEngine.matchesToday(e, monthIdx, d))
-      .map(e => ({
-        id: e.id,
-        name: e.name,
-        when: this._describe(e),
-        notePublic: e.notePublic || "",
-        notePrivate: isGM ? (e.notePrivate || "") : "",
-        visibleToPlayers: !!e.visibleToPlayers
-      }));
+      .map(toView);
 
     return {
       isGM,
       day: d,
-      dateLabel: `${month?.name ?? ""} ${d}`,
-      weekdayName: weekday?.name ?? "",
+      canAdd: isGM,
+      heading: `${month?.name ?? ""} ${d}`,
+      sub: weekday?.name ?? "",
       isWeekend: !!weekday?.isRestDay,
       events: dayEvents
     };
@@ -200,12 +230,22 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
   async _onSelectDay(ev, target) {
     const d = Number(target?.dataset?.day);
     if (!d) return;
+    this._selectedEventId = null;
     this._selectedDay = (this._selectedDay === d) ? null : d;
+    this.render();
+  }
+
+  async _onSelectMonthEvent(ev, target) {
+    const id = target.closest("[data-event-id]")?.dataset.eventId;
+    if (!id) return;
+    this._selectedDay = null;
+    this._selectedEventId = (this._selectedEventId === id) ? null : id;
     this.render();
   }
 
   async _onCloseDetail() {
     this._selectedDay = null;
+    this._selectedEventId = null;
     this.render();
   }
 
@@ -235,21 +275,21 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _onPrev() {
     const n = this._months().length;
-    this._selectedDay = null;
+    this._selectedDay = null; this._selectedEventId = null;
     this._viewMonth--;
     if (this._viewMonth < 0) { this._viewMonth = n - 1; this._viewYear--; }
     this.render();
   }
   async _onNext() {
     const n = this._months().length;
-    this._selectedDay = null;
+    this._selectedDay = null; this._selectedEventId = null;
     this._viewMonth++;
     if (this._viewMonth >= n) { this._viewMonth = 0; this._viewYear++; }
     this.render();
   }
   async _onToday() {
     const c = game.time.components;
-    this._selectedDay = null;
+    this._selectedDay = null; this._selectedEventId = null;
     this._viewYear = c.year; this._viewMonth = c.month;
     this.render();
   }

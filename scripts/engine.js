@@ -41,7 +41,7 @@ export class TimeEngine {
   }
 
   /**
-   * Weekday index for a calendar position, treating intercalary months as
+   * Weekday index for a calendar position, treating intercalary days as
    * sitting *outside* the weekday cycle.
    *
    * Foundry's native `dayOfWeek` counts every elapsed day, including
@@ -50,17 +50,22 @@ export class TimeEngine {
    * starting weekday by one every year, so months drift away from always
    * beginning on Earthday. By excluding intercalary days from the count we
    * honour the design intent: every year (and every 4-week month) begins on the
-   * same weekday. Calendars without intercalary months defer to Foundry's
-   * native computation, which already handles leap years correctly.
+   * same weekday. Calendars whose months all align to the week defer to
+   * Foundry's native computation, which already handles leap years correctly.
+   *
+   * A month counts as "outside the cycle" if it's flagged `intercalary` or is
+   * shorter than a full week (e.g. festival days) — the flag alone is not
+   * reliable because Foundry can drop it from the live calendar data.
    */
   static weekdayOf(year, monthIndex, dayOfMonth0 = 0) {
     const cal = this.calendar;
     const days = cal?.days?.values ?? [];
     const wdCount = days.length || 7;
     const months = cal?.months?.values ?? [];
-    const hasIntercalary = months.some(m => m.intercalary);
+    const outOfCycle = m => m.intercalary || (m.days ?? 0) < wdCount;
+    const hasOutOfCycle = months.some(outOfCycle);
 
-    if (!hasIntercalary) {
+    if (!hasOutOfCycle) {
       // Native handles leap years; pass an explicit day-of-year because
       // componentsToTime resolves position from `day`, not month/dayOfMonth.
       try {
@@ -73,12 +78,12 @@ export class TimeEngine {
 
     const firstWeekday = cal?.years?.firstWeekday ?? 0;
     const yearZero = cal?.years?.yearZero ?? 0;
-    const perYear = months.reduce((a, m) => a + (m.intercalary ? 0 : (m.days ?? 0)), 0) || wdCount;
+    const perYear = months.reduce((a, m) => a + (outOfCycle(m) ? 0 : (m.days ?? 0)), 0) || wdCount;
     let before = 0;
     for (let i = 0; i < monthIndex && i < months.length; i++) {
-      if (!months[i].intercalary) before += months[i].days ?? 0;
+      if (!outOfCycle(months[i])) before += months[i].days ?? 0;
     }
-    const inMonth = months[monthIndex]?.intercalary ? 0 : dayOfMonth0;
+    const inMonth = outOfCycle(months[monthIndex] ?? {}) ? 0 : dayOfMonth0;
     const total = (year - yearZero) * perYear + before + inMonth;
     return ((firstWeekday + total) % wdCount + wdCount) % wdCount;
   }

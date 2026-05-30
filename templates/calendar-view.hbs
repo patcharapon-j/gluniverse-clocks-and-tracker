@@ -7,6 +7,16 @@
     {{#if isGM}}<button type="button" class="cal-today" data-action="manageEvents" title="{{localize 'GLCT.events.title'}}"><i class="fa-solid fa-star"></i></button>{{/if}}
   </header>
 
+  {{#if monthBadges.length}}
+  <div class="cal-badges">
+    {{#each monthBadges}}
+    <button type="button" class="cal-badge{{#if this.gmOnly}} gm-only{{/if}}" data-action="selectMonthEvent" data-event-id="{{this.id}}" title="{{this.name}}">
+      <i class="fa-solid fa-calendar-day"></i><span>{{this.name}}</span>{{#if this.hasNote}}<i class="cal-badge-note fa-solid fa-note-sticky"></i>{{/if}}
+    </button>
+    {{/each}}
+  </div>
+  {{/if}}
+
   <div class="cal-grid">
     {{#each weekdayNames}}<div class="cal-wd{{#if this.rest}} weekend{{/if}}">{{this.label}}</div>{{/each}}
     {{#each cells}}
@@ -35,8 +45,8 @@
   {{#if detail}}
   <div class="cal-detail">
     <header class="cd-head">
-      <span class="cd-date">{{detail.dateLabel}}</span>
-      <span class="cd-wd{{#if detail.isWeekend}} weekend{{/if}}">{{detail.weekdayName}}{{#if detail.isWeekend}} &middot; {{localize 'GLCT.calendarView.weekend'}}{{/if}}</span>
+      <span class="cd-date">{{detail.heading}}</span>
+      <span class="cd-wd{{#if detail.isWeekend}} weekend{{/if}}">{{detail.sub}}{{#if detail.isWeekend}} &middot; {{localize 'GLCT.calendarView.weekend'}}{{/if}}</span>
       <button type="button" class="cd-close" data-action="closeDetail" title="{{localize 'GLCT.calendarView.close'}}"><i class="fa-solid fa-xmark"></i></button>
     </header>
 
@@ -62,7 +72,7 @@
     <p class="cd-empty">{{localize 'GLCT.calendarView.noEvents'}}</p>
     {{/if}}
 
-    {{#if detail.isGM}}
+    {{#if detail.canAdd}}
     <button type="button" class="cd-add" data-action="addEventForDay"><i class="fa-solid fa-plus"></i> {{localize 'GLCT.calendarView.addForDay'}}</button>
     {{/if}}
   </div>
