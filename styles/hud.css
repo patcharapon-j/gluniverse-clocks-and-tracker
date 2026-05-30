@@ -101,14 +101,21 @@
 #glct-hud .reelclock .colon{width:.3em;text-align:center;opacity:.7}
 #glct-hud .clock .pulse{width:6px;height:6px;border-radius:99px;background:var(--tint);box-shadow:0 0 9px var(--glow);animation:glct-bp 2.6s ease-in-out infinite;flex:none}
 @keyframes glct-bp{0%,100%{opacity:.4}50%{opacity:1}}
-/* meter — clean flat pips, active hour expands to squares */
-#glct-hud .meter{flex:1 1 auto;min-width:200px;max-width:300px;justify-content:center;align-items:center;gap:6px;padding:0 13px}
+/* meter — only the current hour shows its six stretch pips; the other hours
+   collapse to a single summary segment so inactive hours stop eating the row. */
+#glct-hud .meter{flex:1 1 auto;min-width:140px;max-width:240px;justify-content:center;align-items:center;gap:6px;padding:0 13px}
 #glct-hud .rem{font-size:8px;color:#69748c;letter-spacing:.12em;text-transform:uppercase;font-weight:700;text-align:center}
-#glct-hud .track{display:flex;gap:4px;align-items:center;justify-content:center;height:18px}
+#glct-hud .track{display:flex;gap:5px;align-items:center;justify-content:center;height:18px}
 #glct-hud .hourgrp{display:flex;gap:1.5px;align-items:center}
 #glct-hud .pip{flex:0 0 auto;width:5px;height:13px;border-radius:1.5px;background:rgba(255,255,255,.12);
-  transition:width .32s cubic-bezier(.34,1.2,.4,1),background .35s ease,box-shadow .35s ease}
+  transition:width .32s cubic-bezier(.34,1.2,.4,1),opacity .3s ease,background .35s ease,box-shadow .35s ease}
 #glct-hud .hourgrp.curr .pip{width:13px;border-radius:2px}
+/* collapsed inactive hour: width-tween the extra pips to zero and keep the first
+   as a slim pill. Its fill state (tint = hour fully passed, dim = upcoming) is
+   inherited from the first pip's existing .fill class — no JS change needed. */
+#glct-hud .hourgrp:not(.curr){gap:0}
+#glct-hud .hourgrp:not(.curr) .pip{width:0;opacity:0;pointer-events:none}
+#glct-hud .hourgrp:not(.curr) .pip:first-child{width:7px;height:14px;opacity:1;border-radius:99px}
 #glct-hud .pip.fill{background:var(--tint);box-shadow:0 0 5px var(--glowsoft)}
 #glct-hud .pip.head{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.9)}
 #glct-hud .pip.pop{animation:glct-pop .5s cubic-bezier(.34,1.56,.5,1)}
