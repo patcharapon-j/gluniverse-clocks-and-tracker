@@ -7,8 +7,14 @@
    ============================================================ */
 
 /* Display face for the clock — a clean, techy numeral that suits the
-   "Arcane Glass" look. Falls back gracefully if the webfont can't load. */
-@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&display=swap');
+   "Arcane Glass" look. Falls back gracefully if the webfont can't load.
+   Loaded as a continuous variable weight axis (200..800) rather than a
+   handful of discrete weights: the HUD and calendar style several elements
+   at intermediate weights (650/740/760/780 — GM dock buttons, shift names,
+   the date readout, calendar day numbers, event badges). With only discrete
+   weights loaded those weights had no matching face and fell back to the
+   system font; the variable axis makes every weight true Oxanium. */
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@200..800&display=swap');
 
 /* ---- frameless ApplicationV2 reset + top-center anchoring ---- */
 #glct-hud{
