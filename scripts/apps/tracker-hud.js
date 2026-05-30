@@ -283,7 +283,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _bodyClock(t) {
     const c = this._el("div", "t-clock");
     const slices = Math.max(1, Math.trunc(Number(t.slices) || 6));
-    const { svg: s, segs } = this._makePie(slices, 45);
+    const { svg: s, segs } = this._makePie(slices, 38);
     const pie = this._el("div", "piewrap"); pie.appendChild(s);
     const nm = this._el("div", "nm", t.name ?? "");
     const frac = this._el("div", "frac");
@@ -319,20 +319,47 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       nm.textContent = tr.name ?? "";
       const cur = Math.max(0, Math.trunc(Number(tr.current) || 0));
       const size = Math.max(2, Math.trunc(Number(tr.size) || 6));
-      if (cur !== last) {
-        dice.replaceChildren();
-        for (let i = 0; i < Math.min(cur, 8); i++) {
-          const d = this._el("div", "die");
-          d.appendChild(this._el("span", "dot"));
-          dice.appendChild(d);
-        }
-        if (cur > 8) dice.appendChild(this._el("span", "more", `+${cur - 8}`));
-      }
+      if (cur !== last) this._renderPoolDice(dice, cur, last);
       cnt.innerHTML = `<b>${cur}</b>d${size}`;
       this._setOverlay(c, cur === 0 ? "empty" : null, game.i18n.localize("GLCT.tracker.empty"));
       last = cur;
     };
     return { content: c, paint };
+  }
+
+  _makeDie(animate) {
+    const d = this._el("div", "die" + (animate ? " rollin" : ""));
+    d.appendChild(this._el("span", "dot"));
+    return d;
+  }
+
+  /**
+   * Reconcile the pool's dice chips toward `cur` (capped at 8 + a "+N" tag).
+   * Growth rolls fresh dice in; a discard tumbles the spent dice away before
+   * they're removed, so the count visibly drains rather than snapping.
+   */
+  _renderPoolDice(host, cur, prev) {
+    const MAX = 8;
+    const newN = Math.min(cur, MAX);
+    host.querySelector(".more")?.remove();
+    // Drop any dice still mid-discard from a previous step so counts stay sane.
+    host.querySelectorAll(".die.discarding").forEach(d => d.remove());
+    const dies = [...host.querySelectorAll(".die")];
+    const oldN = dies.length;
+
+    if (prev < 0) {                                   // first paint — no animation
+      host.replaceChildren();
+      for (let i = 0; i < newN; i++) host.appendChild(this._makeDie(false));
+    } else if (cur >= prev) {                          // grew / refilled — roll new dice in
+      for (let i = oldN; i < newN; i++) host.appendChild(this._makeDie(true));
+    } else {                                           // discarded — tumble the spent dice out
+      dies.slice(newN).forEach((d, i) => {
+        d.classList.add("discarding");
+        d.style.animationDelay = `${i * 70}ms`;
+        d.addEventListener("animationend", () => d.remove(), { once: true });
+      });
+    }
+    if (cur > MAX) host.appendChild(this._el("span", "more", `+${cur - MAX}`));
   }
 
   /* ---- TASK (discrete boxes) ---- */
