@@ -13,7 +13,7 @@ import { MODULE_ID, SETTINGS, SOCKET, HOOKS, TRACKER_TYPES } from "../const.js";
 
 /** Per-type factory defaults for newly created trackers. */
 const DEFAULTS = {
-  point: { name: "Points", value: 0 },
+  point: { name: "Points", value: 0, min: null, max: null },
   clock: { name: "Clock", slices: 6, value: 0 },
   pool:  { name: "Pool", size: 6, count: 5, discard: 2, current: 5, playerRoll: false },
   task:  { title: "Task", subtitle: "", boxes: 6, value: 0 },
@@ -23,6 +23,12 @@ const DEFAULTS = {
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const int = (v, fallback = 0) => { const n = Math.trunc(Number(v)); return Number.isFinite(n) ? n : fallback; };
+/** Optional integer bound: blank/null/undefined stays unset (null); otherwise an int. */
+const optInt = (v) => {
+  if (v === null || v === undefined || String(v).trim() === "") return null;
+  const n = Math.trunc(Number(v));
+  return Number.isFinite(n) ? n : null;
+};
 
 export class TrackerStore {
   /* ------------------------------- reads ------------------------------- */
@@ -113,9 +119,14 @@ export class TrackerStore {
     const t = all.find(x => x.id === id);
     if (!t) return;
     switch (t.type) {
-      case "point":
-        t.value = int(t.value) + delta;
+      case "point": {
+        const lo = optInt(t.min), hi = optInt(t.max);
+        let nv = int(t.value) + delta;
+        if (lo !== null) nv = Math.max(lo, nv);
+        if (hi !== null) nv = Math.min(hi, nv);
+        t.value = nv;
         break;
+      }
       case "clock":
         t.value = clamp(int(t.value) + delta, 0, int(t.slices, 6));
         break;
@@ -233,9 +244,16 @@ export class TrackerStore {
 
   static _sanitize(t) {
     switch (t.type) {
-      case "point":
-        t.value = int(t.value);
+      case "point": {
+        let lo = optInt(t.min), hi = optInt(t.max);
+        if (lo !== null && hi !== null && lo > hi) { const tmp = lo; lo = hi; hi = tmp; }
+        t.min = lo; t.max = hi;
+        let v = int(t.value);
+        if (lo !== null) v = Math.max(lo, v);
+        if (hi !== null) v = Math.min(hi, v);
+        t.value = v;
         break;
+      }
       case "clock":
         t.slices = clamp(int(t.slices, 6), 1, 24);
         t.value = clamp(int(t.value), 0, t.slices);

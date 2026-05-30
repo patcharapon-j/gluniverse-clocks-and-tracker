@@ -81,6 +81,8 @@
   "GLCT.tracker.field.titleField": "Title",
   "GLCT.tracker.field.subtitle": "Subtitle",
   "GLCT.tracker.field.value": "Value",
+  "GLCT.tracker.field.min": "Min (optional)",
+  "GLCT.tracker.field.max": "Max (optional)",
   "GLCT.tracker.field.slices": "Slices",
   "GLCT.tracker.field.boxes": "Boxes",
   "GLCT.tracker.field.count": "Dice count",
