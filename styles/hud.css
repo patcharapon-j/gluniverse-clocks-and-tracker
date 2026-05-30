@@ -105,17 +105,20 @@
    collapse to a single summary segment so inactive hours stop eating the row. */
 #glct-hud .meter{flex:1 1 auto;min-width:140px;max-width:240px;justify-content:center;align-items:center;gap:6px;padding:0 13px}
 #glct-hud .rem{font-size:8px;color:#69748c;letter-spacing:.12em;text-transform:uppercase;font-weight:700;text-align:center}
-#glct-hud .track{display:flex;gap:5px;align-items:center;justify-content:center;height:18px}
-#glct-hud .hourgrp{display:flex;gap:1.5px;align-items:center}
+#glct-hud .track{display:flex;gap:6px;align-items:center;justify-content:center;height:18px}
+#glct-hud .hourgrp{display:flex;gap:1.5px;align-items:center;transition:gap .34s ease}
 #glct-hud .pip{flex:0 0 auto;width:5px;height:13px;border-radius:1.5px;background:rgba(255,255,255,.12);
-  transition:width .32s cubic-bezier(.34,1.2,.4,1),opacity .3s ease,background .35s ease,box-shadow .35s ease}
-#glct-hud .hourgrp.curr .pip{width:13px;border-radius:2px}
-/* collapsed inactive hour: width-tween the extra pips to zero and keep the first
-   as a slim pill. Its fill state (tint = hour fully passed, dim = upcoming) is
-   inherited from the first pip's existing .fill class — no JS change needed. */
+  transition:width .34s cubic-bezier(.34,1.4,.4,1),height .34s cubic-bezier(.34,1.4,.4,1),border-radius .3s ease,opacity .24s ease,background .35s ease,box-shadow .35s ease}
+#glct-hud .hourgrp.curr .pip{width:13px;height:13px;border-radius:2px}
+/* inactive hour: the six squares collapse together into one round dot — a clearly
+   different shape from the square stretch pips. The extra pips shrink down-and-in
+   to nothing and the first morphs into the dot; its fill state (tint = passed,
+   dim = upcoming) is inherited from the existing .fill class, so no JS change is
+   needed. Delay-free uniform timing makes it read as one satisfying merge rather
+   than the staggered wave the JS sets for the active hour. */
 #glct-hud .hourgrp:not(.curr){gap:0}
-#glct-hud .hourgrp:not(.curr) .pip{width:0;opacity:0;pointer-events:none}
-#glct-hud .hourgrp:not(.curr) .pip:first-child{width:7px;height:14px;opacity:1;border-radius:99px}
+#glct-hud .hourgrp:not(.curr) .pip{width:0;height:8px;opacity:0;border-radius:99px;pointer-events:none;transition-delay:0s !important}
+#glct-hud .hourgrp:not(.curr) .pip:first-child{width:8px;opacity:1}
 #glct-hud .pip.fill{background:var(--tint);box-shadow:0 0 5px var(--glowsoft)}
 #glct-hud .pip.head{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.9)}
 #glct-hud .pip.pop{animation:glct-pop .5s cubic-bezier(.34,1.56,.5,1)}
