@@ -47,6 +47,16 @@ export function registerSettings() {
     onChange: () => GlctHud.refreshState()
   });
 
+  // World-wide display granularity: when on, the HUD focuses on the current
+  // shift (watch) and tucks away the HH:MM clock + stretch meter. Time still
+  // advances/stores in stretches; this only changes presentation. The on-HUD
+  // toggle writes this same setting, so the value below is just the default.
+  game.settings.register(MODULE_ID, SETTINGS.shiftLevelMode, {
+    name: "GLCT.settings.shiftMode.name", hint: "GLCT.settings.shiftMode.hint",
+    scope: "world", config: true, type: Boolean, default: false,
+    onChange: () => GlctHud.refreshStructure()
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.hudCollapsed, {
     scope: "client", config: false, type: Boolean, default: false
   });

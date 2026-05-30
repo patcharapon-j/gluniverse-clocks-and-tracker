@@ -147,6 +147,33 @@
 #glct-hud .ring .sq{transform-box:fill-box;transform-origin:50% 100%;fill:rgba(255,255,255,.14);
   transition:transform .42s cubic-bezier(.34,1.5,.5,1),fill .35s ease,filter .35s ease}
 
+/* ===== shift-level (watch) display mode =====
+   World-wide GM toggle. The HH:MM clock + stretch meter + watch strip step
+   aside; a 4-quadrant dial promotes the current watch to hero. game.time still
+   advances in stretches underneath — this only changes presentation. */
+#glct-hud .shift-hero{display:none;flex-direction:row;align-items:center;gap:12px;padding:0 18px}
+#glct-hud .hud-root.shift-mode .shift-hero{display:flex}
+#glct-hud .hud-root.shift-mode .clock-cell,
+#glct-hud .hud-root.shift-mode .meter,
+#glct-hud .hud-root.shift-mode .watch{display:none}
+#glct-hud .shift-hero .sdial svg{display:block;overflow:visible;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+#glct-hud .shift-hero .sinfo{display:flex;flex-direction:column;gap:3px}
+#glct-hud .shift-hero .name{font-size:16.5px;font-weight:780;letter-spacing:.03em;white-space:nowrap;line-height:1;
+  text-shadow:0 0 16px var(--glowsoft);background:linear-gradient(180deg,#fff,#d6deec);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+#glct-hud .shift-hero .row{display:flex;align-items:center;gap:8px;margin-top:1px}
+#glct-hud .shift-hero .of{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#69748c;font-weight:700}
+/* The dial reuses .ring pie styling; these add the faded "past" quadrants, a
+   pointer, and (in shift mode) hide the collapsed-pill stretch squares + clock. */
+#glct-hud .ring .pie.done{fill:rgba(255,255,255,.20)}
+#glct-hud .ring .marker{fill:#fff;filter:drop-shadow(0 0 3px #fff);transition:cx .55s ease,cy .55s ease}
+#glct-hud .hud-root.shift-mode .ring .sq{display:none}
+#glct-hud .hud-root.shift-mode .pill .pc{display:none}
+/* Fine controls stay usable but de-emphasized in shift mode. */
+#glct-hud .hud-root.shift-mode .gmdock .c[data-step="stretch"],
+#glct-hud .hud-root.shift-mode .gmdock .c[data-step="hour"]{opacity:.4}
+#glct-hud .gmdock .c.mode.on{color:var(--ink);background:rgba(255,255,255,.10);box-shadow:0 0 10px var(--glowsoft)}
+
 /* Shared display typeface for the popout calendar/events/editor windows. */
 .glct-calendar,.glct-events,.glct-caledit{font-family:"Oxanium","Segoe UI",system-ui,sans-serif}
 

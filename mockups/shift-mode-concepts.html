@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Clocks &amp; Tracker — Shift-Level Mode Previews</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&display=swap');
+  :root{
+    --ink:#eef1f7; --muted:#98a2b6; --hair:rgba(255,255,255,.08);
+    --tint:#6b86d6; --tint2:#1a2233; --glow:rgba(120,150,225,.5); --glowsoft:rgba(120,150,225,.18);
+    --edge:rgba(255,255,255,.13);
+    --clock-font:"Oxanium","Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{font:14px/1.45 "Oxanium","Segoe UI",system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(1100px 700px at 50% -5%, #1b2336, transparent 55%),
+      radial-gradient(900px 500px at 82% 112%, #221731, transparent 60%), #06080c;
+    -webkit-font-smoothing:antialiased;padding:18px 0 120px;}
+  h1{font-size:19px;font-weight:700;margin:0;text-align:center;letter-spacing:.2px}
+  .hint{color:var(--muted);font-size:12.5px;max-width:760px;text-align:center;margin:8px auto 0}
+  .hint b{color:#cdd6e6}
+  .hint kbd{background:#1a2030;border:1px solid var(--hair);border-radius:5px;padding:0 5px;font:600 11px/1.6 inherit;color:#cdd6e6}
+
+  /* sticky control deck */
+  .deck{position:sticky;top:0;z-index:50;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;
+    width:min(1080px,96vw);margin:16px auto 0;padding:11px 14px;border-radius:13px;
+    background:linear-gradient(180deg,rgba(18,21,28,.97),rgba(18,21,28,.88));border:1px solid var(--hair);
+    box-shadow:0 14px 40px rgba(0,0,0,.5)}
+  .deck .grp{display:flex;gap:6px;align-items:center}
+  .deck .cap{color:#69748c;font-size:9px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;margin-right:2px}
+  .btn{border:1px solid var(--hair);background:#161b25;color:var(--ink);padding:7px 12px;border-radius:9px;font:600 12px var(--clock-font);cursor:pointer;transition:.15s}
+  .btn:hover{background:#1e2533;box-shadow:0 0 12px var(--glowsoft)}
+  .btn.prime{background:var(--tint);border-color:transparent;color:#0b0f17}
+  .btn.live{outline:2px solid var(--tint);outline-offset:1px}
+  .now{color:#aab4c8;font-size:12px}.now b{color:#fff}
+
+  /* shift selector pills in the deck */
+  .pickrow{display:flex;gap:5px}
+  .pickrow .pk{width:30px;height:30px;border-radius:8px;border:1px solid var(--hair);background:#12151c;cursor:pointer;
+    display:grid;place-items:center;font-size:14px;transition:.15s}
+  .pickrow .pk.on{border-color:transparent;box-shadow:0 0 0 2px var(--tint),0 0 14px var(--glowsoft)}
+
+  .row{width:min(1080px,96vw);margin:34px auto 0}
+  .row > .vh{display:flex;align-items:baseline;gap:10px;margin:0 6px 4px}
+  .row > .vh .n{font-size:14px;font-weight:700;color:#dfe6f3}
+  .row > .vh .d{font-size:11.5px;color:var(--muted)}
+  .stage{position:relative;border-radius:14px;border:1px dashed rgba(255,255,255,.10);
+    background:repeating-linear-gradient(135deg,rgba(255,255,255,.014) 0 14px,transparent 14px 28px);
+    padding:26px 20px;display:flex;flex-direction:column;align-items:center;gap:18px}
+  .stage .badge{position:absolute;top:8px;right:12px;color:#3b4254;font-size:10px;letter-spacing:.16em}
+
+  /* ============ THE BAR (Arcane Glass, ported) ============ */
+  .bar{position:relative;border-radius:15px;overflow:hidden;isolation:isolate;
+    background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 34%),
+      linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.20)),
+      linear-gradient(98deg, var(--tint2), #080b11 64%);
+    border:1px solid var(--edge);
+    box-shadow:0 26px 70px rgba(0,0,0,.6),0 2px 0 rgba(0,0,0,.4),
+      inset 0 1px 0 rgba(255,255,255,.16),inset 0 -12px 28px rgba(0,0,0,.38),0 0 46px var(--glowsoft);
+    backdrop-filter:blur(16px) saturate(1.15);transition:background 1s ease,box-shadow 1s ease}
+  .bar::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+    background:radial-gradient(70% 150% at 50% -50%, var(--glow), transparent 66%);opacity:.22;transition:1s}
+  .main{display:flex;align-items:stretch;height:58px;position:relative;z-index:2}
+  .cell{display:flex;flex-direction:column;justify-content:center;padding:0 13px;position:relative;gap:2px}
+  .cell + .cell::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:1px;
+    background:linear-gradient(180deg,transparent,var(--hair) 22%,var(--hair) 78%,transparent)}
+  .lbl{font-size:7.5px;letter-spacing:.22em;text-transform:uppercase;color:#69748c;font-weight:700}
+  .grip{width:20px;justify-content:center;align-items:center;flex-direction:row;gap:3px;cursor:grab}
+  .grip i{width:3px;height:3px;border-radius:99px;background:rgba(255,255,255,.22)}
+
+  .date{padding-left:11px}
+  .date .wd{font-size:8px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+  .date .m{font-size:16px;font-weight:760;line-height:1.05;white-space:nowrap;
+    background:linear-gradient(180deg,#fff,#ccd5e8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .date .m sup{font-size:8px;font-weight:600;-webkit-text-fill-color:var(--muted)}
+  .date .mo{font-size:9.5px;color:#aab4c8;white-space:nowrap}
+
+  .moon{position:relative;width:12px;height:12px;border-radius:50%;overflow:hidden;
+    background:radial-gradient(circle at 38% 34%,#eef2fb,#a9b5ce);box-shadow:0 0 8px rgba(207,216,234,.4),inset -2px -2px 3px rgba(0,0,0,.25)}
+  .season{font-size:9px;color:var(--muted);white-space:nowrap}
+
+  .event-cell{justify-content:center;max-width:190px}
+  .event{font-size:9.5px;color:#ffe6b5;background:linear-gradient(180deg,rgba(255,196,84,.16),rgba(255,196,84,.05));
+    border:1px solid rgba(255,196,84,.30);border-radius:99px;padding:4px 9px;display:flex;gap:5px;align-items:center;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .event .dot{width:5px;height:5px;border-radius:99px;background:#ffc454;box-shadow:0 0 9px #ffc454;flex:none}
+
+  /* the reference (current stretch) clock cell — shown only on the reference card */
+  .clock-cell{align-items:center;justify-content:center;gap:1px;padding:0 18px}
+  .clock{font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:26px;font-weight:600;
+    line-height:1;display:flex;align-items:center;gap:9px;color:#fff;text-shadow:0 0 16px var(--glowsoft)}
+  .clock .pulse{width:6px;height:6px;border-radius:99px;background:var(--tint);box-shadow:0 0 9px var(--glow)}
+  .meter{justify-content:center;align-items:center;gap:6px;padding:0 13px}
+  .track{display:flex;gap:4px;align-items:center;height:18px}
+  .hourgrp{display:flex;gap:1.5px}
+  .pip{width:5px;height:13px;border-radius:1.5px;background:rgba(255,255,255,.12)}
+  .pip.fill{background:var(--tint);box-shadow:0 0 5px var(--glowsoft)}
+  .pip.head{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.9)}
+  .rem{font-size:8px;color:#69748c;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+
+  /* ====== A · PHASE BAR : enlarged 4-segment shift track ====== */
+  .shiftcell{justify-content:center;padding:0 18px;gap:4px;min-width:280px}
+  .shiftcell .top{display:flex;align-items:baseline;gap:8px}
+  .shiftcell .name{font-size:18px;font-weight:780;letter-spacing:.02em;white-space:nowrap;text-shadow:0 0 16px var(--glowsoft);
+    background:linear-gradient(180deg,#fff,#d6deec);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .shiftcell .of{font-size:9px;color:#69748c;letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+  .segbar{display:flex;gap:5px;height:13px}
+  .segbar .seg{flex:1;min-width:42px;border-radius:4px;border:1.5px solid rgba(255,255,255,.20);background:transparent;
+    position:relative;overflow:hidden;transition:border-color .4s,background .4s}
+  .segbar .seg.done{background:rgba(255,255,255,.26);border-color:transparent}
+  .segbar .seg.on{border-color:transparent;background:rgba(255,255,255,.08);box-shadow:0 0 12px var(--glow)}
+  .segbar .seg.on::after{content:"";position:absolute;inset:0;width:var(--fill,50%);
+    background:linear-gradient(90deg,var(--tint),color-mix(in srgb,var(--tint) 70%,#fff));box-shadow:0 0 8px var(--glow);transition:width .5s ease}
+
+  /* ====== B · QUADRANT DIAL : the 4-quadrant pie as hero ====== */
+  .dialcell{flex-direction:row;align-items:center;gap:13px;padding:0 20px}
+  .dialcell svg{display:block;overflow:visible;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+  .dialcell .pie{fill:rgba(255,255,255,.06);stroke:rgba(255,255,255,.10);stroke-width:.5;transition:fill .55s ease,filter .55s ease}
+  .dialcell .pie.on{fill:var(--tint);filter:drop-shadow(0 0 4px var(--glow))}
+  .dialcell .pie.done{fill:rgba(255,255,255,.22)}
+  .dialcell .hub{fill:#0a0e15;stroke:rgba(255,255,255,.14);stroke-width:.6}
+  .dialcell .marker{fill:#fff;filter:drop-shadow(0 0 4px #fff)}
+  .dialcell .txt{display:flex;flex-direction:column;gap:1px}
+  .dialcell .name{font-size:17px;font-weight:780;white-space:nowrap;text-shadow:0 0 16px var(--glowsoft);
+    background:linear-gradient(180deg,#fff,#d6deec);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .dialcell .of{font-size:9px;color:#69748c;letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+
+  /* ====== C · DAY ARC : a horizon sweep with a travelling sun/moon ====== */
+  .arccell{flex-direction:column;justify-content:center;padding:0 22px;gap:3px;min-width:300px}
+  .arccell .name{font-size:15px;font-weight:760;text-align:center;text-shadow:0 0 14px var(--glowsoft);
+    background:linear-gradient(180deg,#fff,#d6deec);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .arccell svg{display:block;overflow:visible}
+  .arccell .zone{stroke-width:5;fill:none;stroke-linecap:round;opacity:.32;transition:opacity .5s,stroke .5s}
+  .arccell .zone.on{opacity:1;filter:drop-shadow(0 0 5px var(--glow))}
+  .arccell .orb{transition:transform .6s cubic-bezier(.4,0,.2,1)}
+
+  /* ====== D · ICON HERO : big glyph + name, dots beneath ====== */
+  .iconcell{flex-direction:row;align-items:center;gap:13px;padding:0 20px}
+  .iconcell .glyph{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;flex:none;
+    background:radial-gradient(circle at 36% 30%,color-mix(in srgb,var(--tint) 55%,#fff),var(--tint));
+    box-shadow:0 0 18px var(--glow),inset 0 2px 4px rgba(255,255,255,.4);font-size:21px}
+  .iconcell .txt{display:flex;flex-direction:column;gap:3px}
+  .iconcell .name{font-size:17px;font-weight:780;white-space:nowrap;line-height:1;text-shadow:0 0 16px var(--glowsoft);
+    background:linear-gradient(180deg,#fff,#d6deec);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .iconcell .dots{display:flex;gap:5px}
+  .iconcell .dots i{width:18px;height:4px;border-radius:99px;background:rgba(255,255,255,.18);transition:.4s}
+  .iconcell .dots i.done{background:rgba(255,255,255,.4)}
+  .iconcell .dots i.on{background:var(--tint);box-shadow:0 0 8px var(--glow);width:26px}
+
+  /* GM dock (simplified for shift mode) */
+  .gmdock{display:inline-flex;gap:3px;padding:3px;border-radius:10px;
+    background:linear-gradient(180deg,rgba(22,27,37,.92),rgba(14,18,26,.92));border:1px solid var(--hair);
+    box-shadow:0 8px 22px rgba(0,0,0,.5)}
+  .gmdock .c{font:650 10.5px var(--clock-font);padding:5px 9px;border-radius:7px;cursor:pointer;color:var(--ink);white-space:nowrap}
+  .gmdock .c:hover{background:rgba(255,255,255,.08)}
+  .gmdock .c.sep{color:var(--muted)}
+  .gmdock .c.dim{opacity:.35;text-decoration:line-through}
+
+  /* collapsed pill variants */
+  .pill{display:inline-flex;align-items:center;gap:11px;padding:9px 16px 9px 12px;border-radius:13px;
+    background:linear-gradient(98deg,var(--tint2),#080b11 64%);border:1px solid var(--edge);
+    box-shadow:0 14px 30px rgba(0,0,0,.5),0 0 26px var(--glowsoft)}
+  .pill .pw{font-size:12px;font-weight:740;white-space:nowrap}
+  .pill .pd{font-size:10px;color:#aab4c8}
+  .colcap{color:#69748c;font-size:9px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;margin-top:4px}
+</style>
+</head>
+<body>
+  <h1>Shift-Level Mode — Design Variants</h1>
+  <p class="hint">
+    Display-only simplification: <b>game.time still ticks in stretches</b> underneath, but the HUD hides the HH:MM clock
+    and stretch meter and promotes the <b>current shift</b> to hero. Use the deck to jump shifts or nudge progress within a
+    shift, and compare the four hero treatments. The first card is today's <b>stretch mode</b> for reference.
+  </p>
+
+  <div class="deck">
+    <span class="cap">Shift</span>
+    <div class="pickrow" id="picks">
+      <button class="pk" data-s="0" title="Night">🌙</button>
+      <button class="pk" data-s="1" title="Dawn">🌅</button>
+      <button class="pk" data-s="2" title="Day">☀️</button>
+      <button class="pk" data-s="3" title="Dusk">🌆</button>
+    </div>
+    <span class="grp"><button class="btn" id="prev">◀ Rewind shift</button>
+      <button class="btn" id="nudge">＋ Nudge progress</button>
+      <button class="btn prime" id="next">Next watch ↪</button></span>
+    <span class="now">Watch <b id="nowN">3</b>/4 · <b id="nowP">50</b>% through</span>
+  </div>
+
+  <!-- reference: current stretch mode -->
+  <div class="row">
+    <div class="vh"><span class="n">Reference — current “stretch” mode</span><span class="d">what players see today</span></div>
+    <div class="stage"><span class="badge">REFERENCE</span>
+      <div class="bar"><div class="main">
+        <div class="cell grip"><i></i><i></i><i></i></div>
+        <div class="cell date"><span class="wd" data-wd></span>
+          <span class="m"><span data-dy></span><sup data-ord></sup> <span data-moshort></span></span>
+          <span class="mo" data-mo></span></div>
+        <div class="cell clock-cell"><span class="lbl">Time</span>
+          <span class="clock"><span class="pulse"></span><span data-clock>14:50</span></span></div>
+        <div class="cell meter"><div class="track" data-track></div><span class="rem" data-rem></span></div>
+        <div class="cell event-cell"><span class="lbl">Calendar</span>
+          <span class="event"><span class="dot"></span><span data-ev>Next: Harvest Moon · 4d</span></span></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- A · Phase Bar -->
+  <div class="row">
+    <div class="vh"><span class="n">A · Phase Bar</span><span class="d">enlarged 4-segment shift track; active segment fills with intra-shift progress</span></div>
+    <div class="stage"><span class="badge">VARIANT A</span>
+      <div class="bar" data-tint><div class="main">
+        <div class="cell grip"><i></i><i></i><i></i></div>
+        <div class="cell date"><span class="wd" data-wd></span>
+          <span class="m"><span data-dy></span><sup data-ord></sup> <span data-moshort></span></span>
+          <span class="mo" data-mo></span></div>
+        <div class="cell shiftcell">
+          <div class="top"><span class="name" data-name></span><span class="of" data-of></span></div>
+          <div class="segbar" data-segbar></div>
+        </div>
+        <div class="cell event-cell"><span class="lbl">Calendar</span>
+          <span class="event"><span class="dot"></span><span data-ev></span></span></div>
+      </div></div>
+      <div class="gmdock"><span class="c dim">＋ Stretch</span><span class="c dim">＋ Hour</span>
+        <span class="c">＋ Shift</span><span class="c">＋ Day</span><span class="c sep">↪ Next Watch</span><span class="c sep">⌚</span></div>
+      <div class="pill" data-tint><span data-icon style="font-size:15px"></span><span class="pw" data-name></span><span class="pd" data-of></span></div>
+      <span class="colcap">collapsed pill</span>
+    </div>
+  </div>
+
+  <!-- B · Quadrant Dial -->
+  <div class="row">
+    <div class="vh"><span class="n">B · Quadrant Dial</span><span class="d">the collapsed dual-ring's 4-quadrant pie, grown into the hero; a marker rides the active quadrant</span></div>
+    <div class="stage"><span class="badge">VARIANT B</span>
+      <div class="bar" data-tint><div class="main">
+        <div class="cell grip"><i></i><i></i><i></i></div>
+        <div class="cell date"><span class="wd" data-wd></span>
+          <span class="m"><span data-dy></span><sup data-ord></sup> <span data-moshort></span></span>
+          <span class="mo" data-mo></span></div>
+        <div class="cell dialcell">
+          <svg width="44" height="44" viewBox="0 0 40 40" data-dial></svg>
+          <div class="txt"><span class="name" data-name></span><span class="of" data-of></span></div>
+        </div>
+        <div class="cell event-cell"><span class="lbl">Calendar</span>
+          <span class="event"><span class="dot"></span><span data-ev></span></span></div>
+      </div></div>
+      <div class="gmdock"><span class="c dim">＋ Stretch</span><span class="c dim">＋ Hour</span>
+        <span class="c">＋ Shift</span><span class="c">＋ Day</span><span class="c sep">↪ Next Watch</span><span class="c sep">⌚</span></div>
+      <div class="pill" data-tint><svg width="26" height="26" viewBox="0 0 40 40" data-dial></svg><span class="pw" data-name></span></div>
+      <span class="colcap">collapsed pill</span>
+    </div>
+  </div>
+
+  <!-- C · Day Arc -->
+  <div class="row">
+    <div class="vh"><span class="n">C · Day Arc</span><span class="d">a horizon sweep coloured by the four watches; a sun/moon orb travels the arc</span></div>
+    <div class="stage"><span class="badge">VARIANT C</span>
+      <div class="bar" data-tint><div class="main">
+        <div class="cell grip"><i></i><i></i><i></i></div>
+        <div class="cell date"><span class="wd" data-wd></span>
+          <span class="m"><span data-dy></span><sup data-ord></sup> <span data-moshort></span></span>
+          <span class="mo" data-mo></span></div>
+        <div class="cell arccell">
+          <span class="name" data-name></span>
+          <svg width="240" height="46" viewBox="0 0 240 46" data-arc></svg>
+        </div>
+        <div class="cell event-cell"><span class="lbl">Calendar</span>
+          <span class="event"><span class="dot"></span><span data-ev></span></span></div>
+      </div></div>
+      <div class="gmdock"><span class="c dim">＋ Stretch</span><span class="c dim">＋ Hour</span>
+        <span class="c">＋ Shift</span><span class="c">＋ Day</span><span class="c sep">↪ Next Watch</span><span class="c sep">⌚</span></div>
+      <div class="pill" data-tint><span data-icon style="font-size:15px"></span><span class="pw" data-name></span><span class="pd" data-of></span></div>
+      <span class="colcap">collapsed pill</span>
+    </div>
+  </div>
+
+  <!-- D · Icon Hero -->
+  <div class="row">
+    <div class="vh"><span class="n">D · Icon Hero</span><span class="d">a big shift glyph + name; four slim dots beneath mark progress through the day</span></div>
+    <div class="stage"><span class="badge">VARIANT D</span>
+      <div class="bar" data-tint><div class="main">
+        <div class="cell grip"><i></i><i></i><i></i></div>
+        <div class="cell date"><span class="wd" data-wd></span>
+          <span class="m"><span data-dy></span><sup data-ord></sup> <span data-moshort></span></span>
+          <span class="mo" data-mo></span></div>
+        <div class="cell iconcell">
+          <div class="glyph" data-icon></div>
+          <div class="txt"><span class="name" data-name></span>
+            <div class="dots" data-dots><i></i><i></i><i></i><i></i></div></div>
+        </div>
+        <div class="cell event-cell"><span class="lbl">Calendar</span>
+          <span class="event"><span class="dot"></span><span data-ev></span></span></div>
+      </div></div>
+      <div class="gmdock"><span class="c dim">＋ Stretch</span><span class="c dim">＋ Hour</span>
+        <span class="c">＋ Shift</span><span class="c">＋ Day</span><span class="c sep">↪ Next Watch</span><span class="c sep">⌚</span></div>
+      <div class="pill" data-tint><span data-icon style="font-size:16px"></span><span class="pw" data-name></span><span class="pd" data-of></span></div>
+      <span class="colcap">collapsed pill</span>
+    </div>
+  </div>
+
+<script>
+  const WATCHES = [
+    { name:"Night Watch", icon:"🌙", tint:"#6b86d6", tint2:"#1a2233", glow:"rgba(120,150,225,.5)",  soft:"rgba(120,150,225,.18)" },
+    { name:"Dawn Watch",  icon:"🌅", tint:"#e0a368", tint2:"#2f2316", glow:"rgba(230,170,100,.5)",  soft:"rgba(230,170,100,.18)" },
+    { name:"Day Watch",   icon:"☀️", tint:"#6fb8d8", tint2:"#162a36", glow:"rgba(110,184,216,.5)",  soft:"rgba(110,184,216,.18)" },
+    { name:"Dusk Watch",  icon:"🌆", tint:"#b884d0", tint2:"#241430", glow:"rgba(184,132,208,.5)",  soft:"rgba(184,132,208,.18)" },
+  ];
+  let shift = 2, prog = 0.5; // 0..1 within the shift
+
+  const NS = "http://www.w3.org/2000/svg";
+  const svg=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const polar=(cx,cy,r,deg)=>{const a=(deg-90)*Math.PI/180;return [cx+r*Math.cos(a),cy+r*Math.sin(a)];};
+  function wedge(cx,cy,r,a0,a1){const [x0,y0]=polar(cx,cy,r,a0),[x1,y1]=polar(cx,cy,r,a1);
+    const lg=a1-a0<=180?0:1;return `M${cx} ${cy} L${x0} ${y0} A${r} ${r} 0 ${lg} 1 ${x1} ${y1} Z`;}
+
+  // ---- build the reference stretch meter once ----
+  (function(){
+    const track=document.querySelector("[data-track]");
+    for(let h=0;h<6;h++){const g=document.createElement("div");g.className="hourgrp";
+      for(let p=0;p<6;p++){const e=document.createElement("div");e.className="pip";g.appendChild(e);}track.appendChild(g);}
+    const pips=track.querySelectorAll(".pip");
+    const head=29; // 14:50 ≈ stretch 29 of 36 in Day Watch
+    pips.forEach((p,i)=>{p.classList.toggle("fill",i<head);p.classList.toggle("head",i===head);});
+    document.querySelector("[data-rem]").textContent="7 stretches left";
+  })();
+
+  function render(){
+    const w = WATCHES[shift];
+
+    // theme every tinted element
+    document.querySelectorAll("[data-tint]").forEach(el=>{
+      el.style.setProperty("--tint",w.tint); el.style.setProperty("--tint2",w.tint2);
+      el.style.setProperty("--glow",w.glow); el.style.setProperty("--glowsoft",w.soft);
+    });
+    // reference card keeps Day Watch tint for context
+    const ref=document.querySelector(".stage .bar:not([data-tint])");
+
+    // shared date / event / name / of / icon
+    document.querySelectorAll("[data-wd]").forEach(e=>e.textContent="Moonday");
+    document.querySelectorAll("[data-dy]").forEach(e=>e.textContent="14");
+    document.querySelectorAll("[data-ord]").forEach(e=>e.textContent="th");
+    document.querySelectorAll("[data-moshort]").forEach(e=>e.textContent="Calistril");
+    document.querySelectorAll("[data-mo]").forEach(e=>e.textContent="Calistril · 4712 A.R.");
+    document.querySelectorAll("[data-ev]").forEach(e=>e.textContent="Next: Harvest Moon · 4d");
+    document.querySelectorAll("[data-name]").forEach(e=>e.textContent=w.name);
+    document.querySelectorAll("[data-of]").forEach(e=>e.textContent=`Watch ${shift+1} of 4`);
+    document.querySelectorAll("[data-icon]").forEach(e=>e.textContent=w.icon);
+
+    // A · phase bar segments
+    document.querySelectorAll("[data-segbar]").forEach(bar=>{
+      bar.replaceChildren();
+      for(let i=0;i<4;i++){const s=document.createElement("div");s.className="seg";
+        if(i<shift)s.classList.add("done"); if(i===shift){s.classList.add("on");s.style.setProperty("--fill",`${prog*100}%`);}
+        bar.appendChild(s);}
+    });
+
+    // B · quadrant dials
+    document.querySelectorAll("[data-dial]").forEach(host=>{
+      host.replaceChildren();
+      for(let i=0;i<4;i++){const p=svg("path",{d:wedge(20,20,15,i*90-45,(i+1)*90-45),class:"pie"});
+        if(i<shift)p.classList.add("done"); if(i===shift)p.classList.add("on"); host.appendChild(p);}
+      host.appendChild(svg("circle",{cx:20,cy:20,r:3,class:"hub"}));
+      // marker dot riding the active quadrant by progress
+      const a = (shift*90-45) + prog*90;
+      const [mx,my]=polar(20,20,15,a);
+      host.appendChild(svg("circle",{cx:mx,cy:my,r:2.1,class:"marker"}));
+    });
+
+    // C · day arc
+    document.querySelectorAll("[data-arc]").forEach(host=>{
+      host.replaceChildren();
+      // a shallow dome; four 45° bands from 180°(left) to 0°(right) = night→dusk
+      const cx=120, cy=64, r=42;
+      const pt=(deg)=>{const a=deg*Math.PI/180;return [cx + r*Math.cos(a), cy - r*Math.sin(a)];};
+      const seg=(d0,d1,cls)=>{const [x0,y0]=pt(d0),[x1,y1]=pt(d1);
+        const p=svg("path",{d:`M${x0} ${y0} A${r} ${r} 0 0 1 ${x1} ${y1}`,class:cls});return p;};
+      // four 45° bands from 180°(left) to 0°(right)
+      for(let i=0;i<4;i++){
+        const d0=180-i*45, d1=180-(i+1)*45;
+        const p=seg(d0,d1,"zone"); p.style.stroke=WATCHES[i].tint;
+        if(i===shift)p.classList.add("on"); host.appendChild(p);
+      }
+      // orb position
+      const od=180 - (shift+prog)*45;
+      const [ox,oy]=pt(od);
+      const g=svg("g",{class:"orb",transform:`translate(${ox} ${oy})`});
+      g.appendChild(svg("circle",{r:6,fill:w.tint,filter:"drop-shadow(0 0 6px "+w.glow+")"}));
+      g.appendChild(svg("circle",{r:6,fill:"none",stroke:"rgba(255,255,255,.8)","stroke-width":1}));
+      host.appendChild(g);
+    });
+
+    // D · dots
+    document.querySelectorAll("[data-dots]").forEach(d=>{
+      [...d.children].forEach((i,idx)=>{i.classList.toggle("done",idx<shift);i.classList.toggle("on",idx===shift);});
+    });
+
+    // deck readout + pick highlight
+    document.getElementById("nowN").textContent=shift+1;
+    document.getElementById("nowP").textContent=Math.round(prog*100);
+    document.querySelectorAll("#picks .pk").forEach(p=>p.classList.toggle("on",+p.dataset.s===shift));
+  }
+
+  document.getElementById("next").onclick=()=>{shift=(shift+1)%4;prog=0;render();};
+  document.getElementById("prev").onclick=()=>{shift=(shift+3)%4;prog=0;render();};
+  document.getElementById("nudge").onclick=()=>{prog+=0.25;if(prog>=1){prog=0;shift=(shift+1)%4;}render();};
+  document.querySelectorAll("#picks .pk").forEach(p=>p.onclick=()=>{shift=+p.dataset.s;prog=0.5;render();});
+  render();
+</script>
+</body>
+</html>

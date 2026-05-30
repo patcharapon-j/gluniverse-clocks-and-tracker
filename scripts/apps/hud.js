@@ -45,6 +45,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       advance: GlctHud.prototype._onAdvance,
       nextShift: GlctHud.prototype._onNextShift,
       setTime: GlctHud.prototype._onSetTime,
+      toggleShiftMode: GlctHud.prototype._onToggleShiftMode,
       openCalendar: GlctHud.prototype._onOpenCalendar
     }
   };
@@ -58,6 +59,8 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _reels = [];
   _ringPies = [];
   _ringSqs = [];
+  _dialPies = [];
+  _dialMarker = null;
   _displayTime = null;  // world time currently painted on the HUD
   _anim = null;         // active step-animation interval id
 
@@ -65,11 +68,17 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     try { return game.settings.get(MODULE_ID, SETTINGS.hudCollapsed); } catch { return false; }
   }
 
+  /** World-wide shift-level (watch) display mode. */
+  get shiftMode() {
+    try { return game.settings.get(MODULE_ID, SETTINGS.shiftLevelMode); } catch { return false; }
+  }
+
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     return Object.assign(context, {
       isGM: game.user?.isGM ?? false,
-      collapsed: this.collapsed
+      collapsed: this.collapsed,
+      shiftMode: this.shiftMode
     });
   }
 
@@ -128,6 +137,23 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
         g.appendChild(rect); svg.appendChild(g); this._ringSqs.push(rect);
       }
       ringHost.appendChild(svg);
+    }
+
+    // shift-mode hero dial — the dual-ring's 4-quadrant pie grown up, no
+    // stretch squares. A static pointer marks the active watch (no sub-progress).
+    const dialHost = root.querySelector("[data-dial]");
+    this._dialPies = []; this._dialMarker = null;
+    if (dialHost) {
+      dialHost.replaceChildren();
+      const svg = this._svg("svg", { viewBox: "0 0 40 40", width: 38, height: 38, class: "ring" });
+      for (let i = 0; i < SHIFTS_PER_DAY; i++) {
+        const p = this._svg("path", { d: this._wedge(20, 20, 15, i * 90 - 45, (i + 1) * 90 - 45), class: "pie" });
+        svg.appendChild(p); this._dialPies.push(p);
+      }
+      svg.appendChild(this._svg("circle", { cx: 20, cy: 20, r: 3, class: "hub" }));
+      this._dialMarker = this._svg("circle", { cx: 20, cy: 8, r: 2.2, class: "marker" });
+      svg.appendChild(this._dialMarker);
+      dialHost.appendChild(svg);
     }
 
     // slot-reel clocks
@@ -244,6 +270,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _paint(st, quiet = false) {
     const root = this.element;
+    const sm = this.shiftMode;
 
     // per-shift theming
     root.style.setProperty("--tint", st.watch.tint);
@@ -268,13 +295,20 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._setText("[data-pilldate]", `· ${st.date.weekday} ${st.date.day}`);
     this._setText("[data-season]", st.seasonName);
     this._setText("[data-rem]", game.i18n.format("GLCT.hud.stretchesLeft", { n: st.stretchesLeftInShift }));
+    this._setText("[data-shiftof]", game.i18n.format("GLCT.hud.watchOf", { n: st.shiftIndex + 1, total: SHIFTS_PER_DAY }));
+
+    // shift-mode toggle button reflects the current granularity
+    const modeBtn = root.querySelector("[data-modebtn]");
+    if (modeBtn) {
+      modeBtn.classList.toggle("on", sm);
+      modeBtn.textContent = game.i18n.localize(sm ? "GLCT.controls.shiftModeOn" : "GLCT.controls.shiftModeOff");
+    }
 
     // slot-reel clocks
     this._reels.forEach(c => this._setClock(c, st.clock));
 
-    // moon phase shadow
-    const sh = root.querySelector("[data-moon]");
-    if (sh) sh.style.left = `${(st.moonPhase / 7) * 14 - 7}px`;
+    // moon phase shadow (present in both the watch cell and the shift-mode hero)
+    root.querySelectorAll("[data-moon]").forEach(sh => { sh.style.left = `${(st.moonPhase / 7) * 14 - 7}px`; });
 
     // shift cells
     root.querySelectorAll("[data-shifts] .s").forEach((d, i) => {
@@ -296,8 +330,24 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     if (headPip) { headPip.classList.remove("pop"); void headPip.offsetWidth; headPip.classList.add("pop"); }
     root.querySelectorAll(".hourgrp").forEach((g, h) => g.classList.toggle("curr", h === st.hourOfShift));
 
-    // dual-ring
-    this._ringPies.forEach((p, i) => p.classList.toggle("on", i === st.shiftIndex));
+    // dual-ring (collapsed pill); in shift mode, fade past quadrants too
+    this._ringPies.forEach((p, i) => {
+      p.classList.toggle("on", i === st.shiftIndex);
+      p.classList.toggle("done", sm && i < st.shiftIndex);
+    });
+
+    // shift-mode hero dial: light the active quadrant, fade the past ones, and
+    // park a static pointer on the active watch's bisector (no sub-progress).
+    this._dialPies.forEach((p, i) => {
+      p.classList.toggle("on", i === st.shiftIndex);
+      p.classList.toggle("done", i < st.shiftIndex);
+    });
+    if (this._dialMarker) {
+      const [mx, my] = this._polar(20, 20, 9, st.shiftIndex * 90);
+      this._dialMarker.setAttribute("cx", mx.toFixed(2));
+      this._dialMarker.setAttribute("cy", my.toFixed(2));
+    }
+
     this._ringSqs.forEach((rect, idx) => {
       const inHour = Math.floor(idx / 6) === st.hourOfShift;
       const passed = idx < st.stretchInShift, head = idx === st.stretchInShift;
@@ -411,6 +461,10 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!game.user.isGM) return;
     const { SetTimeDialog } = await import("./set-time-dialog.js");
     SetTimeDialog.show();
+  }
+  async _onToggleShiftMode() {
+    if (!game.user.isGM) return;
+    try { await game.settings.set(MODULE_ID, SETTINGS.shiftLevelMode, !this.shiftMode); } catch { /* ignore */ }
   }
   async _onOpenCalendar() {
     const { CalendarView } = await import("./calendar-view.js");

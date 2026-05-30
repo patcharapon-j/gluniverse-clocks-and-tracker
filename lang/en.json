@@ -7,6 +7,7 @@
   "GLCT.hud.toggleHint": "Double-click to switch standard / compact",
   "GLCT.hud.stretchesLeft": "{n} stretches left",
   "GLCT.hud.timeLabel": "Time",
+  "GLCT.hud.watchOf": "Watch {n} of {total}",
 
   "GLCT.controls.advanceStretch": "+ Stretch",
   "GLCT.controls.advanceHour": "+ Hour",
@@ -15,6 +16,9 @@
   "GLCT.controls.nextShift": "Next Watch",
   "GLCT.controls.setTime": "Set exact date & time",
   "GLCT.controls.rewindHint": "Left-click to advance · Right-click to rewind",
+  "GLCT.controls.shiftModeToggle": "Toggle watch / stretch granularity",
+  "GLCT.controls.shiftModeOn": "Watch view",
+  "GLCT.controls.shiftModeOff": "Stretch view",
 
   "GLCT.shifts.0": "Night Watch",
   "GLCT.shifts.1": "Dawn Watch",
@@ -31,6 +35,8 @@
   "GLCT.settings.hudCollapsed.hint": "Whether the HUD starts collapsed.",
   "GLCT.settings.sceneLight.name": "Tint Scene With Shift",
   "GLCT.settings.sceneLight.hint": "Opt-in per scene: tint the canvas to match the current watch.",
+  "GLCT.settings.shiftMode.name": "Track Time at Shift Level",
+  "GLCT.settings.shiftMode.hint": "Focus the HUD on the current watch and hide the clock & stretch meter. Time still advances in stretches; this only changes the display. The GM can also flip this from the HUD dock.",
   "GLCT.settings.stepMode.name": "Default Step Snapping",
   "GLCT.settings.stepMode.hint": "When advancing, snap to the nearest stretch or shift boundary.",
 
