@@ -136,7 +136,7 @@
 #glct-hud .bar.collapsed .main{height:auto}
 #glct-hud .bar.collapsed .cell:not(.pill):not(.grip){display:none}
 #glct-hud .pill{display:none}
-#glct-hud .bar.collapsed .pill{display:flex;flex-direction:row;align-items:center;gap:9px;padding:2px 11px 2px 3px}
+#glct-hud .bar.collapsed .pill{display:flex;flex-direction:row;align-items:center;gap:10px;padding:5px 14px 5px 6px}
 #glct-hud .pill .pring{flex:none}
 #glct-hud .pill .ptxt{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:0;line-height:1.04}
 #glct-hud .pill .pw{font-size:12.5px;font-weight:780;letter-spacing:.06em;white-space:nowrap;
@@ -148,7 +148,7 @@
 /* watch mode hides the clock; promote the watch name to clock-size so it owns
    the readout, and grow the inner pie to fill the whole footprint. */
 #glct-hud .hud-root.shift-mode .pill .pw{font-size:25px;font-weight:760;letter-spacing:.01em;line-height:1.02}
-#glct-hud .hud-root.shift-mode .pring .ring .pie{transform-box:view-box;transform-origin:center;transform:scale(1.62)}
+#glct-hud .hud-root.shift-mode .pring .ring .pie{transform-box:view-box;transform-origin:center;transform:scale(1.5)}
 /* collapsed dual-ring: inner 4-quadrant shift pie + outer stretch squares (hour-gapped) */
 #glct-hud .pring{display:inline-flex;align-items:center;justify-content:center}
 #glct-hud .ring{display:block;overflow:visible}
