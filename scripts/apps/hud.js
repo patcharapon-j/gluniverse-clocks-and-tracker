@@ -11,8 +11,7 @@
 import { MODULE_ID, SETTINGS } from "../const.js";
 import { TimeEngine } from "../engine.js";
 import {
-  STRETCHES_PER_SHIFT, STRETCHES_PER_HOUR, HOURS_PER_SHIFT, SHIFTS_PER_DAY,
-  STRETCHES_PER_DAY, SECONDS_PER_STRETCH
+  STRETCHES_PER_SHIFT, STRETCHES_PER_HOUR, HOURS_PER_SHIFT, SHIFTS_PER_DAY
 } from "../time-math.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -66,8 +65,6 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _dialPies = [];
   _dialPtr = null;
   _dialRot = 0;
-  _displayTime = null;  // world time currently painted on the HUD
-  _anim = null;         // active step-animation interval id
   _barT = null;         // pending bar-width-tween cleanup timeout
 
   get collapsed() {
@@ -241,48 +238,18 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   /* ------------------------------ painting ------------------------------- */
 
   /**
-   * Entry point for all repaints. Jumps larger than one stretch are tweened —
-   * the displayed time steps one stretch at a time toward the real world time,
-   * so advancing an hour/shift/day visibly "ticks" rather than snapping.
+   * Entry point for all repaints. The UI is painted straight to the current
+   * world time in a single pass — however far the GM jumps. The polished
+   * motion comes from the CSS transitions on the reels, pips, rings and dial,
+   * which glide once to the final values rather than ticking through every
+   * intermediate stretch.
    */
   update() {
     if (!this.rendered || !this._built) return;
-    const target = TimeEngine.worldTime;
-
-    if (this._displayTime === null) { this._paintAt(target); return; }
-
-    const steps = Math.round(Math.abs(target - this._displayTime) / SECONDS_PER_STRETCH);
-    // Snap directly for ≤1 stretch and for day-or-larger jumps (too long to tween).
-    if (steps <= 1 || steps >= STRETCHES_PER_DAY) { this._cancelAnim(); this._paintAt(target); return; }
-    this._animateTo(target, steps);
+    this._paint(TimeEngine.getStateAt(TimeEngine.worldTime));
   }
 
-  _paintAt(t, quiet = false) {
-    this._displayTime = t;
-    this._paint(TimeEngine.getStateAt(t), quiet);
-  }
-
-  _cancelAnim() {
-    if (this._anim) { clearInterval(this._anim); this._anim = null; }
-  }
-
-  /** Tween the displayed time from the current paint to `to`, one stretch per tick. */
-  _animateTo(to, steps) {
-    this._cancelAnim();
-    const from = this._displayTime;
-    const dir = Math.sign(to - from);
-    const interval = Math.max(16, Math.min(80, 700 / steps));
-    let i = 0;
-    this._anim = setInterval(() => {
-      if (!this.rendered || !this._built) { this._cancelAnim(); return; }
-      i++;
-      const last = i >= steps;
-      this._paintAt(last ? to : from + i * SECONDS_PER_STRETCH * dir, !last);
-      if (last) this._cancelAnim();
-    }, interval);
-  }
-
-  _paint(st, quiet = false) {
+  _paint(st) {
     const root = this.element;
     const sm = this.shiftMode;
 
@@ -399,7 +366,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
 
-    if (!quiet) Hooks.callAll(`${MODULE_ID}.timeChanged`, st);
+    Hooks.callAll(`${MODULE_ID}.timeChanged`, st);
   }
 
   _setText(sel, txt) {
