@@ -129,7 +129,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._ringPies = []; this._ringSqs = [];
     if (ringHost) {
       ringHost.replaceChildren();
-      const svg = this._svg("svg", { viewBox: "0 0 40 40", width: 34, height: 34, class: "ring" });
+      const svg = this._svg("svg", { viewBox: "0 0 40 40", width: 38, height: 38, class: "ring" });
       for (let i = 0; i < SHIFTS_PER_DAY; i++) {
         const p = this._svg("path", { d: this._wedge(20, 20, 8, i * 90 - 45, (i + 1) * 90 - 45), class: "pie" });
         svg.appendChild(p); this._ringPies.push(p);
@@ -303,7 +303,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._setText("[data-ord]", st.date.ordinal);
     this._setText("[data-moshort]", st.date.monthAbbr);
     this._setText("[data-mo]", `${st.date.monthName} · ${st.date.year}${st.date.yearLabel ? " " + st.date.yearLabel : ""}`);
-    this._setText("[data-pilldate]", `· ${st.date.weekday} ${st.date.day}`);
+    this._setText("[data-pilldate]", `${st.date.weekday} ${st.date.day}${st.date.ordinal} · ${st.date.monthAbbr}`);
     this._setText("[data-season]", st.seasonName);
     this._setText("[data-rem]", game.i18n.format("GLCT.hud.stretchesLeft", { n: st.stretchesLeftInShift }));
     this._setText("[data-shiftof]", game.i18n.format("GLCT.hud.watchOf", { n: st.shiftIndex + 1, total: SHIFTS_PER_DAY }));

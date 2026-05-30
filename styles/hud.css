@@ -129,15 +129,24 @@
 #glct-hud .player-hidden{display:none}
 
 /* ===== collapsed pill with shift+stretch dual-ring ===== */
+/* The pie anchors the left; the watch name, clock and date stack beside it as a
+   tidy card so the compact view fills its height instead of stranding the
+   readouts on a single sparse baseline. */
 #glct-hud .bar.collapsed{width:auto;min-width:0;display:inline-flex}
-#glct-hud .bar.collapsed .main{height:46px}
+#glct-hud .bar.collapsed .main{height:auto;min-height:56px}
 #glct-hud .bar.collapsed .cell:not(.pill):not(.grip){display:none}
 #glct-hud .pill{display:none}
-#glct-hud .bar.collapsed .pill{display:flex;flex-direction:row;align-items:center;gap:11px;padding-right:15px}
-#glct-hud .pill .pw{font-size:11.5px;font-weight:740;letter-spacing:.04em;white-space:nowrap}
-#glct-hud .pill .pc{font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:21px;font-weight:600;
-  letter-spacing:.01em;color:#fff;text-shadow:0 0 12px var(--glowsoft)}
-#glct-hud .pill .pd{font-size:10.5px;color:#aab4c8;white-space:nowrap}
+#glct-hud .bar.collapsed .pill{display:flex;flex-direction:row;align-items:center;gap:13px;padding:6px 18px 6px 6px}
+#glct-hud .pill .pring{flex:none}
+#glct-hud .pill .ptxt{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:1px;line-height:1.06}
+#glct-hud .pill .pw{font-size:12.5px;font-weight:780;letter-spacing:.06em;white-space:nowrap;
+  background:linear-gradient(180deg,#fff,#d6deec);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;text-shadow:0 0 16px var(--glowsoft)}
+#glct-hud .pill .pc{font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:25px;font-weight:700;
+  letter-spacing:.01em;line-height:1.04;color:#fff;text-shadow:0 0 15px var(--glowsoft),0 1px 0 rgba(0,0,0,.35)}
+#glct-hud .pill .pd{font-size:9.5px;color:#aab4c8;white-space:nowrap;letter-spacing:.04em}
+/* shift mode hides the clock line — keep the name/date pair vertically centred */
+#glct-hud .hud-root.shift-mode .bar.collapsed .main{min-height:50px}
 /* collapsed dual-ring: inner 4-quadrant shift pie + outer stretch squares (hour-gapped) */
 #glct-hud .pring{display:inline-flex;align-items:center;justify-content:center}
 #glct-hud .ring{display:block;overflow:visible}
