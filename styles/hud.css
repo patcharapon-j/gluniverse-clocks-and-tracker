@@ -147,6 +147,64 @@
 #glct-hud .ring .sq{transform-box:fill-box;transform-origin:50% 100%;fill:rgba(255,255,255,.14);
   transition:transform .42s cubic-bezier(.34,1.5,.5,1),fill .35s ease,filter .35s ease}
 
+/* ===== shift-level (watch) display mode =====
+   World-wide GM toggle. The HH:MM clock + stretch meter + watch strip step
+   aside; a 4-quadrant dial promotes the current watch to hero. game.time still
+   advances in stretches underneath — this only changes presentation. */
+#glct-hud .shift-hero{display:none;flex-direction:row;align-items:center;gap:12px;padding:0 18px}
+#glct-hud .hud-root.shift-mode .shift-hero{display:flex}
+#glct-hud .hud-root.shift-mode .clock-cell,
+#glct-hud .hud-root.shift-mode .meter,
+#glct-hud .hud-root.shift-mode .watch{display:none}
+#glct-hud .shift-hero .sdial svg{display:block;overflow:visible;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+#glct-hud .shift-hero .sinfo{display:flex;flex-direction:column;gap:3px}
+#glct-hud .shift-hero .name{font-size:16.5px;font-weight:780;letter-spacing:.03em;white-space:nowrap;line-height:1;
+  text-shadow:0 0 16px var(--glowsoft);background:linear-gradient(180deg,#fff,#d6deec);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+#glct-hud .shift-hero .row{display:flex;align-items:center;gap:8px;margin-top:1px}
+#glct-hud .shift-hero .of{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#69748c;font-weight:700}
+/* GM-only compact time readout: exact clock + a slim stretch-progress bar.
+   Players never get this element (it's gated by isGM in the template). */
+#glct-hud .shift-hero .minitime{display:flex;align-items:center;gap:6px;margin-top:3px}
+#glct-hud .shift-hero .mt-clock{font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:11px;font-weight:700;
+  color:#cfd7e6;letter-spacing:.02em;text-shadow:0 0 8px var(--glowsoft)}
+#glct-hud .shift-hero .mt-bar{position:relative;width:46px;height:3px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}
+#glct-hud .shift-hero .mt-bar i{position:absolute;inset:0;width:0;border-radius:99px;
+  background:linear-gradient(90deg,var(--tint),color-mix(in srgb,var(--tint) 70%,#fff));
+  box-shadow:0 0 6px var(--glowsoft);transition:width .5s cubic-bezier(.34,1.1,.4,1)}
+#glct-hud .shift-hero .mt-rem{font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:#5b6478;font-weight:700;white-space:nowrap}
+
+/* The dial reuses .ring pie styling; these add the faded "past" quadrants, the
+   sweeping pointer, and (in shift mode) hide the collapsed-pill squares + clock. */
+#glct-hud .sdial .pie{transform-box:view-box;transform-origin:20px 20px}
+#glct-hud .ring .pie.done{fill:rgba(255,255,255,.20)}
+#glct-hud .ring .pie.lit{animation:glct-quadpop .55s cubic-bezier(.34,1.5,.5,1)}
+@keyframes glct-quadpop{0%{fill:#fff;filter:drop-shadow(0 0 9px #fff)}100%{}}
+#glct-hud .ring .marker{fill:#fff;filter:drop-shadow(0 0 3px #fff)}
+#glct-hud .dialptr{transition:transform .6s cubic-bezier(.34,1.3,.4,1)}
+#glct-hud .hud-root.shift-mode .ring .sq{display:none}
+#glct-hud .hud-root.shift-mode .pill .pc{display:none}
+/* Fine controls stay usable but de-emphasized in shift mode. */
+#glct-hud .hud-root.shift-mode .gmdock .c[data-step="stretch"],
+#glct-hud .hud-root.shift-mode .gmdock .c[data-step="hour"]{opacity:.4}
+#glct-hud .gmdock .c.mode.on{color:var(--ink);background:rgba(255,255,255,.10);box-shadow:0 0 10px var(--glowsoft)}
+
+/* Mode-swap entrance: the appearing side eases in; a bar sweep (triggered in
+   JS) masks the layout change. Added transiently as .mode-swap on .hud-root. */
+#glct-hud .hud-root.mode-swap.shift-mode .shift-hero{animation:glct-heroIn .55s cubic-bezier(.34,1.4,.4,1)}
+#glct-hud .hud-root.mode-swap:not(.shift-mode) .clock-cell,
+#glct-hud .hud-root.mode-swap:not(.shift-mode) .meter{animation:glct-heroIn .55s cubic-bezier(.34,1.4,.4,1)}
+@keyframes glct-heroIn{0%{opacity:0;transform:translateY(5px) scale(.95)}100%{opacity:1;transform:none}}
+/* the four quadrants draw in, staggered, when watch mode appears */
+#glct-hud .hud-root.mode-swap.shift-mode .sdial .pie{animation:glct-dialIn .5s both cubic-bezier(.34,1.4,.4,1)}
+#glct-hud .hud-root.mode-swap.shift-mode .sdial .pie:nth-child(1){animation-delay:.02s}
+#glct-hud .hud-root.mode-swap.shift-mode .sdial .pie:nth-child(2){animation-delay:.08s}
+#glct-hud .hud-root.mode-swap.shift-mode .sdial .pie:nth-child(3){animation-delay:.14s}
+#glct-hud .hud-root.mode-swap.shift-mode .sdial .pie:nth-child(4){animation-delay:.20s}
+#glct-hud .hud-root.mode-swap.shift-mode .sdial .dialptr{animation:glct-ptrIn .55s .2s both ease}
+@keyframes glct-dialIn{0%{opacity:0;transform:scale(.4)}100%{opacity:1;transform:scale(1)}}
+@keyframes glct-ptrIn{0%{opacity:0}60%{opacity:0}100%{opacity:1}}
+
 /* Shared display typeface for the popout calendar/events/editor windows. */
 .glct-calendar,.glct-events,.glct-caledit{font-family:"Oxanium","Segoe UI",system-ui,sans-serif}
 

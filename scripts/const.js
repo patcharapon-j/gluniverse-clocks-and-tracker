@@ -23,6 +23,7 @@ export const SETTINGS = {
   calendarConfig: "calendarConfig",// Object: the stored CalendarConfig (custom edits)
   events: "events",                // Array: events & holidays
   shiftNames: "shiftNames",        // Array<string>: customizable watch names
+  shiftLevelMode: "shiftLevelMode",// Boolean (world): track/display at shift granularity only
   hudCollapsed: "hudCollapsed",    // Boolean (client)
   hudPosition: "hudPosition",      // Object {top,left} (client)
   sceneTint: "sceneTint",          // Boolean: tint canvas with the active shift
