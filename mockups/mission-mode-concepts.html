@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mission Mode — Animation Intensity Concepts</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@200..800&display=swap');
+  :root{
+    --ink:#eef1f7; --muted:#98a2b6; --hair:rgba(255,255,255,.08);
+    --tint:#6b86d6; --tint2:#1a2233; --glow:rgba(120,150,225,.5); --glowsoft:rgba(120,150,225,.18);
+    --edge:rgba(255,255,255,.13);
+    --mission:#37d99a; --missionsoft:rgba(55,217,154,.5);
+    --clock-font:"Oxanium","Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{font:14px/1.45 "Oxanium","Segoe UI",system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(1100px 700px at 50% -5%, #1b2336, transparent 55%),
+      radial-gradient(900px 500px at 82% 112%, #221731, transparent 60%), #06080c;
+    -webkit-font-smoothing:antialiased;padding:22px 0 90px;}
+  h1{font-size:19px;font-weight:700;margin:0;text-align:center;letter-spacing:.01em}
+  .hint{color:var(--muted);font-size:12.5px;max-width:760px;text-align:center;margin:8px auto 0}
+  .hint b{color:#cdd6e6}
+  .controls{display:flex;gap:9px;justify-content:center;margin:18px auto 4px}
+  .tgl{border:1px solid var(--hair);background:#161b25;color:var(--ink);padding:7px 14px;border-radius:9px;
+    font:600 12px/1 "Oxanium",system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+  .tgl:hover{background:#1e2533}
+  .tgl.active{background:var(--tint);border-color:transparent;box-shadow:0 0 16px var(--glowsoft)}
+
+  .panel{width:min(960px,96vw);margin:30px auto 0}
+  .panel > .cap{display:flex;align-items:baseline;gap:10px;margin:0 4px 10px}
+  .panel .cap .tag{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#fff}
+  .panel .cap .desc{font-size:11.5px;color:var(--muted)}
+  .variant-minimal  .cap .tag{color:#aab4c8}
+  .variant-subtle   .cap .tag{color:#ffe6b5}
+  .variant-cinematic .cap .tag{color:#ff9a6f}
+
+  /* ---- glass bar (trimmed to the mission-relevant cells) ---- */
+  .bar{position:relative;border-radius:15px;overflow:hidden;isolation:isolate;
+    background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 34%),
+      linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.20)),
+      linear-gradient(98deg, var(--tint2), #080b11 64%);
+    border:1px solid var(--edge);
+    box-shadow:0 26px 70px rgba(0,0,0,.6), 0 2px 0 rgba(0,0,0,.4),
+      inset 0 1px 0 rgba(255,255,255,.16), inset 0 -12px 28px rgba(0,0,0,.38), 0 0 46px var(--glowsoft);
+    backdrop-filter:blur(16px) saturate(1.15);transition:box-shadow .6s ease}
+  .main{display:flex;align-items:stretch;height:60px}
+  .cell{display:flex;align-items:center;padding:0 14px;position:relative}
+  .cell + .cell::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:1px;
+    background:linear-gradient(180deg,transparent,var(--hair) 22%,var(--hair) 78%,transparent)}
+  .lbl{font-size:7.5px;letter-spacing:.22em;text-transform:uppercase;color:#69748c;font-weight:700}
+
+  /* ---- the dock mission button (bullseye + live count) ---- */
+  .cell.dock{gap:6px}
+  .c{font:650 11px/1 "Oxanium",system-ui,sans-serif;padding:6px 10px;border-radius:7px;cursor:pointer;white-space:nowrap;
+    color:var(--ink);background:transparent;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px}
+  .c.sep{color:var(--muted)}
+  .c svg{width:13px;height:13px;display:block}
+  .c.mission.on{color:#10141d;background:var(--mission);box-shadow:0 0 12px var(--missionsoft);font-weight:800}
+  .c.mission .cnt{font-variant-numeric:tabular-nums;font-weight:800}
+
+  /* ---- stretch meter (ported from the live HUD) ---- */
+  .meter{flex:1 1 auto;gap:13px}
+  .track{display:flex;gap:6px;align-items:center;height:18px}
+  .hourgrp{display:flex;gap:1.5px;align-items:center;transition:gap .34s ease}
+  .pip{position:relative;flex:0 0 auto;width:5px;height:13px;border-radius:1.5px;background:rgba(255,255,255,.12);
+    transition:width .34s cubic-bezier(.34,1.4,.4,1),height .34s cubic-bezier(.34,1.4,.4,1),
+      border-radius .3s ease,opacity .24s ease,background .35s ease,box-shadow .35s ease}
+  .hourgrp.curr .pip{width:13px;height:13px;border-radius:2px}
+  .pip.fill{background:var(--tint);box-shadow:0 0 5px var(--glowsoft)}
+  .pip.head{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.9);z-index:2}
+
+  /* mission base: inactive hours become thin individual rectangles, not a dot */
+  .hourgrp:not(.curr){gap:2px}
+  .hourgrp:not(.curr) .pip{width:3px;height:13px;opacity:.9;border-radius:1.5px}
+  .pip:not(.fill):not(.head):not(.mleft){background:rgba(255,255,255,.10);opacity:.5}
+  .pip.mleft{background:var(--mission);opacity:1}
+  .pip.mtarget{background:#fff}
+
+  /* ---- the slot-reel countdown + objective chip ---- */
+  .missline{display:flex;align-items:center;gap:9px;margin-left:4px}
+  .mc-ico{display:grid;place-items:center;color:var(--mission);width:18px;height:18px}
+  .mc-ico svg{width:17px;height:17px}
+  /* glow as drop-shadow on the un-clipped wrapper, NOT a text-shadow on the
+     overflow-hidden reel (which clips the halo into a square behind the digit) */
+  .mreelwrap{display:inline-flex;align-items:baseline;gap:5px;filter:drop-shadow(0 0 9px var(--missionsoft))}
+  .mreel{display:inline-block;height:1em;overflow:hidden;font-family:var(--clock-font);font-weight:800;font-size:30px;
+    line-height:1;color:#fff;font-variant-numeric:tabular-nums;width:.62em;text-align:center}
+  .mstrip{display:flex;flex-direction:column;transition:transform .5s cubic-bezier(.2,.85,.22,1)}
+  .mstrip span{height:1em;line-height:1em}
+  .mc-unit{font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#8a93a6;font-weight:800}
+  .mc-chip{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;letter-spacing:.02em;
+    color:#ffe6b5;background:linear-gradient(180deg,rgba(255,196,84,.18),rgba(255,196,84,.05));
+    border:1px solid rgba(255,196,84,.30);border-radius:99px;padding:3px 9px;white-space:nowrap}
+  .mc-chip svg{width:10px;height:10px}
+  .mc-done{display:none;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#8af0bd;font-size:13px;
+    text-shadow:0 0 16px rgba(103,211,155,.8)}
+
+  /* ============================================================
+     VARIANT 1 — MINIMAL: clean amber, no glow/pulse, flat target,
+     no entry/exit motion or celebration. Icon + reel + lit rects.
+     ============================================================ */
+  .variant-minimal .pip.mtarget{box-shadow:0 0 6px var(--missionsoft);outline:1.5px solid var(--mission);outline-offset:1px}
+
+  /* ============================================================
+     VARIANT 2 — POLISHED-SUBTLE: soft accent glow, a checkered
+     finish pennant on the target, a gently breathing readout.
+     No red urgency, no celebration stamp.
+     ============================================================ */
+  .variant-subtle .pip.mleft{box-shadow:0 0 6px var(--missionsoft)}
+  .variant-subtle .pip.mtarget{box-shadow:0 0 12px var(--mission);outline:1.5px solid var(--mission);outline-offset:1px}
+  .variant-subtle .pip.mtarget::after{content:"";position:absolute;left:50%;bottom:100%;margin-bottom:3px;width:10px;height:7px;
+    transform:translateX(-.5px);border:.5px solid rgba(255,255,255,.65);border-radius:1px;
+    background:conic-gradient(#fff 25%,#1a1a1a 0 50%,#fff 0 75%,#1a1a1a 0)0 0/5px 3.5px;
+    box-shadow:0 0 6px var(--missionsoft)}
+  .variant-subtle .pip.mtarget::before{content:"";position:absolute;left:50%;bottom:100%;width:1px;height:6px;background:rgba(255,255,255,.6)}
+  .variant-subtle .missline{animation:breathe 3.2s ease-in-out infinite}
+  @keyframes breathe{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 7px var(--missionsoft))}}
+
+  /* ============================================================
+     VARIANT 3 — CINEMATIC: entry cascade (rects unfurl), red-shift
+     + heartbeat urgency as the count runs low, per-stretch tick-down
+     flares, and a "TARGET REACHED" celebration stamp.
+     ============================================================ */
+  .variant-cinematic .pip.mleft{box-shadow:0 0 7px var(--missionsoft)}
+  .variant-cinematic .pip.mtarget{box-shadow:0 0 14px var(--mission);outline:1.5px solid var(--mission);outline-offset:1px}
+  .variant-cinematic .pip.mtarget::after{content:"";position:absolute;left:50%;bottom:100%;margin-bottom:3px;width:10px;height:7px;
+    transform-origin:left bottom;animation:flagwave 1.6s ease-in-out infinite;border:.5px solid rgba(255,255,255,.7);border-radius:1px;
+    background:conic-gradient(#fff 25%,#1a1a1a 0 50%,#fff 0 75%,#1a1a1a 0)0 0/5px 3.5px;box-shadow:0 0 8px var(--mission)}
+  .variant-cinematic .pip.mtarget::before{content:"";position:absolute;left:50%;bottom:100%;width:1px;height:6px;background:rgba(255,255,255,.7)}
+  @keyframes flagwave{0%,100%{transform:translateX(-.5px) rotate(0)}50%{transform:translateX(-.5px) rotate(-7deg)}}
+  /* travelling shimmer across the to-go rectangles */
+  .variant-cinematic .pip.mleft{position:relative;overflow:hidden}
+  .variant-cinematic .pip.mleft::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(180deg,transparent,rgba(255,255,255,.7),transparent);
+    transform:translateY(-120%);animation:rainsweep 2.4s linear infinite}
+  @keyframes rainsweep{0%{transform:translateY(-120%)}60%,100%{transform:translateY(120%)}}
+  /* per-stretch tick-down flare on the just-passed stretch */
+  .variant-cinematic .pip.flare{animation:flare .55s cubic-bezier(.34,1.5,.5,1)}
+  @keyframes flare{0%{box-shadow:0 0 18px var(--mission);transform:scaleY(1.4);background:#fff}100%{}}
+  /* entry cascade — inactive rects unfurl from collapsed dots */
+  .variant-cinematic.cascade .hourgrp:not(.curr) .pip{animation:unfurl .5s both cubic-bezier(.34,1.5,.4,1);animation-delay:calc(var(--i,0)*26ms)}
+  @keyframes unfurl{0%{width:0;opacity:0;border-radius:99px}100%{}}
+  /* heartbeat urgency: amber → red, the readout and to-go rects pulse faster */
+  .variant-cinematic.urgent{--mission:#ff7a4d;--missionsoft:rgba(255,122,77,.55)}
+  .variant-cinematic.final{--mission:#ff4d4d;--missionsoft:rgba(255,77,77,.6)}
+  .variant-cinematic.urgent .missline{animation:heartbeat 1s ease-in-out infinite}
+  .variant-cinematic.final  .missline{animation:heartbeat .62s ease-in-out infinite}
+  @keyframes heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.12)}28%{transform:scale(1)}42%{transform:scale(1.07)}}
+  .variant-cinematic.urgent .bar{box-shadow:0 26px 70px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.16),0 0 50px var(--missionsoft)}
+  /* celebration */
+  .variant-cinematic.reached .missline > *:not(.mc-done){display:none}
+  .variant-cinematic.reached .mc-done{display:inline-flex;align-items:center;gap:7px;animation:stamp .6s cubic-bezier(.34,1.6,.5,1)}
+  .variant-cinematic.reached .mc-ico{display:grid;color:#8af0bd}
+  @keyframes stamp{0%{transform:scale(1.6);opacity:0}55%{transform:scale(.94)}100%{transform:scale(1);opacity:1}}
+  .reached .pip.head{background:#8af0bd;box-shadow:0 0 16px rgba(103,211,155,.95)}
+
+  /* shared "reached" digit recolour for subtle/minimal (no stamp, just a tint) */
+  .variant-subtle.reached .mreel,.variant-minimal.reached .mreel{color:#8af0bd}
+  .variant-subtle.reached .mreelwrap,.variant-minimal.reached .mreelwrap{filter:drop-shadow(0 0 11px rgba(103,211,155,.7))}
+
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+  <h1>Mission Mode — pick an animation intensity</h1>
+  <p class="hint">All three use the chosen <b>bullseye</b> identity and the <b>slot-reel countdown</b>. Inactive hours no longer collapse to a dot — each stretch is an individual rectangle, with the ones still to go before the target lit in accent (count them), the target flagged, and the rest faint. The bars run a synced loop so you can compare the motion. <b>Minimal</b> is calmest, <b>Cinematic</b> is the most dramatic.</p>
+
+  <div class="controls">
+    <button class="tgl active" id="playBtn">⏸ Pause</button>
+    <button class="tgl" id="restartBtn">↺ Restart</button>
+  </div>
+
+  <!-- ============ VARIANT 1: MINIMAL ============ -->
+  <div class="panel variant variant-minimal" data-variant="minimal">
+    <div class="cap"><span class="tag">Minimal</span><span class="desc">Clean accent, no glow/pulse, flat target marker, no entry or celebration motion.</span></div>
+    <div class="bar"><div class="main">
+      <div class="cell dock"><span class="c sep">+ Stretch</span><span class="c mission on"></span></div>
+      <div class="cell meter"><div class="track"></div></div>
+      <div class="cell"><div class="missline"></div></div>
+    </div></div>
+  </div>
+
+  <!-- ============ VARIANT 2: POLISHED-SUBTLE ============ -->
+  <div class="panel variant variant-subtle" data-variant="subtle">
+    <div class="cap"><span class="tag">Polished-subtle</span><span class="desc">Soft accent glow, a checkered finish pennant on the target, a gently breathing readout. No red, no celebration.</span></div>
+    <div class="bar"><div class="main">
+      <div class="cell dock"><span class="c sep">+ Stretch</span><span class="c mission on"></span></div>
+      <div class="cell meter"><div class="track"></div></div>
+      <div class="cell"><div class="missline"></div></div>
+    </div></div>
+  </div>
+
+  <!-- ============ VARIANT 3: CINEMATIC ============ -->
+  <div class="panel variant variant-cinematic" data-variant="cinematic">
+    <div class="cap"><span class="tag">Cinematic</span><span class="desc">Entry cascade, travelling shimmer, red-shift + heartbeat urgency as it runs low, per-stretch flares, and a “TARGET REACHED” stamp.</span></div>
+    <div class="bar"><div class="main">
+      <div class="cell dock"><span class="c sep">+ Stretch</span><span class="c mission on"></span></div>
+      <div class="cell meter"><div class="track"></div></div>
+      <div class="cell"><div class="missline"></div></div>
+    </div></div>
+  </div>
+
+<script>
+  // ---- inline icons (Font Awesome paths, kept local so the preview needs no network) ----
+  const ICON = {
+    // fa-solid fa-bullseye
+    bullseye: `<svg viewBox="0 0 512 512" fill="currentColor"><path d="M448 256A192 192 0 1 0 64 256a192 192 0 1 0 384 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm256 80a80 80 0 1 0 0-160 80 80 0 1 0 0 160zm0-224a144 144 0 1 1 0 288 144 144 0 1 1 0-288zM224 256a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"/></svg>`,
+    // fa-solid fa-flag-checkered
+    flag: `<svg viewBox="0 0 448 512" fill="currentColor"><path d="M32 0C49.7 0 64 14.3 64 32l0 16 69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 27 448 41.9 448 65l0 263.4c0 12.1-6.8 23.2-17.7 28.6l-9.5 4.8c-46.3 23.2-100.8 23.2-147.1 0c-35.1-17.6-75.4-22-113.5-12.5L64 384l0 96c0 17.7-14.3 32-32 32s-32-14.3-32-32L0 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9 0-65.5L64 121.6l0 65.5zm128-29.3l51.1-9.3c-12.8-4.3-25.1-9.9-36.9-16.6l-14.2 7.1 0 18.8zm84 53.1c11.7 6.7 24.1 12.3 36.9 16.6l-46.9 8.6 10-25.2zm64 13.9l64-13.9 0-65.5-64 14.7 0 64.7zM196.9 80.3l-4.9 .9 0 65.4 14.2-7.1c-3.2-1.8-6.3-3.8-9.3-5.9zM320 121.6l0 65.5 64-13.9 0-65.5-64 13.9z"/></svg>`,
+    // fa-solid fa-forward-step (next watch)
+    forward: `<svg viewBox="0 0 320 512" fill="currentColor"><path d="M52.5 440.6c-9.5 7.9-22.8 9.7-34.1 4.4S0 428.4 0 416L0 96C0 83.6 7.2 72.3 18.4 67s24.5-3.6 34.1 4.4L224 214.3l0-118.3c0-17.7 14.3-32 32-32l32 0c17.7 0 32 14.3 32 32l0 320c0 17.7-14.3 32-32 32l-32 0c-17.7 0-32-14.3-32-32l0-118.3L52.5 440.6z"/></svg>`,
+  };
+
+  const TOTAL = 36, GROUPS = 6, PER = 6;
+  const START = 10, TARGET = 19;            // 9 stretches to go at the start of each loop
+
+  // Build the DOM for one panel and return its handles.
+  function buildPanel(panel){
+    const track = panel.querySelector('.track');
+    const pips = [];
+    for (let h=0; h<GROUPS; h++){
+      const g = document.createElement('div'); g.className='hourgrp';
+      for (let p=0; p<PER; p++){ const e=document.createElement('div'); e.className='pip'; g.appendChild(e); pips.push(e); }
+      track.appendChild(g);
+    }
+    // dock mission button
+    const btn = panel.querySelector('.c.mission');
+    btn.innerHTML = `${ICON.bullseye}<span>Mission</span><b class="cnt"></b>`;
+    // readout
+    const missline = panel.querySelector('.missline');
+    missline.innerHTML = `
+      <span class="mc-ico">${ICON.bullseye}</span>
+      <span class="mreelwrap"><span class="mreel"><span class="mstrip"></span></span><span class="mc-unit">to go</span></span>
+      <span class="mc-chip">${ICON.flag}<span>Reach the gate</span></span>
+      <span class="mc-done">${ICON.flag}<span>Target reached</span></span>`;
+    const strip = missline.querySelector('.mstrip');
+    for (let n=0;n<10;n++){ const d=document.createElement('span'); d.textContent=n; strip.appendChild(d); }
+    return { panel, track, pips, strip, cnt: btn.querySelector('.cnt'), prevHead: START };
+  }
+
+  function setReel(strip, val){ strip.style.transform = `translateY(-${Math.max(0,Math.min(9,val))}em)`; }
+
+  function render(P, head, reached){
+    const left = Math.max(0, TARGET - head);
+    const cinematic = P.panel.dataset.variant === 'cinematic';
+    P.pips.forEach((p, idx) => {
+      const isHead = idx === head;
+      const upcoming = !reached && idx > head;
+      const mleft = upcoming && idx <= TARGET;
+      const mtarget = upcoming && idx === TARGET;
+      p.classList.toggle('fill', idx < head);
+      p.classList.toggle('head', isHead);
+      p.classList.toggle('mleft', mleft);
+      p.classList.toggle('mtarget', mtarget);
+      p.style.setProperty('--i', idx);                       // cascade stagger index
+    });
+    P.track.querySelectorAll('.hourgrp').forEach((g,h)=> g.classList.toggle('curr', h === Math.floor(head/6)));
+    setReel(P.strip, left);
+    P.cnt.textContent = left;
+    // urgency (cinematic only)
+    P.panel.classList.toggle('urgent', cinematic && left>0 && left<=3);
+    P.panel.classList.toggle('final',  cinematic && left===1);
+    P.panel.classList.toggle('reached', reached);
+    // per-stretch tick-down flare on the stretch that was just passed
+    if (cinematic && !reached && head > P.prevHead){
+      const flared = P.pips[head-1];
+      if (flared){ flared.classList.remove('flare'); void flared.offsetWidth; flared.classList.add('flare'); }
+    }
+    P.prevHead = head;
+  }
+
+  function cascade(P){
+    if (P.panel.dataset.variant !== 'cinematic') return;
+    P.panel.classList.remove('cascade'); void P.panel.offsetWidth; P.panel.classList.add('cascade');
+    setTimeout(()=>P.panel.classList.remove('cascade'), 700);
+  }
+
+  const panels = [...document.querySelectorAll('.panel')].map(buildPanel);
+  let head = START, playing = true, timer = null;
+
+  function reset(){ head = START; panels.forEach(P=>{ P.prevHead = START; render(P, head, false); cascade(P); }); }
+  function step(){
+    if (head >= TARGET){
+      panels.forEach(P=>render(P, TARGET, true));     // arrive → celebration
+      pause(); setTimeout(()=>{ reset(); if (wantPlay) play(); }, 1700);
+      return;
+    }
+    head++;
+    panels.forEach(P=>render(P, head, false));
+  }
+
+  let wantPlay = true;
+  function play(){ playing=true; wantPlay=true; clearInterval(timer); timer=setInterval(step, 1150); playBtn.textContent='⏸ Pause'; }
+  function pause(){ playing=false; clearInterval(timer); playBtn.textContent='▶ Play'; }
+
+  const playBtn = document.getElementById('playBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  playBtn.addEventListener('click', ()=>{ if(playing){ wantPlay=false; pause(); } else play(); });
+  restartBtn.addEventListener('click', ()=>{ reset(); if(!playing){ /* stay paused */ } });
+
+  reset();
+  play();
+</script>
+</body>
+</html>

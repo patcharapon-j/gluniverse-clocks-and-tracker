@@ -32,6 +32,33 @@ export class TimeEngine {
     return DEFAULT_SHIFT_NAMES;
   }
 
+  /**
+   * Current mission countdown config (world setting). A "mission" pins a target
+   * world time; the HUD then counts the stretches remaining until it. `target`
+   * is an absolute world time in seconds, snapped to a stretch boundary.
+   */
+  static get mission() {
+    const m = getSetting(SETTINGS.mission, null);
+    if (!m || typeof m !== "object") return { active: false, target: 0, label: "", kind: "goal" };
+    return {
+      active: !!m.active,
+      target: Number(m.target) || 0,
+      label: typeof m.label === "string" ? m.label : "",
+      // "goal" = count down to reaching a target; "deadline" = a time limit.
+      kind: m.kind === "deadline" ? "deadline" : "goal"
+    };
+  }
+
+  /** Resolve calendar components to a stretch-snapped world time (no mutation). */
+  static componentsToWorldTime(components) {
+    const cal = this.calendar;
+    if (typeof cal?.componentsToTime !== "function") return null;
+    const month = components.month ?? 0;
+    const dayOfMonth = components.dayOfMonth ?? 0;
+    const resolved = { ...components, month, dayOfMonth, day: this.dayOfYear(month, dayOfMonth) };
+    return M.snapToStretch(cal.componentsToTime(resolved));
+  }
+
   /** Day-of-year (0-based) for a calendar position, using month lengths. */
   static dayOfYear(monthIndex, dayOfMonth0) {
     const months = this.calendar?.months?.values ?? [];
@@ -121,6 +148,27 @@ export class TimeEngine {
     const absDay = Math.floor(worldTime / M.SECONDS_PER_DAY);
     const moonPhase = ((Math.floor(((absDay % 28) / 28) * 8)) % 8 + 8) % 8;
 
+    // Mission countdown: stretches remaining until the pinned target, plus where
+    // the target falls within the current shift (so the meter can flag it). All
+    // derived from absolute stretch indices so it's day/shift-agnostic.
+    const mission = this.mission;
+    let missionState = { active: false, kind: "goal", label: "", stretchesLeft: 0, reached: false, targetStretchInShift: -1 };
+    if (mission.active) {
+      const absStretch = M.stretchIndexFromSeconds(worldTime);
+      const targetAbs = M.stretchIndexFromSeconds(mission.target);
+      const left = targetAbs - absStretch;
+      const shiftStartAbs = absStretch - t.stretchInShift;
+      missionState = {
+        active: true,
+        kind: mission.kind,
+        label: mission.label,
+        target: mission.target,
+        stretchesLeft: Math.max(0, left),
+        reached: left <= 0,
+        targetStretchInShift: targetAbs - shiftStartAbs
+      };
+    }
+
     return {
       worldTime,
       isGM: game.user?.isGM ?? false,
@@ -136,6 +184,8 @@ export class TimeEngine {
       clock: M.formatClock(t),
 
       watch: { key: watch.key, name: names[t.shiftIndex] ?? watch.key, ...watch },
+
+      mission: missionState,
 
       date: {
         day: dayNum,

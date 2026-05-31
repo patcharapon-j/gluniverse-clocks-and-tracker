@@ -221,7 +221,7 @@ export class TrackerStore {
     const content =
       `<div class="glct-chatcard${empty ? " empty" : ""}">
         <div class="glct-cc-head">
-          <span class="glct-cc-ico">&#9858;</span>
+          <span class="glct-cc-ico"><i class="fa-solid fa-dice"></i></span>
           <span class="glct-cc-title"><span class="n">${foundry.utils.escapeHTML(tracker.name ?? "Pool")}</span>` +
           `<span class="s">${game.i18n.localize("GLCT.tracker.types.pool")} · d${size} · ${game.i18n.format("GLCT.tracker.dropLE", { n: discard })}</span></span>
         </div>

@@ -11,6 +11,7 @@ A premium, tactile in-game **calendar and time HUD** for Foundry VTT, built on F
 - **Top-bar HUD** — a polished, hideable bar anchored to the top of the screen. Drag to reposition, click the grip to collapse to a compact dual-ring readout.
 - **Year Zero–style time model** — each day is 4 **shifts** (*Night / Dawn / Day / Dusk Watch*) of 6 hours; each hour is 6 **stretches** of 10 minutes. The HUD shows the active shift, the current hour, and stretch progress as tactile pips and a dual ring.
 - **Shift-level (watch) mode** — when stretch-by-stretch detail is more than your table needs, the GM flips a world-wide toggle on the HUD dock: the HH:MM clock and stretch meter step aside and a 4-quadrant **watch dial** promotes the current shift to hero, with a light sweep and a sweeping pointer animating the change. Time still advances and stores in stretches under the hood (so effect expiry and other modules are unaffected); only the display changes, and players see the simpler view too. The **GM keeps a compact exact-time readout** (clock + a slim stretch-progress bar) beside the dial, so nothing is lost. Set the default in module settings.
+- **Mission mode** — pin a deadline and the stretch meter becomes a countdown. The GM sets a target either as a number of **stretches from now** or an **exact date & time** (with an optional label like *"Reach the gate"*). Inactive hours stop collapsing into a single dot — every stretch stays individually visible as a thin vertical rectangle, with the stretches still to go before the target lit in an amber accent (so players can literally count them), the target stretch flagged as a finish line, and a prominent *"N stretches to go"* readout. The active hour keeps its full pips. Players see the same adapted meter; the GM clears it from the same **🎯 Mission** dock button.
 - **Slot-reel clock** — digits spin into place like a slot machine when time changes.
 - **Animated time passage** — advancing an hour or a shift visibly *ticks* forward one stretch at a time; day-or-larger jumps snap instantly.
 - **Custom calendars** — GM-editable calendar config supporting any month/weekday/season layout, leap years, and intercalary months. Ships with **Gregorian**, **Golarion** (Pathfinder), and **Harptos** (Forgotten Realms) presets. Import/export as JSON.
@@ -53,6 +54,7 @@ This always installs the latest release. Then enable **GLUniverse — Clocks & T
 | Toggle watch / stretch view (GM) | The **Watch view / Stretch view** button on the dock (or set the default in module settings) |
 | Advance one stretch (GM) | `Alt+]` |
 | Set an exact date/time (GM) | Set-time button on the dock |
+| Start / clear a mission countdown (GM) | The **🎯 Mission** button on the dock |
 | Open the calendar | `Alt+C`, or click the event chip |
 | Manage events (GM) | From the calendar view → Manage Events |
 | Toggle the tracker dock | `Alt+R`, or the checklist button in the scene controls |

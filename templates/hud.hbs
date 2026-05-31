@@ -58,6 +58,11 @@
       <div class="cell meter">
         <div class="track" data-track></div>
         <span class="rem"><span data-rem></span></span>
+        <span class="missline" data-missline>
+          <span class="mc-ico"><i class="fa-solid fa-bullseye goal-ic"></i><i class="fa-solid fa-hourglass-half dl-ic"></i></span>
+          <span class="mc-reelwrap"><span class="mc-reel" data-missreel></span><span class="mc-unit" data-missunit></span></span>
+          <span class="mc-chip" data-misschip><i class="fa-solid fa-flag-checkered goal-ic"></i><i class="fa-solid fa-hourglass-end dl-ic"></i> <span data-misslabel></span></span>
+        </span>
       </div>
 
       <div class="cell event-cell" data-action="openCalendar">
@@ -75,9 +80,10 @@
       <span class="c" data-step="hour"    data-action="advance">{{localize 'GLCT.controls.advanceHour'}}</span>
       <span class="c" data-step="shift"   data-action="advance">{{localize 'GLCT.controls.advanceShift'}}</span>
       <span class="c" data-step="day"     data-action="advance">{{localize 'GLCT.controls.advanceDay'}}</span>
-      <span class="c sep" data-action="nextShift">&#8618; {{localize 'GLCT.shifts.0'}}</span>
-      <span class="c sep" data-action="setTime" title="{{localize 'GLCT.controls.setTime'}}">&#8986;</span>
-      <span class="c sep mode" data-action="toggleShiftMode" data-modebtn title="{{localize 'GLCT.controls.shiftModeToggle'}}"></span>
+      <span class="c sep" data-action="nextShift"><i class="fa-solid fa-forward-step"></i> {{localize 'GLCT.shifts.0'}}</span>
+      <span class="c sep ico" data-action="setTime" title="{{localize 'GLCT.controls.setTime'}}"><i class="fa-solid fa-stopwatch"></i></span>
+      <span class="c sep mission" data-action="openMission" data-missionbtn title="{{localize 'GLCT.controls.missionToggle'}}"><i class="fa-solid fa-bullseye goal-ic"></i><i class="fa-solid fa-hourglass-half dl-ic"></i> {{localize 'GLCT.controls.mission'}}<b class="cnt" data-missioncount></b></span>
+      <span class="c sep mode" data-action="toggleShiftMode" data-modebtn title="{{localize 'GLCT.controls.shiftModeToggle'}}"><i class="fa-solid fa-circle-half-stroke"></i> <span data-modetext></span></span>
     </div>
   </div>
   {{/if}}

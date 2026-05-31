@@ -48,6 +48,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       nextShift: GlctHud.prototype._onNextShift,
       setTime: GlctHud.prototype._onSetTime,
       toggleShiftMode: GlctHud.prototype._onToggleShiftMode,
+      openMission: GlctHud.prototype._onOpenMission,
       openCalendar: GlctHud.prototype._onOpenCalendar
     }
   };
@@ -60,6 +61,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _prevShift = null;
   _prevShiftDial = null;
   _reels = [];
+  _missReel = [];
   _ringPies = [];
   _ringSqs = [];
   _dialPies = [];
@@ -170,7 +172,35 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     // slot-reel clocks
     this._reels = [...root.querySelectorAll("[data-reelclock]")].map(host => this._buildClock(host));
 
+    // mission countdown reel (up to 3 digits; leading zeros collapse away)
+    const missHost = root.querySelector("[data-missreel]");
+    this._missReel = missHost ? this._buildMissReel(missHost) : [];
+
     this._built = true;
+  }
+
+  /** Build the mission countdown reel: 3 digit wheels, each a 0-9 strip. */
+  _buildMissReel(host) {
+    host.replaceChildren();
+    const reels = [];
+    for (let i = 0; i < 3; i++) {
+      const r = document.createElement("span"); r.className = "mreel";
+      const s = document.createElement("span"); s.className = "mstrip";
+      for (let n = 0; n < 10; n++) { const d = document.createElement("span"); d.textContent = n; s.appendChild(d); }
+      r.appendChild(s); host.appendChild(r); reels.push({ reel: r, strip: s });
+    }
+    return reels;
+  }
+
+  /** Show `val` on the mission reel, collapsing leading-zero wheels. */
+  _setMissReel(reels, val) {
+    const str = String(Math.max(0, Math.min(999, Math.round(val))));
+    const lead = reels.length - str.length;
+    reels.forEach((o, i) => {
+      const pos = i - lead;
+      if (pos < 0) { o.reel.classList.add("hide"); o.strip.style.transform = "translateY(0)"; }
+      else { o.reel.classList.remove("hide"); o.strip.style.transform = `translateY(-${+str[pos]}em)`; }
+    });
   }
 
   _svg(tag, attrs) {
@@ -253,6 +283,9 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const root = this.element;
     const sm = this.shiftMode;
 
+    // Mission countdown changes how the stretch meter reads (see CSS .mission).
+    root.querySelector(".hud-root")?.classList.toggle("mission", st.mission.active);
+
     // per-shift theming
     root.style.setProperty("--tint", st.watch.tint);
     root.style.setProperty("--tint2", st.watch.tint2);
@@ -275,14 +308,18 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._setText("[data-mo]", `${st.date.monthName} · ${st.date.year}${st.date.yearLabel ? " " + st.date.yearLabel : ""}`);
     this._setText("[data-pilldate]", `${st.date.weekday} ${st.date.day}${st.date.ordinal} · ${st.date.monthAbbr}`);
     this._setText("[data-season]", st.seasonName);
-    this._setText("[data-rem]", game.i18n.format("GLCT.hud.stretchesLeft", { n: st.stretchesLeftInShift }));
+    this._setText("[data-rem]", this._remText(st));
     this._setText("[data-shiftof]", game.i18n.format("GLCT.hud.watchOf", { n: st.shiftIndex + 1, total: SHIFTS_PER_DAY }));
+
+    // mission dock button reflects whether a countdown is running (+ live count)
+    root.querySelector("[data-missionbtn]")?.classList.toggle("on", st.mission.active);
+    this._setText("[data-missioncount]", st.mission.active && !st.mission.reached ? String(st.mission.stretchesLeft) : "");
 
     // shift-mode toggle button reflects the current granularity
     const modeBtn = root.querySelector("[data-modebtn]");
     if (modeBtn) {
       modeBtn.classList.toggle("on", sm);
-      modeBtn.textContent = game.i18n.localize(sm ? "GLCT.controls.shiftModeOn" : "GLCT.controls.shiftModeOff");
+      this._setText("[data-modetext]", game.i18n.localize(sm ? "GLCT.controls.shiftModeOn" : "GLCT.controls.shiftModeOff"));
     }
 
     // slot-reel clocks
@@ -299,6 +336,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     });
 
     // stretch meter pips
+    const m = st.mission;
     let headPip = null;
     root.querySelectorAll(".hourgrp .pip").forEach((p, idx) => {
       const dist = Math.abs(idx - st.stretchInShift);
@@ -307,9 +345,42 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       const isHead = idx === st.stretchInShift;
       p.classList.toggle("head", isHead);
       if (isHead) headPip = p;
+
+      // Mission mode: highlight the stretches still to go before the target so
+      // they can be counted, and flag the target stretch itself. A target beyond
+      // this shift (targetStretchInShift > 35) lights every upcoming stretch.
+      const upcoming = m.active && !m.reached && idx > st.stretchInShift;
+      const inLeft = upcoming && m.targetStretchInShift >= 0 && idx <= m.targetStretchInShift;
+      p.classList.toggle("mleft", inLeft);
+      p.classList.toggle("mtarget", upcoming && idx === m.targetStretchInShift);
     });
     if (headPip) { headPip.classList.remove("pop"); void headPip.offsetWidth; headPip.classList.add("pop"); }
-    root.querySelectorAll(".hourgrp").forEach((g, h) => g.classList.toggle("curr", h === st.hourOfShift));
+
+    // Only the active hour and the hours up to the target stay expanded; fully
+    // past hours and hours beyond the target collapse to a single dot, as in
+    // normal mode. `mexpand` marks an hour for the thin-rectangle treatment.
+    const targetHour = m.targetStretchInShift >= 0 ? Math.floor(m.targetStretchInShift / STRETCHES_PER_HOUR) : -1;
+    root.querySelectorAll(".hourgrp").forEach((g, h) => {
+      g.classList.toggle("curr", h === st.hourOfShift);
+      const expand = m.active && !m.reached && h > st.hourOfShift &&
+        (m.targetStretchInShift >= STRETCHES_PER_SHIFT || h <= targetHour);
+      g.classList.toggle("mexpand", expand);
+    });
+
+    // mission countdown readout (the rich meter-side reel + objective chip)
+    const hud = root.querySelector(".hud-root");
+    hud?.classList.toggle("mreached", m.active && m.reached);
+    hud?.classList.toggle("kind-deadline", m.active && m.kind === "deadline");
+    if (m.active) {
+      this._setMissReel(this._missReel, m.stretchesLeft);
+      const dl = m.kind === "deadline";
+      const unitKey = m.reached ? (dl ? "GLCT.hud.missionExpiredShort" : "GLCT.hud.missionReachedShort")
+                                : (dl ? "GLCT.hud.missionUnitDeadline" : "GLCT.hud.missionUnit");
+      this._setText("[data-missunit]", game.i18n.localize(unitKey));
+      this._setText("[data-misslabel]", m.label || "");
+      const chip = root.querySelector("[data-misschip]");
+      if (chip) chip.style.display = m.label ? "" : "none";
+    }
 
     // dual-ring (collapsed pill); in shift mode, fade past quadrants too
     this._ringPies.forEach((p, i) => {
@@ -338,7 +409,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     // the exact clock plus a slim stretch-progress bar.
     this._setText("[data-mtclock]", st.clock);
     root.querySelectorAll("[data-mtfill]").forEach(f => { f.style.width = `${st.shiftProgress * 100}%`; });
-    this._setText("[data-mtrem]", game.i18n.format("GLCT.hud.stretchesLeft", { n: st.stretchesLeftInShift }));
+    this._setText("[data-mtrem]", this._remText(st));
 
     this._ringSqs.forEach((rect, idx) => {
       const inHour = Math.floor(idx / 6) === st.hourOfShift;
@@ -371,6 +442,19 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _setText(sel, txt) {
     this.element.querySelectorAll(sel).forEach(e => { e.textContent = txt; });
+  }
+
+  /**
+   * The "stretches remaining" caption. Normally counts to the end of the current
+   * shift; when a mission is running it counts down to the pinned target (and
+   * appends the mission's label, if any) or announces it once reached.
+   */
+  _remText(st) {
+    const m = st.mission;
+    if (!m.active) return game.i18n.format("GLCT.hud.stretchesLeft", { n: st.stretchesLeftInShift });
+    if (m.reached) return game.i18n.localize(m.kind === "deadline" ? "GLCT.hud.missionExpired" : "GLCT.hud.missionReached");
+    const base = game.i18n.format("GLCT.hud.missionLeft", { n: m.stretchesLeft });
+    return m.label ? `${base} · ${m.label}` : base;
   }
 
   /* ---------------------------- interactions ----------------------------- */
@@ -466,6 +550,11 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!game.user.isGM) return;
     const { SetTimeDialog } = await import("./set-time-dialog.js");
     SetTimeDialog.show();
+  }
+  async _onOpenMission() {
+    if (!game.user.isGM) return;
+    const { MissionDialog } = await import("./mission-dialog.js");
+    MissionDialog.show();
   }
   async _onToggleShiftMode() {
     if (!game.user.isGM) return;

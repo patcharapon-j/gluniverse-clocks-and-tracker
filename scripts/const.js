@@ -24,6 +24,7 @@ export const SETTINGS = {
   events: "events",                // Array: events & holidays
   shiftNames: "shiftNames",        // Array<string>: customizable watch names
   shiftLevelMode: "shiftLevelMode",// Boolean (world): track/display at shift granularity only
+  mission: "mission",              // Object (world): {active,target,label} stretch-countdown to a target time
   hudCollapsed: "hudCollapsed",    // Boolean (client)
   hudPosition: "hudPosition",      // Object {top,cx} centre-anchored (client; legacy {top,left} migrated)
   sceneTint: "sceneTint",          // Boolean: tint canvas with the active shift

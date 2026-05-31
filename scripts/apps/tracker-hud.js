@@ -160,12 +160,12 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     if (isGM) {
       const tools = this._el("div", "tools");
       const eye = this._el("button", "eye" + (t.visibleToPlayers ? "" : " off"));
-      eye.innerHTML = t.visibleToPlayers ? "&#128065;" : "&#128584;";
+      eye.innerHTML = t.visibleToPlayers ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
       eye.title = game.i18n.localize("GLCT.tracker.toggleVis");
       eye.addEventListener("click", e => { e.stopPropagation(); TrackerStore.setVisibility(t.id, !t.visibleToPlayers); });
-      const edit = this._el("button"); edit.innerHTML = "&#9881;"; edit.title = game.i18n.localize("GLCT.tracker.edit");
+      const edit = this._el("button"); edit.innerHTML = '<i class="fa-solid fa-gear"></i>'; edit.title = game.i18n.localize("GLCT.tracker.edit");
       edit.addEventListener("click", e => { e.stopPropagation(); this._editTracker(t.id); });
-      const del = this._el("button"); del.innerHTML = "&#10005;"; del.title = game.i18n.localize("GLCT.tracker.delete");
+      const del = this._el("button"); del.innerHTML = '<i class="fa-solid fa-xmark"></i>'; del.title = game.i18n.localize("GLCT.tracker.delete");
       del.addEventListener("click", e => { e.stopPropagation(); this._deleteTracker(t.id); });
       tools.append(eye, edit, del);
       row.appendChild(tools);
@@ -403,7 +403,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const dice = this._el("div", "dice");
     const cnt = this._el("div", "cnt");
     c.append(nm, dice, cnt);
-    if (t.playerRoll) { const p = this._el("div", "play"); p.innerHTML = "&#9654;"; p.title = game.i18n.localize("GLCT.tracker.playersMayRoll"); c.append(p); }
+    if (t.playerRoll) { const p = this._el("div", "play"); p.innerHTML = '<i class="fa-solid fa-play"></i>'; p.title = game.i18n.localize("GLCT.tracker.playersMayRoll"); c.append(p); }
     let last = -1;
     const paint = (tr) => {
       nm.textContent = tr.name ?? "";

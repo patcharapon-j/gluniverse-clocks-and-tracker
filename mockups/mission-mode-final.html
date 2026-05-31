@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mission Mode — Final (Goal vs Deadline)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@200..800&display=swap');
+  :root{
+    --ink:#eef1f7; --muted:#98a2b6; --hair:rgba(255,255,255,.08); --edge:rgba(255,255,255,.13);
+    --mission:#37d99a; --missionsoft:rgba(55,217,154,.45);
+    --clock-font:"Oxanium","Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{font:14px/1.45 "Oxanium","Segoe UI",system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(1100px 700px at 50% -5%, #1b2336, transparent 55%),
+      radial-gradient(900px 500px at 82% 112%, #221731, transparent 60%), #06080c;padding:22px 0 90px;}
+  h1{font-size:19px;font-weight:700;margin:0;text-align:center}
+  .hint{color:var(--muted);font-size:12.5px;max-width:820px;text-align:center;margin:8px auto 0}
+  .hint b{color:#cdd6e6}
+  .controls{display:flex;gap:9px;justify-content:center;margin:18px auto 4px}
+  .tgl{border:1px solid var(--hair);background:#161b25;color:var(--ink);padding:7px 14px;border-radius:9px;
+    font:600 12px/1 "Oxanium",system-ui,sans-serif;cursor:pointer}
+  .tgl:hover{background:#1e2533}
+
+  #mm .panel{width:min(1000px,96vw);margin:28px auto 0}
+  #mm .cap{display:flex;align-items:baseline;gap:10px;margin:0 4px 10px}
+  #mm .cap .tag{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+  #mm .panel.goal .tag{color:#7ff0c0} #mm .panel.dl .tag{color:#ff9a8f}
+  #mm .cap .desc{font-size:11.5px;color:var(--muted)}
+  #mm .legend{display:flex;gap:16px;justify-content:center;margin:8px auto 0;color:var(--muted);font-size:11px;flex-wrap:wrap}
+  #mm .legend i{display:inline-block;vertical-align:middle;margin-right:5px}
+  #mm .lg-dot{width:8px;height:8px;border-radius:99px}
+  #mm .lg-rect{width:3px;height:11px;border-radius:1.5px}
+  #mm .lg-sq{width:11px;height:11px;border-radius:2px}
+
+  .bar{position:relative;border-radius:15px;overflow:hidden;isolation:isolate;
+    background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 34%),
+      linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.20)),
+      linear-gradient(98deg, var(--tint2), #080b11 64%);
+    border:1px solid var(--edge);
+    box-shadow:0 26px 70px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.16),inset 0 -12px 28px rgba(0,0,0,.38),0 0 46px var(--glowsoft);
+    backdrop-filter:blur(16px) saturate(1.15)}
+  .main{display:flex;align-items:stretch;height:60px}
+  .cell{display:flex;align-items:center;padding:0 14px;position:relative}
+  .cell + .cell::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:1px;
+    background:linear-gradient(180deg,transparent,var(--hair) 22%,var(--hair) 78%,transparent)}
+  .lbl{font-size:7.5px;letter-spacing:.22em;text-transform:uppercase;color:#69748c;font-weight:700}
+
+  /* dock mission button */
+  .cell.dock{gap:6px}
+  .c{font:650 11px/1 "Oxanium",system-ui,sans-serif;padding:6px 10px;border-radius:7px;white-space:nowrap;
+    color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+  .c.sep{color:var(--muted)}
+  .c svg{width:13px;height:13px;display:block;fill:currentColor}
+  .mission.on .c.missbtn{color:#06140e;background:var(--mission);box-shadow:0 0 12px var(--missionsoft);font-weight:800}
+  .kind-deadline.on .c.missbtn{color:#fff}
+  .c.missbtn .cnt{font-variant-numeric:tabular-nums;font-weight:800}
+
+  /* meter + pips (ported from the live HUD) */
+  .meter{flex:1 1 auto}
+  .track{display:flex;gap:6px;align-items:center;height:18px}
+  .hourgrp{display:flex;gap:1.5px;align-items:center;transition:gap .34s ease}
+  .pip{position:relative;flex:0 0 auto;width:5px;height:13px;border-radius:1.5px;background:rgba(255,255,255,.12);
+    transition:width .34s cubic-bezier(.34,1.4,.4,1),height .34s cubic-bezier(.34,1.4,.4,1),
+      border-radius .3s ease,opacity .24s ease,background .35s ease,box-shadow .35s ease}
+  .hourgrp.curr .pip{width:13px;height:13px;border-radius:2px}
+  .pip.fill{background:var(--tint);box-shadow:0 0 5px var(--glowsoft)}
+  .pip.head{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.9);z-index:2}
+  /* base collapse: non-current hours fold to a single dot */
+  .hourgrp:not(.curr){gap:0}
+  .hourgrp:not(.curr) .pip{width:0;height:8px;opacity:0;border-radius:99px;transition-delay:0s !important}
+  .hourgrp:not(.curr) .pip:first-child{width:8px;opacity:1}
+  /* mission: ONLY the to-go window (.mexpand) expands into thin rectangles */
+  .mission .hourgrp.mexpand{gap:2px}
+  .mission .hourgrp.mexpand .pip{width:3px;height:13px;opacity:.9;border-radius:1.5px;transition-delay:0s !important}
+  .mission :is(.curr,.mexpand) .pip:not(.fill):not(.head):not(.mleft){background:rgba(255,255,255,.10);opacity:.55}
+  .mission .pip.mleft{background:var(--mission);opacity:1;box-shadow:0 0 6px var(--missionsoft)}
+  .mission .pip.mtarget{background:#fff;box-shadow:0 0 12px var(--mission);outline:1.5px solid var(--mission);outline-offset:1px}
+  /* finish pennant on the target */
+  .mission .pip.mtarget::before{content:"";position:absolute;left:50%;bottom:100%;width:1px;height:6px;background:rgba(255,255,255,.6)}
+  .mission .pip.mtarget::after{content:"";position:absolute;left:50%;bottom:100%;margin-bottom:5px;width:10px;height:7px;
+    transform:translateX(-.5px);border:.5px solid rgba(255,255,255,.6);border-radius:1px;
+    background:conic-gradient(#fff 25%,#1a1a1a 0 50%,#fff 0 75%,#1a1a1a 0) 0 0/5px 3.5px;box-shadow:0 0 6px var(--missionsoft)}
+  /* deadline recolour + solid warning pennant */
+  .kind-deadline{--mission:#ff5a52;--missionsoft:rgba(255,90,82,.45)}
+  .kind-deadline .pip.mtarget::after{background:var(--mission);border-color:rgba(255,255,255,.5)}
+
+  /* readout: bullseye/hourglass + slot-reel + objective chip */
+  .missline{display:inline-flex;align-items:center;gap:10px;margin-left:14px}
+  .mc-ico{display:grid;place-items:center;color:var(--mission);animation:mbreathe 3.4s ease-in-out infinite}
+  .mc-ico svg{width:16px;height:16px;fill:currentColor}
+  .mreelwrap{display:inline-flex;align-items:baseline;gap:5px;filter:drop-shadow(0 0 9px var(--missionsoft));transition:filter .4s ease}
+  .mc-reel{display:inline-flex;font-family:var(--clock-font);font-weight:800;font-size:26px;line-height:1;color:#fff;font-variant-numeric:tabular-nums}
+  .mreel{display:inline-block;height:1em;overflow:hidden;width:.6em;text-align:center;transition:width .3s ease}
+  .mreel.hide{width:0}
+  .mstrip{display:flex;flex-direction:column;transition:transform .5s cubic-bezier(.2,.85,.22,1)}
+  .mstrip span{height:1em;line-height:1em}
+  .mc-unit{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#8a93a6;font-weight:800;align-self:flex-end;padding-bottom:3px}
+  .mc-chip{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;
+    color:color-mix(in srgb,var(--mission) 55%,#fff);
+    background:linear-gradient(180deg,color-mix(in srgb,var(--mission) 18%,transparent),color-mix(in srgb,var(--mission) 5%,transparent));
+    border:1px solid color-mix(in srgb,var(--mission) 36%,transparent);border-radius:99px;padding:3px 9px;white-space:nowrap}
+  .mc-chip svg{width:10px;height:10px;fill:currentColor}
+  @keyframes mbreathe{0%,100%{opacity:.82;filter:drop-shadow(0 0 0 transparent)}50%{opacity:1;filter:drop-shadow(0 0 7px var(--missionsoft))}}
+  /* arrival */
+  .goal.mreached .mc-reel{color:#8af0bd} .goal.mreached .mreelwrap{filter:drop-shadow(0 0 10px rgba(103,211,155,.6))}
+  .goal.mreached .mc-ico{color:#8af0bd} .goal.mreached .pip.head{background:#8af0bd;box-shadow:0 0 14px rgba(103,211,155,.9)}
+  .dl.mreached .mc-reel{color:#ff7a6f} .dl.mreached .pip.head{background:var(--mission);box-shadow:0 0 14px var(--missionsoft)}
+
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="mm">
+  <h1>Mission Mode — final behaviour</h1>
+  <p class="hint">Two mission <b>types</b>: <b>Goal</b> (emerald — reach a target) and <b>Deadline</b> (red — time runs out). Both share the polished-subtle look. Note the smarter collapse: <b>only the active hour and the hours up to the target stay expanded</b>; fully-past hours and hours after the target fold back to a single dot, exactly like normal mode. Synced 13→0 loop.</p>
+  <div class="legend">
+    <span><span class="lg-dot" style="background:#8aa0d8;display:inline-block"></span> past hour (collapsed)</span>
+    <span><span class="lg-sq" style="background:#fff;display:inline-block"></span> active hour (squares)</span>
+    <span><span class="lg-rect" style="background:var(--mission);display:inline-block"></span> to-go stretch (count these)</span>
+    <span><span class="lg-dot" style="background:rgba(255,255,255,.18);display:inline-block"></span> after target (collapsed)</span>
+  </div>
+
+  <div class="controls"><button class="tgl" id="playBtn">⏸ Pause</button><button class="tgl" id="restartBtn">↺ Restart</button></div>
+
+  <!-- GOAL -->
+  <div class="panel goal" data-kind="goal" style="--tint:#e0a368;--tint2:#2f2316;--glow:rgba(230,170,100,.5);--glowsoft:rgba(230,170,100,.18)">
+    <div class="cap"><span class="tag">Goal</span><span class="desc">Emerald accent shown over a <b>Dawn watch</b> (amber) bar — no clash. Checkered finish pennant; quiet green confirmation on arrival.</span></div>
+    <div class="bar mission on"><div class="main">
+      <div class="cell dock"><span class="c sep">+ Stretch</span><span class="c sep missbtn"></span></div>
+      <div class="cell meter"><div class="track"></div><span class="missline"></span></div>
+    </div></div>
+  </div>
+
+  <!-- DEADLINE -->
+  <div class="panel dl kind-deadline" data-kind="deadline" style="--tint:#6fb8d8;--tint2:#162a36;--glow:rgba(110,184,216,.5);--glowsoft:rgba(110,184,216,.18)">
+    <div class="cap"><span class="tag">Deadline</span><span class="desc">Red accent + hourglass over a <b>Day watch</b> (cyan) bar. Solid warning pennant; ominous “Time’s up” on expiry.</span></div>
+    <div class="bar mission kind-deadline on"><div class="main">
+      <div class="cell dock"><span class="c sep">+ Stretch</span><span class="c sep missbtn"></span></div>
+      <div class="cell meter"><div class="track"></div><span class="missline"></span></div>
+    </div></div>
+  </div>
+</div>
+
+<script>
+  const ICON = {
+    bullseye:`<svg viewBox="0 0 512 512"><path d="M448 256A192 192 0 1 0 64 256a192 192 0 1 0 384 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm256 80a80 80 0 1 0 0-160 80 80 0 1 0 0 160zm0-224a144 144 0 1 1 0 288 144 144 0 1 1 0-288zM224 256a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"/></svg>`,
+    hourglass:`<svg viewBox="0 0 384 512"><path d="M0 32C0 14.3 14.3 0 32 0L352 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l0 11c0 42.4-16.9 83.1-46.9 113.1L237.3 256l67.9 67.9c30 30 46.9 70.7 46.9 113.1l0 11c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 512c-17.7 0-32-14.3-32-32s14.3-32 32-32l0-11c0-42.4 16.9-83.1 46.9-113.1L146.7 256 78.9 188.1C48.9 158.1 32 117.4 32 75l0-11C14.3 64 0 49.7 0 32zM96 75c0 25.5 10.1 49.9 28.1 67.9L192 210.7l67.9-67.9c18-18 28.1-42.4 28.1-67.9l0-11L96 64l0 11zm0 362l192 0 0-11c0-25.5-10.1-49.9-28.1-67.9L192 301.3l-67.9 67.9c-18 18-28.1 42.4-28.1 67.9l0 11z"/></svg>`,
+    flag:`<svg viewBox="0 0 448 512"><path d="M32 0C49.7 0 64 14.3 64 32l0 16 69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 27 448 41.9 448 65l0 263.4c0 12.1-6.8 23.2-17.7 28.6l-9.5 4.8c-46.3 23.2-100.8 23.2-147.1 0c-35.1-17.6-75.4-22-113.5-12.5L64 384l0 96c0 17.7-14.3 32-32 32s-32-14.3-32-32L0 32C0 14.3 14.3 0 32 0z"/></svg>`,
+  };
+  const HOUR=6, TOTAL=36, START=8, TARGET=21;     // past hour, active hour, to-go window, after-target hour
+
+  function build(panel){
+    const kind = panel.dataset.kind, dl = kind==='deadline';
+    const track = panel.querySelector('.track'); const pips=[];
+    for(let h=0;h<6;h++){ const g=document.createElement('div');g.className='hourgrp';
+      for(let p=0;p<6;p++){const e=document.createElement('div');e.className='pip';g.appendChild(e);pips.push(e);} track.appendChild(g); }
+    const ico = dl?ICON.hourglass:ICON.bullseye, fic = dl?ICON.hourglass:ICON.flag;
+    panel.querySelector('.missbtn').innerHTML = `${ico}<span>Mission</span><b class="cnt"></b>`;
+    panel.querySelector('.missline').innerHTML =
+      `<span class="mc-ico">${ico}</span>
+       <span class="mreelwrap"><span class="mc-reel"><span class="mstrip"></span></span><span class="mc-unit"></span></span>
+       <span class="mc-chip">${fic}<span>${dl?'Gate closes':'Reach the gate'}</span></span>`;
+    const strip = panel.querySelector('.mstrip');
+    for(let n=0;n<10;n++){const d=document.createElement('span');d.textContent=n;strip.appendChild(d);}
+    return {panel,bar:panel.querySelector('.bar'),groups:[...track.querySelectorAll('.hourgrp')],pips,strip,
+      unit:panel.querySelector('.mc-unit'),cnt:panel.querySelector('.cnt'),kind};
+  }
+  function setReel(strip,v){ strip.style.transform=`translateY(-${Math.max(0,Math.min(9,v))}em)`; }
+
+  function render(P, head, reached){
+    const left=Math.max(0,TARGET-head), dl=P.kind==='deadline';
+    P.pips.forEach((p,idx)=>{
+      const upcoming=!reached&&idx>head;
+      p.classList.toggle('fill',idx<head);
+      p.classList.toggle('head',idx===head);
+      p.classList.toggle('mleft',upcoming&&idx<=TARGET);
+      p.classList.toggle('mtarget',upcoming&&idx===TARGET);
+    });
+    const curHour=Math.floor(head/HOUR), targetHour=Math.floor(TARGET/HOUR);
+    P.groups.forEach((g,h)=>{
+      g.classList.toggle('curr',h===curHour);
+      g.classList.toggle('mexpand',!reached && h>curHour && h<=targetHour);
+    });
+    setReel(P.strip,left); P.cnt.textContent=left;
+    P.unit.textContent = reached ? (dl?"Time's up":"Reached") : (dl?"left":"to go");
+    P.panel.classList.toggle('mreached',reached);
+  }
+
+  const panels=[...document.querySelectorAll('#mm .panel')].map(build);
+  let head=START, playing=true, timer=null, wantPlay=true;
+  function reset(){ head=START; panels.forEach(P=>render(P,head,false)); }
+  function step(){
+    if(head>=TARGET){ panels.forEach(P=>render(P,TARGET,true)); clearInterval(timer);
+      setTimeout(()=>{ reset(); if(wantPlay){play();} }, 1800); return; }
+    head++; panels.forEach(P=>render(P,head,false));
+  }
+  function play(){ playing=true;wantPlay=true;clearInterval(timer);timer=setInterval(step,1100);playBtn.textContent='⏸ Pause'; }
+  function pause(){ playing=false;clearInterval(timer);playBtn.textContent='▶ Play'; }
+  const playBtn=document.getElementById('playBtn'), restartBtn=document.getElementById('restartBtn');
+  playBtn.addEventListener('click',()=>{ if(playing){wantPlay=false;pause();}else play(); });
+  restartBtn.addEventListener('click',()=>reset());
+  reset(); play();
+</script>
+</body>
+</html>

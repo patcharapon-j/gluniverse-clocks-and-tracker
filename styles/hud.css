@@ -21,6 +21,9 @@
   --ink:#eef1f7; --muted:#98a2b6; --hair:rgba(255,255,255,.08);
   --tint:#6b86d6; --tint2:#1a2233; --glow:rgba(120,150,225,.5); --glowsoft:rgba(120,150,225,.18);
   --edge:rgba(255,255,255,.13);
+  /* Mission accent — emerald, chosen to stay clear of every shift tint
+     (blue/amber/cyan/purple), the amber event chip, and the red hazard. */
+  --mission:#37d99a; --missionsoft:rgba(55,217,154,.45);
   --clock-font:"Oxanium","Segoe UI",system-ui,sans-serif;
   background:none;border:none;box-shadow:none;padding:0;margin:0;
   width:auto;height:auto;min-width:0;min-height:0;
@@ -124,6 +127,85 @@
 #glct-hud .pip.pop{animation:glct-pop .5s cubic-bezier(.34,1.56,.5,1)}
 @keyframes glct-pop{0%{transform:scaleY(.5);opacity:.4}45%{transform:scaleY(1.32);opacity:1;box-shadow:0 0 20px #fff}100%{transform:scaleY(1)}}
 
+/* ===== mission countdown mode (polished-subtle) =====
+   The GM pins a target (a time, or N stretches from now). Inactive hours stop
+   collapsing to a single dot: every stretch stays individually visible as a thin
+   vertical rectangle, so the row reads as a literal countdown. The active hour
+   keeps its full squares. The stretches still to go before the target are lit in
+   the mission accent (the ones you count) with a soft glow; stretches beyond the
+   target stay faint; the target stretch gets a bright marker with a checkered
+   finish pennant. A slot-reel beside the meter shows the remaining count, and the
+   bullseye gently breathes. No red urgency, no celebration stamp. */
+#glct-hud .hud-root.mission .meter{flex-direction:row;align-items:center;gap:14px;max-width:460px}
+#glct-hud .hud-root.mission .meter .rem{display:none}
+#glct-hud .hud-root.mission .pip{position:relative}
+/* Only the active hour and the hours up to the target (.mexpand) show individual
+   thin rectangles. Fully-past hours and hours beyond the target keep the normal
+   collapse-to-a-single-dot behaviour (base rules below this block still apply to
+   them, since they're neither .curr nor .mexpand). */
+#glct-hud .hud-root.mission .hourgrp.mexpand{gap:2px}
+#glct-hud .hud-root.mission .hourgrp.mexpand .pip{
+  width:3px;height:13px;opacity:.9;border-radius:1.5px;pointer-events:auto;transition-delay:0s !important}
+/* within the expanded window, stretches past the target read as faint */
+#glct-hud .hud-root.mission :is(.curr,.mexpand) .pip:not(.fill):not(.head):not(.mleft){background:rgba(255,255,255,.10);opacity:.55}
+/* stretches still to go before the target — the countable ones, softly lit */
+#glct-hud .hud-root.mission .pip.mleft{background:var(--mission);opacity:1;box-shadow:0 0 6px var(--missionsoft)}
+/* the target stretch: a bright finish marker */
+#glct-hud .hud-root.mission .pip.mtarget{background:#fff;box-shadow:0 0 12px var(--mission);
+  outline:1.5px solid var(--mission);outline-offset:1px}
+/* checkered finish pennant flying above the target stretch */
+#glct-hud .hud-root.mission .pip.mtarget::before{content:"";position:absolute;left:50%;bottom:100%;
+  width:1px;height:6px;background:rgba(255,255,255,.6)}
+#glct-hud .hud-root.mission .pip.mtarget::after{content:"";position:absolute;left:50%;bottom:100%;margin-bottom:5px;
+  width:10px;height:7px;transform:translateX(-.5px);border:.5px solid rgba(255,255,255,.6);border-radius:1px;
+  background:conic-gradient(#fff 25%,#1a1a1a 0 50%,#fff 0 75%,#1a1a1a 0) 0 0/5px 3.5px;box-shadow:0 0 6px var(--missionsoft)}
+
+/* the meter-side readout: bullseye + slot-reel count + objective chip */
+#glct-hud .missline{display:none}
+#glct-hud .hud-root.mission .meter .missline{display:inline-flex;align-items:center;gap:10px}
+#glct-hud .missline .mc-ico{display:grid;place-items:center;color:var(--mission);animation:glct-mbreathe 3.4s ease-in-out infinite}
+#glct-hud .missline .mc-ico i{font-size:15px}
+/* glow as a drop-shadow on this un-clipped wrapper (never a text-shadow on the
+   overflow-hidden reel, which would clip the halo into a square). */
+#glct-hud .missline .mc-reelwrap{display:inline-flex;align-items:baseline;gap:5px;
+  filter:drop-shadow(0 0 9px var(--missionsoft));transition:filter .4s ease}
+#glct-hud .missline .mc-reel{display:inline-flex;font-family:var(--clock-font);font-weight:800;font-size:26px;
+  line-height:1;color:#fff;font-variant-numeric:tabular-nums}
+#glct-hud .missline .mreel{display:inline-block;height:1em;overflow:hidden;width:.6em;text-align:center;transition:width .3s ease}
+#glct-hud .missline .mreel.hide{width:0}
+#glct-hud .missline .mstrip{display:flex;flex-direction:column;transition:transform .5s cubic-bezier(.2,.85,.22,1)}
+#glct-hud .missline .mstrip span{height:1em;line-height:1em}
+#glct-hud .missline .mc-unit{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#8a93a6;font-weight:800;align-self:flex-end;padding-bottom:3px}
+#glct-hud .missline .mc-chip{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;letter-spacing:.02em;
+  color:color-mix(in srgb,var(--mission) 55%,#fff);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--mission) 18%,transparent),color-mix(in srgb,var(--mission) 5%,transparent));
+  border:1px solid color-mix(in srgb,var(--mission) 36%,transparent);border-radius:99px;padding:3px 9px;white-space:nowrap}
+#glct-hud .missline .mc-chip i{font-size:9px}
+@keyframes glct-mbreathe{0%,100%{opacity:.82;filter:drop-shadow(0 0 0 transparent)}50%{opacity:1;filter:drop-shadow(0 0 7px var(--missionsoft))}}
+
+/* GOAL arrival: a quiet green confirmation (no stamp in the subtle profile) */
+#glct-hud .hud-root.mission.mreached:not(.kind-deadline) .mc-reel{color:#8af0bd}
+#glct-hud .hud-root.mission.mreached:not(.kind-deadline) .mc-reelwrap{filter:drop-shadow(0 0 10px rgba(103,211,155,.6))}
+#glct-hud .hud-root.mission.mreached:not(.kind-deadline) .mc-ico{color:#8af0bd}
+#glct-hud .hud-root.mission.mreached:not(.kind-deadline) .pip.head{background:#8af0bd;box-shadow:0 0 14px rgba(103,211,155,.9)}
+
+/* ----- DEADLINE variant: a warning-red recolour of the same subtle profile.
+   A single var swap repaints the rects, reel glow, chip and dock button; the
+   finish pennant becomes a solid warning flag and arrival stays ominous. ----- */
+#glct-hud .hud-root.kind-deadline{--mission:#ff5a52; --missionsoft:rgba(255,90,82,.45)}
+#glct-hud .hud-root.kind-deadline .pip.mtarget::after{background:var(--mission);border-color:rgba(255,255,255,.5)}
+#glct-hud .hud-root.mission.kind-deadline.mreached .mc-reel{color:#ff7a6f}
+#glct-hud .hud-root.mission.kind-deadline.mreached .pip.head{background:var(--mission);box-shadow:0 0 14px var(--missionsoft)}
+/* swap the goal/deadline glyphs (dock button + readout icon + chip icon) */
+#glct-hud .dl-ic{display:none}
+#glct-hud .hud-root.kind-deadline .goal-ic{display:none}
+#glct-hud .hud-root.kind-deadline .dl-ic{display:inline-block}
+
+/* watch-mode minitime tint + dock button lit state */
+#glct-hud .hud-root.mission.shift-mode .shift-hero .mt-rem{color:var(--mission)}
+#glct-hud .gmdock .c.mission.on{color:#06140e;background:var(--mission);box-shadow:0 0 10px var(--missionsoft);font-weight:700}
+#glct-hud .hud-root.kind-deadline .gmdock .c.mission.on{color:#fff}
+
 #glct-hud .event-cell{justify-content:center;max-width:180px}
 #glct-hud .event{font-size:9.5px;color:#ffe6b5;background:linear-gradient(180deg,rgba(255,196,84,.16),rgba(255,196,84,.05));
   border:1px solid rgba(255,196,84,.30);border-radius:99px;padding:4px 9px;display:flex;gap:5px;align-items:center;
@@ -143,6 +225,13 @@
 #glct-hud .c:active{transform:translateY(1px)}
 #glct-hud .c.rw{box-shadow:inset 0 0 0 1.5px rgba(255,140,120,.7)}
 #glct-hud .c.sep{color:var(--muted)}
+/* dock buttons carry Font Awesome glyphs now — align icon + label on one row */
+#glct-hud .c{display:inline-flex;align-items:center;gap:5px;line-height:1}
+#glct-hud .c i{font-size:11px;line-height:1}
+#glct-hud .c.ico{padding:5px 8px}
+#glct-hud .c.ico i{font-size:12.5px}
+#glct-hud .c.mission .cnt{font-variant-numeric:tabular-nums;font-weight:800;font-size:10px}
+#glct-hud .c.mission .cnt:empty{display:none}
 #glct-hud .player-hidden{display:none}
 
 /* ===== collapsed pill with shift+stretch dual-ring ===== */
@@ -442,16 +531,22 @@
 #glct-tracker-hud .t-point .chev.down{color:#ff8a7e;animation:glct-floatDown .6s ease}
 @keyframes glct-floatUp{0%{opacity:0;transform:translateY(3px)}30%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
 @keyframes glct-floatDown{0%{opacity:0;transform:translateY(-3px)}30%{opacity:1}100%{opacity:0;transform:translateY(6px)}}
-#glct-tracker-hud .t-point .pval{flex:none;display:inline-flex;align-items:flex-end;gap:1px}
+/* Glow lives here (no overflow:hidden) as a drop-shadow, not as a text-shadow on
+   the clipped .reeldig — otherwise the coloured halo is clipped to the reel's
+   box and reads as a square behind the number. drop-shadow follows the glyphs. */
+#glct-tracker-hud .t-point .pval{flex:none;display:inline-flex;align-items:flex-end;gap:1px;
+  filter:drop-shadow(0 0 9px var(--glowsoft));transition:filter .35s ease}
 #glct-tracker-hud .reeldig{display:inline-flex;align-items:center;height:1.05em;overflow:hidden;font-family:var(--clock-font);font-weight:800;
-  font-size:25px;font-variant-numeric:tabular-nums;line-height:1.05;color:#fff;text-shadow:0 0 16px var(--glowsoft);flex:none;
-  transition:color .35s ease,text-shadow .35s ease}
+  font-size:25px;font-variant-numeric:tabular-nums;line-height:1.05;color:#fff;flex:none;
+  transition:color .35s ease}
 /* Faint "/max" cap shown after the value when a maximum is configured. */
 #glct-tracker-hud .t-point .reelmax{font-family:var(--clock-font);font-weight:700;font-size:12px;line-height:1;color:#fff;opacity:.26;
   font-variant-numeric:tabular-nums;padding-bottom:.18em}
 /* Value text recolours at the ceiling / floor (floor is colour-only — min isn't shown). */
-#glct-tracker-hud .t-point .pval.at-max .reeldig{color:var(--good);text-shadow:0 0 16px rgba(103,211,155,.55)}
-#glct-tracker-hud .t-point .pval.at-min .reeldig{color:#ff8a7e;text-shadow:0 0 16px rgba(224,88,79,.5)}
+#glct-tracker-hud .t-point .pval.at-max .reeldig{color:var(--good)}
+#glct-tracker-hud .t-point .pval.at-max{filter:drop-shadow(0 0 10px rgba(103,211,155,.6))}
+#glct-tracker-hud .t-point .pval.at-min .reeldig{color:#ff8a7e}
+#glct-tracker-hud .t-point .pval.at-min{filter:drop-shadow(0 0 10px rgba(224,88,79,.55))}
 #glct-tracker-hud .reeldig .reel{display:inline-block;height:1.05em;width:.62em;overflow:hidden;text-align:center}
 #glct-tracker-hud .reeldig .strip{display:flex;flex-direction:column;transition:transform .5s cubic-bezier(.2,.85,.22,1)}
 #glct-tracker-hud .reeldig .strip span{height:1.05em;line-height:1.05em}
