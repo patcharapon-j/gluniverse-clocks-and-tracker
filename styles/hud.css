@@ -139,12 +139,15 @@
 #glct-hud .hud-root.mission .meter{flex-direction:row;align-items:center;gap:14px;max-width:460px}
 #glct-hud .hud-root.mission .meter .rem{display:none}
 #glct-hud .hud-root.mission .pip{position:relative}
-/* inactive hours: thin individual rectangles instead of the collapsed dot */
-#glct-hud .hud-root.mission .hourgrp:not(.curr){gap:2px}
-#glct-hud .hud-root.mission .hourgrp:not(.curr) .pip{
+/* Only the active hour and the hours up to the target (.mexpand) show individual
+   thin rectangles. Fully-past hours and hours beyond the target keep the normal
+   collapse-to-a-single-dot behaviour (base rules below this block still apply to
+   them, since they're neither .curr nor .mexpand). */
+#glct-hud .hud-root.mission .hourgrp.mexpand{gap:2px}
+#glct-hud .hud-root.mission .hourgrp.mexpand .pip{
   width:3px;height:13px;opacity:.9;border-radius:1.5px;pointer-events:auto;transition-delay:0s !important}
-/* upcoming stretches past the target read as "not yet relevant" — kept faint */
-#glct-hud .hud-root.mission .pip:not(.fill):not(.head):not(.mleft){background:rgba(255,255,255,.10);opacity:.5}
+/* within the expanded window, stretches past the target read as faint */
+#glct-hud .hud-root.mission :is(.curr,.mexpand) .pip:not(.fill):not(.head):not(.mleft){background:rgba(255,255,255,.10);opacity:.55}
 /* stretches still to go before the target — the countable ones, softly lit */
 #glct-hud .hud-root.mission .pip.mleft{background:var(--mission);opacity:1;box-shadow:0 0 6px var(--missionsoft)}
 /* the target stretch: a bright finish marker */
@@ -180,15 +183,28 @@
 #glct-hud .missline .mc-chip i{font-size:9px}
 @keyframes glct-mbreathe{0%,100%{opacity:.82;filter:drop-shadow(0 0 0 transparent)}50%{opacity:1;filter:drop-shadow(0 0 7px var(--missionsoft))}}
 
-/* arrival: a quiet green confirmation (no stamp in the subtle profile) */
-#glct-hud .hud-root.mission.mreached .mc-reel{color:#8af0bd}
-#glct-hud .hud-root.mission.mreached .mc-reelwrap{filter:drop-shadow(0 0 10px rgba(103,211,155,.6))}
-#glct-hud .hud-root.mission.mreached .mc-ico{color:#8af0bd}
-#glct-hud .hud-root.mission.mreached .pip.head{background:#8af0bd;box-shadow:0 0 14px rgba(103,211,155,.9)}
+/* GOAL arrival: a quiet green confirmation (no stamp in the subtle profile) */
+#glct-hud .hud-root.mission.mreached:not(.kind-deadline) .mc-reel{color:#8af0bd}
+#glct-hud .hud-root.mission.mreached:not(.kind-deadline) .mc-reelwrap{filter:drop-shadow(0 0 10px rgba(103,211,155,.6))}
+#glct-hud .hud-root.mission.mreached:not(.kind-deadline) .mc-ico{color:#8af0bd}
+#glct-hud .hud-root.mission.mreached:not(.kind-deadline) .pip.head{background:#8af0bd;box-shadow:0 0 14px rgba(103,211,155,.9)}
+
+/* ----- DEADLINE variant: a warning-red recolour of the same subtle profile.
+   A single var swap repaints the rects, reel glow, chip and dock button; the
+   finish pennant becomes a solid warning flag and arrival stays ominous. ----- */
+#glct-hud .hud-root.kind-deadline{--mission:#ff5a52; --missionsoft:rgba(255,90,82,.45)}
+#glct-hud .hud-root.kind-deadline .pip.mtarget::after{background:var(--mission);border-color:rgba(255,255,255,.5)}
+#glct-hud .hud-root.mission.kind-deadline.mreached .mc-reel{color:#ff7a6f}
+#glct-hud .hud-root.mission.kind-deadline.mreached .pip.head{background:var(--mission);box-shadow:0 0 14px var(--missionsoft)}
+/* swap the goal/deadline glyphs (dock button + readout icon + chip icon) */
+#glct-hud .dl-ic{display:none}
+#glct-hud .hud-root.kind-deadline .goal-ic{display:none}
+#glct-hud .hud-root.kind-deadline .dl-ic{display:inline-block}
 
 /* watch-mode minitime tint + dock button lit state */
 #glct-hud .hud-root.mission.shift-mode .shift-hero .mt-rem{color:var(--mission)}
 #glct-hud .gmdock .c.mission.on{color:#06140e;background:var(--mission);box-shadow:0 0 10px var(--missionsoft);font-weight:700}
+#glct-hud .hud-root.kind-deadline .gmdock .c.mission.on{color:#fff}
 
 #glct-hud .event-cell{justify-content:center;max-width:180px}
 #glct-hud .event{font-size:9.5px;color:#ffe6b5;background:linear-gradient(180deg,rgba(255,196,84,.16),rgba(255,196,84,.05));

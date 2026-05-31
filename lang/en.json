@@ -11,8 +11,11 @@
   "GLCT.hud.gmTimeHint": "GM only — exact time & stretch progress within this watch",
   "GLCT.hud.missionLeft": "{n} stretches to go",
   "GLCT.hud.missionReached": "Target reached",
+  "GLCT.hud.missionExpired": "Time's up",
   "GLCT.hud.missionUnit": "to go",
+  "GLCT.hud.missionUnitDeadline": "left",
   "GLCT.hud.missionReachedShort": "Reached",
+  "GLCT.hud.missionExpiredShort": "Time's up",
 
   "GLCT.controls.advanceStretch": "+ Stretch",
   "GLCT.controls.advanceHour": "+ Hour",
@@ -29,6 +32,9 @@
 
   "GLCT.mission.title": "Mission Countdown",
   "GLCT.mission.hint": "Pin a target and the stretch meter counts down to it: every stretch between now and the target stays individually visible so players can see exactly how many are left.",
+  "GLCT.mission.typeLabel": "Type",
+  "GLCT.mission.typeGoal": "Goal — reach a target",
+  "GLCT.mission.typeDeadline": "Deadline — time runs out",
   "GLCT.mission.labelField": "Label (optional)",
   "GLCT.mission.labelPlaceholder": "e.g. Reach the gate",
   "GLCT.mission.modeLabel": "Set target by",

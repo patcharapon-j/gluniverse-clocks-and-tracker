@@ -25,10 +25,16 @@ export class MissionDialog {
       .map((m, i) => `<option value="${i}" ${i === c.month ? "selected" : ""}>${m.name}</option>`)
       .join("");
 
+    const dl = cur.kind === "deadline";
     const content = `
       <div class="glct-mission" style="display:flex;flex-direction:column;gap:10px;">
         <p class="glct-trk-pick">${L("GLCT.mission.hint")}</p>
         <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;">
+          <label>${L("GLCT.mission.typeLabel")}</label>
+          <select name="kind">
+            <option value="goal" ${dl ? "" : "selected"}>${L("GLCT.mission.typeGoal")}</option>
+            <option value="deadline" ${dl ? "selected" : ""}>${L("GLCT.mission.typeDeadline")}</option>
+          </select>
           <label>${L("GLCT.mission.labelField")}</label>
           <input type="text" name="label" value="${cur.label ?? ""}" placeholder="${L("GLCT.mission.labelPlaceholder")}">
           <label>${L("GLCT.mission.modeLabel")}</label>
@@ -71,11 +77,12 @@ export class MissionDialog {
         target = snapToStretch(TimeEngine.worldTime) + n * SECONDS_PER_STRETCH;
       }
       if (!Number.isFinite(target)) return;
-      await game.settings.set(MODULE_ID, SETTINGS.mission, { active: true, target, label });
+      const kind = form.kind.value === "deadline" ? "deadline" : "goal";
+      await game.settings.set(MODULE_ID, SETTINGS.mission, { active: true, target, label, kind });
     };
 
     const clearMission = () =>
-      game.settings.set(MODULE_ID, SETTINGS.mission, { active: false, target: 0, label: "" });
+      game.settings.set(MODULE_ID, SETTINGS.mission, { active: false, target: 0, label: "", kind: "goal" });
 
     try {
       await DialogV2.wait({

@@ -388,13 +388,28 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       p.classList.toggle("mtarget", upcoming && idx === m.targetStretchInShift);
     });
     if (headPip) { headPip.classList.remove("pop"); void headPip.offsetWidth; headPip.classList.add("pop"); }
-    root.querySelectorAll(".hourgrp").forEach((g, h) => g.classList.toggle("curr", h === st.hourOfShift));
+
+    // Only the active hour and the hours up to the target stay expanded; fully
+    // past hours and hours beyond the target collapse to a single dot, as in
+    // normal mode. `mexpand` marks an hour for the thin-rectangle treatment.
+    const targetHour = m.targetStretchInShift >= 0 ? Math.floor(m.targetStretchInShift / STRETCHES_PER_HOUR) : -1;
+    root.querySelectorAll(".hourgrp").forEach((g, h) => {
+      g.classList.toggle("curr", h === st.hourOfShift);
+      const expand = m.active && !m.reached && h > st.hourOfShift &&
+        (m.targetStretchInShift >= STRETCHES_PER_SHIFT || h <= targetHour);
+      g.classList.toggle("mexpand", expand);
+    });
 
     // mission countdown readout (the rich meter-side reel + objective chip)
-    root.querySelector(".hud-root")?.classList.toggle("mreached", m.active && m.reached);
+    const hud = root.querySelector(".hud-root");
+    hud?.classList.toggle("mreached", m.active && m.reached);
+    hud?.classList.toggle("kind-deadline", m.active && m.kind === "deadline");
     if (m.active) {
       this._setMissReel(this._missReel, m.stretchesLeft);
-      this._setText("[data-missunit]", game.i18n.localize(m.reached ? "GLCT.hud.missionReachedShort" : "GLCT.hud.missionUnit"));
+      const dl = m.kind === "deadline";
+      const unitKey = m.reached ? (dl ? "GLCT.hud.missionExpiredShort" : "GLCT.hud.missionReachedShort")
+                                : (dl ? "GLCT.hud.missionUnitDeadline" : "GLCT.hud.missionUnit");
+      this._setText("[data-missunit]", game.i18n.localize(unitKey));
       this._setText("[data-misslabel]", m.label || "");
       const chip = root.querySelector("[data-misschip]");
       if (chip) chip.style.display = m.label ? "" : "none";
@@ -470,7 +485,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _remText(st) {
     const m = st.mission;
     if (!m.active) return game.i18n.format("GLCT.hud.stretchesLeft", { n: st.stretchesLeftInShift });
-    if (m.reached) return game.i18n.localize("GLCT.hud.missionReached");
+    if (m.reached) return game.i18n.localize(m.kind === "deadline" ? "GLCT.hud.missionExpired" : "GLCT.hud.missionReached");
     const base = game.i18n.format("GLCT.hud.missionLeft", { n: m.stretchesLeft });
     return m.label ? `${base} · ${m.label}` : base;
   }

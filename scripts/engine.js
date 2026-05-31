@@ -39,11 +39,13 @@ export class TimeEngine {
    */
   static get mission() {
     const m = getSetting(SETTINGS.mission, null);
-    if (!m || typeof m !== "object") return { active: false, target: 0, label: "" };
+    if (!m || typeof m !== "object") return { active: false, target: 0, label: "", kind: "goal" };
     return {
       active: !!m.active,
       target: Number(m.target) || 0,
-      label: typeof m.label === "string" ? m.label : ""
+      label: typeof m.label === "string" ? m.label : "",
+      // "goal" = count down to reaching a target; "deadline" = a time limit.
+      kind: m.kind === "deadline" ? "deadline" : "goal"
     };
   }
 
@@ -150,7 +152,7 @@ export class TimeEngine {
     // the target falls within the current shift (so the meter can flag it). All
     // derived from absolute stretch indices so it's day/shift-agnostic.
     const mission = this.mission;
-    let missionState = { active: false, label: "", stretchesLeft: 0, reached: false, targetStretchInShift: -1 };
+    let missionState = { active: false, kind: "goal", label: "", stretchesLeft: 0, reached: false, targetStretchInShift: -1 };
     if (mission.active) {
       const absStretch = M.stretchIndexFromSeconds(worldTime);
       const targetAbs = M.stretchIndexFromSeconds(mission.target);
@@ -158,6 +160,7 @@ export class TimeEngine {
       const shiftStartAbs = absStretch - t.stretchInShift;
       missionState = {
         active: true,
+        kind: mission.kind,
         label: mission.label,
         target: mission.target,
         stretchesLeft: Math.max(0, left),
