@@ -114,12 +114,15 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
 
-    // shift cells
+    // shift cells: four day-quarter squares; the active one expands and carries
+    // the current watch's name inside it (so no separate name line is needed).
     const shiftsRow = root.querySelector("[data-shifts]");
     if (shiftsRow) {
       shiftsRow.replaceChildren();
       for (let i = 0; i < SHIFTS_PER_DAY; i++) {
-        const d = document.createElement("span"); d.className = "s"; shiftsRow.appendChild(d);
+        const d = document.createElement("span"); d.className = "s";
+        d.appendChild(document.createElement("span")).className = "s-name";
+        shiftsRow.appendChild(d);
       }
     }
 
@@ -328,11 +331,14 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     // moon phase shadow (present in both the watch cell and the shift-mode hero)
     root.querySelectorAll("[data-moon]").forEach(sh => { sh.style.left = `${(st.moonPhase / 7) * 14 - 7}px`; });
 
-    // shift cells
+    // shift cells: the active square expands and shows the watch name inside it
     root.querySelectorAll("[data-shifts] .s").forEach((d, i) => {
-      d.classList.toggle("on", i === st.shiftIndex);
+      const active = i === st.shiftIndex;
+      d.classList.toggle("on", active);
       d.classList.toggle("done", i < st.shiftIndex);
-      if (i === st.shiftIndex) d.style.setProperty("--fill", `${st.shiftProgress * 100}%`);
+      if (active) d.style.setProperty("--fill", `${st.shiftProgress * 100}%`);
+      const nm = d.querySelector(".s-name");
+      if (nm) nm.textContent = active ? st.watch.name : "";
     });
 
     // stretch meter pips
