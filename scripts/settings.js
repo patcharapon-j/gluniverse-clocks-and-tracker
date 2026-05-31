@@ -57,6 +57,15 @@ export function registerSettings() {
     onChange: () => GlctHud.applyShiftMode()
   });
 
+  // Mission countdown (world). GM-set via the HUD dock; players see the same
+  // adapted meter. Stored as {active,target,label}; target is an absolute,
+  // stretch-snapped world time. Repaint the HUD on any change.
+  game.settings.register(MODULE_ID, SETTINGS.mission, {
+    scope: "world", config: false, type: Object,
+    default: { active: false, target: 0, label: "" },
+    onChange: () => GlctHud.refreshState()
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.hudCollapsed, {
     scope: "client", config: false, type: Boolean, default: false
   });

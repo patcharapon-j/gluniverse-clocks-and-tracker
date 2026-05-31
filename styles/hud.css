@@ -21,6 +21,7 @@
   --ink:#eef1f7; --muted:#98a2b6; --hair:rgba(255,255,255,.08);
   --tint:#6b86d6; --tint2:#1a2233; --glow:rgba(120,150,225,.5); --glowsoft:rgba(120,150,225,.18);
   --edge:rgba(255,255,255,.13);
+  --mission:#ffc454; --missionsoft:rgba(255,196,84,.45);
   --clock-font:"Oxanium","Segoe UI",system-ui,sans-serif;
   background:none;border:none;box-shadow:none;padding:0;margin:0;
   width:auto;height:auto;min-width:0;min-height:0;
@@ -123,6 +124,33 @@
 #glct-hud .pip.head{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.9)}
 #glct-hud .pip.pop{animation:glct-pop .5s cubic-bezier(.34,1.56,.5,1)}
 @keyframes glct-pop{0%{transform:scaleY(.5);opacity:.4}45%{transform:scaleY(1.32);opacity:1;box-shadow:0 0 20px #fff}100%{transform:scaleY(1)}}
+
+/* ===== mission countdown mode =====
+   The GM pins a target (a time, or N stretches from now). Inactive hours stop
+   collapsing to a single dot: every stretch stays individually visible as a thin
+   vertical rectangle, so the row reads as a literal countdown. The active hour
+   keeps its full squares. The stretches between now and the target are lit in the
+   mission accent (the ones you count); stretches beyond the target stay faint; the
+   target stretch itself gets a bright finish marker. */
+#glct-hud .hud-root.mission .meter{max-width:380px}
+/* inactive hours: thin individual rectangles instead of the collapsed dot */
+#glct-hud .hud-root.mission .hourgrp:not(.curr){gap:2px}
+#glct-hud .hud-root.mission .hourgrp:not(.curr) .pip{
+  width:3px;height:13px;opacity:.9;border-radius:1.5px;pointer-events:auto;transition-delay:0s !important}
+/* upcoming stretches past the target read as "not yet relevant" — kept faint */
+#glct-hud .hud-root.mission .pip:not(.fill):not(.head):not(.mleft){background:rgba(255,255,255,.10);opacity:.5}
+/* stretches still to go before the target — the countable ones */
+#glct-hud .hud-root.mission .pip.mleft{background:var(--mission);opacity:1;box-shadow:0 0 6px var(--missionsoft)}
+/* the target stretch: a bright finish marker */
+#glct-hud .hud-root.mission .pip.mtarget{background:#fff;box-shadow:0 0 10px var(--mission);
+  outline:1.5px solid var(--mission);outline-offset:1px}
+/* the active hour stays squares; just recolour its mission states (no resizing) */
+#glct-hud .hud-root.mission .hourgrp.curr .pip.mleft{box-shadow:0 0 8px var(--missionsoft)}
+/* emphasise the remaining-count readout */
+#glct-hud .hud-root.mission .meter .rem{color:var(--mission);font-weight:800;letter-spacing:.1em}
+#glct-hud .hud-root.mission.shift-mode .shift-hero .mt-rem{color:var(--mission)}
+/* mission dock button: lit when a countdown is running */
+#glct-hud .gmdock .c.mission.on{color:#10141d;background:var(--mission);box-shadow:0 0 10px var(--missionsoft);font-weight:700}
 
 #glct-hud .event-cell{justify-content:center;max-width:180px}
 #glct-hud .event{font-size:9.5px;color:#ffe6b5;background:linear-gradient(180deg,rgba(255,196,84,.16),rgba(255,196,84,.05));
