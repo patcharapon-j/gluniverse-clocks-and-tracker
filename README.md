@@ -20,8 +20,8 @@ A premium, tactile in-game **calendar and time HUD** for Foundry VTT, built on F
 - **Per-shift theming** — subtle color tint and an optional full-scene glow that shifts with the time of day.
 - **Tracker dock** — a *separate* compact floating HUD where the GM keeps live, at-a-glance trackers and shows them to players (read-only). Six types, each a single tidy row:
   - **Point** — a prominent numeral with a bold label; left-click +1, right-click −1. Optional **min** and **max** bounds clamp the value; when a max is set it shows a faint `/max` after the numeral, and the numeral recolours when the value reaches the ceiling (green) or floor (red, the min itself stays hidden).
-  - **Clock** — a Blades-in-the-Dark segmented progress clock; left-click advances a slice, right-click steps back.
-  - **Resource Pool** — a pool of dice; clicking rolls them and drops any die at or below the discard range, posting a compact chat card and rolling real 3D dice via **Dice So Nice** when installed (the dock count holds until the 3D dice settle). Empty the pool and it shows a bold **EMPTY**. Optionally lets players roll it.
+  - **Clock** — a Blades-in-the-Dark segmented progress clock; left-click advances a slice, right-click steps back. Flag it **ominous (bad clock)** and it turns hazard-red with a dread glow — filling it stamps a red **DOOM** instead of the usual green **FILLED**.
+  - **Resource Pool** — a pool of dice; clicking rolls them and drops any die at or below the discard range, posting a compact chat card and rolling real 3D dice via **Dice So Nice** when installed (the dock count holds until the 3D dice settle). The dock reads like a Point tracker — the **dice remaining** is the hero numeral with a faint `d?` size cap, and a chevron flicks up on a refill, down on a discard. Empty the pool and it shows a bold **EMPTY**. Optionally lets players roll it.
   - **Task** — a row of boxes that fill toward **COMPLETED**, with a title & subtitle.
   - **Hazard** — a doom clock in danger-red with a persistent dread glow & ember flicker.
   - **Separator** — a slim, label-bearing divider to group the dock into sections (purely visual).

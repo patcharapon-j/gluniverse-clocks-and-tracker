@@ -111,7 +111,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _structuralSig(t) {
     return [t.id, t.order, t.type, t.name, t.title, t.subtitle, t.label, t.slices, t.boxes,
-      t.size, t.count, t.discard, t.playerRoll, t.visibleToPlayers].join("|");
+      t.size, t.count, t.discard, t.playerRoll, t.bad, t.visibleToPlayers].join("|");
   }
 
   /** The live value that, when it changes, should pop a compact card open. */
@@ -143,10 +143,13 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Shared row shell: grip (GM) · type body · GM tools · overlay. */
   _buildRow(t) {
     const isGM = game.user.isGM;
-    const row = this._el("div", "trow type-" + t.type + (t.type === "hazard" ? " hazard" : "") + (t.type === "separator" ? " sep" : ""));
+    // A clock flagged `bad` (a hazard clock whose completion is bad news) wears
+    // the same red dread treatment as a hazard tracker.
+    const badClock = t.type === "clock" && t.bad;
+    const row = this._el("div", "trow type-" + t.type + (t.type === "hazard" ? " hazard" : "") + (badClock ? " badclock" : "") + (t.type === "separator" ? " sep" : ""));
     row.dataset.id = t.id;
     if (isGM && !t.visibleToPlayers) row.classList.add("hiddenfromplayers");
-    if (t.type === "hazard") row.appendChild(this._el("div", "haz-scan"));
+    if (t.type === "hazard" || badClock) row.appendChild(this._el("div", "haz-scan"));
 
     if (isGM) {
       const grip = this._el("div", "grip");
@@ -390,66 +393,49 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       frac.innerHTML = `<b>${v}</b>/${slices}`;
       const done = v >= slices;
       c.classList.toggle("complete", done);
-      this._setOverlay(c, done ? "done" : null, game.i18n.localize("GLCT.tracker.filled"));
+      // A bad clock filling up is an ominous event — a red "doom" stamp rather
+      // than the usual green "filled".
+      const bad = !!tr.bad;
+      this._setOverlay(c, done ? (bad ? "doom" : "done") : null,
+        game.i18n.localize(bad ? "GLCT.tracker.doom" : "GLCT.tracker.filled"));
       last = v;
     };
     return { content: c, paint };
   }
 
-  /* ---- POOL (remaining-dice chips; 3D roll handled by Dice So Nice in chat) ---- */
+  /* ---- POOL (point-style remaining count; 3D roll handled by Dice So Nice in chat) ---- */
+  // Reads like a point tracker: the number of dice remaining is the hero, and
+  // the die size is a faint "d?" cap — no per-die chips. A down-chevron flicks
+  // on a discard, an up-chevron on a refill, mirroring the point readout.
   _bodyPool(t) {
     const c = this._el("div", "t-pool");
+    const chev = this._el("div", "chev");
     const nm = this._el("div", "nm", t.name ?? "");
-    const dice = this._el("div", "dice");
-    const cnt = this._el("div", "cnt");
-    c.append(nm, dice, cnt);
+    const val = this._el("div", "pval");
+    const reel = this._el("div", "reeldig");
+    const sizelbl = this._el("div", "reelmax");     // faint "d?" cap, mirroring point's "/max"
+    val.append(reel, sizelbl);
+    c.append(chev, nm, val);
     if (t.playerRoll) { const p = this._el("div", "play"); p.innerHTML = '<i class="fa-solid fa-play"></i>'; p.title = game.i18n.localize("GLCT.tracker.playersMayRoll"); c.append(p); }
-    let last = -1;
+    let last = null;
     const paint = (tr) => {
       nm.textContent = tr.name ?? "";
       const cur = Math.max(0, Math.trunc(Number(tr.current) || 0));
       const size = Math.max(2, Math.trunc(Number(tr.size) || 6));
-      if (cur !== last) this._renderPoolDice(dice, cur, last);
-      cnt.innerHTML = `<b>${cur}</b>d${size}`;
+      this._renderReel(reel, cur, last);
+      sizelbl.textContent = `d${size}`;
+      val.classList.toggle("at-min", cur === 0);     // empty pool reads red, like a point at its floor
+      if (last !== null && cur !== last) {
+        const dir = cur > last ? "up" : "down";
+        chev.textContent = cur > last ? "▲" : "▼";
+        chev.className = "chev";
+        void chev.offsetWidth;
+        chev.className = "chev " + dir;
+      }
       this._setOverlay(c, cur === 0 ? "empty" : null, game.i18n.localize("GLCT.tracker.empty"));
       last = cur;
     };
     return { content: c, paint };
-  }
-
-  _makeDie(animate) {
-    const d = this._el("div", "die" + (animate ? " rollin" : ""));
-    d.appendChild(this._el("span", "dot"));
-    return d;
-  }
-
-  /**
-   * Reconcile the pool's dice chips toward `cur` (capped at 8 + a "+N" tag).
-   * Growth rolls fresh dice in; a discard tumbles the spent dice away before
-   * they're removed, so the count visibly drains rather than snapping.
-   */
-  _renderPoolDice(host, cur, prev) {
-    const MAX = 8;
-    const newN = Math.min(cur, MAX);
-    host.querySelector(".more")?.remove();
-    // Drop any dice still mid-discard from a previous step so counts stay sane.
-    host.querySelectorAll(".die.discarding").forEach(d => d.remove());
-    const dies = [...host.querySelectorAll(".die")];
-    const oldN = dies.length;
-
-    if (prev < 0) {                                   // first paint — no animation
-      host.replaceChildren();
-      for (let i = 0; i < newN; i++) host.appendChild(this._makeDie(false));
-    } else if (cur >= prev) {                          // grew / refilled — roll new dice in
-      for (let i = oldN; i < newN; i++) host.appendChild(this._makeDie(true));
-    } else {                                           // discarded — tumble the spent dice out
-      dies.slice(newN).forEach((d, i) => {
-        d.classList.add("discarding");
-        d.style.animationDelay = `${i * 70}ms`;
-        d.addEventListener("animationend", () => d.remove(), { once: true });
-      });
-    }
-    if (cur > MAX) host.appendChild(this._el("span", "more", `+${cur - MAX}`));
   }
 
   /* ---- TASK (discrete boxes) ---- */
@@ -544,15 +530,17 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
         break;
       }
       case "pool": {
-        const die = this._el("div", "tm-die"); die.appendChild(this._el("span", "dot"));
-        core.appendChild(die);
-        const sub = this._el("div", "tm-sub"); el.appendChild(sub);
+        // Like the point card: the remaining count is the hero, the die size a faint cap.
+        const val = this._el("div", "tm-val big");
+        const sizelbl = this._el("div", "tm-max");
+        core.append(val, sizelbl);
         paint = (tr) => {
           name.textContent = tr.name ?? "";
           const cur = Math.max(0, Math.trunc(Number(tr.current) || 0));
           const size = Math.max(2, Math.trunc(Number(tr.size) || 6));
-          sub.innerHTML = `<b>${cur}</b>d${size}`;
-          el.classList.toggle("empty", cur === 0);
+          val.textContent = String(cur);
+          sizelbl.textContent = `d${size}`;
+          el.classList.toggle("at-min", cur === 0);
         };
         break;
       }

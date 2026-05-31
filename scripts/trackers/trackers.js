@@ -14,7 +14,7 @@ import { MODULE_ID, SETTINGS, SOCKET, HOOKS, TRACKER_TYPES } from "../const.js";
 /** Per-type factory defaults for newly created trackers. */
 const DEFAULTS = {
   point: { name: "Points", value: 0, min: null, max: null },
-  clock: { name: "Clock", slices: 6, value: 0 },
+  clock: { name: "Clock", slices: 6, value: 0, bad: false },
   pool:  { name: "Pool", size: 6, count: 5, discard: 2, current: 5, playerRoll: false },
   task:  { title: "Task", subtitle: "", boxes: 6, value: 0 },
   hazard:{ title: "Hazard", subtitle: "", boxes: 8, value: 0 },
@@ -257,6 +257,7 @@ export class TrackerStore {
       case "clock":
         t.slices = clamp(int(t.slices, 6), 1, 24);
         t.value = clamp(int(t.value), 0, t.slices);
+        t.bad = !!t.bad;
         break;
       case "pool":
         t.size = clamp(int(t.size, 6), 2, 100);

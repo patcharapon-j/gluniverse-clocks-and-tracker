@@ -521,32 +521,47 @@
 #glct-tracker-hud .rovl.done{background:linear-gradient(90deg,rgba(6,26,17,.7),rgba(8,22,15,.55))}
 #glct-tracker-hud .rovl.done .ot{color:#8af0bd;text-shadow:0 0 16px rgba(103,211,155,.9)}
 #glct-tracker-hud .rovl.done.show .ot{animation:glct-stamp .55s cubic-bezier(.34,1.6,.5,1)}
+/* A completed bad clock stamps red "doom" rather than green "filled". */
+#glct-tracker-hud .rovl.doom{background:linear-gradient(90deg,rgba(28,8,8,.74),rgba(20,6,6,.56))}
+#glct-tracker-hud .rovl.doom .ot{color:#ff7a6f;text-shadow:0 0 16px rgba(224,88,79,.9)}
+#glct-tracker-hud .rovl.doom.show .ot{animation:glct-stamp .55s cubic-bezier(.34,1.6,.5,1)}
 @keyframes glct-stamp{0%{transform:scale(1.5);opacity:0}55%{transform:scale(.92)}100%{transform:scale(1);opacity:1}}
 
-/* POINT */
-#glct-tracker-hud .t-point{flex:1;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
-#glct-tracker-hud .t-point .nm{flex:1}
-#glct-tracker-hud .t-point .chev{font-size:10px;width:10px;opacity:0;font-weight:700;flex:none}
-#glct-tracker-hud .t-point .chev.up{color:var(--good);animation:glct-floatUp .6s ease}
-#glct-tracker-hud .t-point .chev.down{color:#ff8a7e;animation:glct-floatDown .6s ease}
+/* POINT + POOL — both read as a hero number with a faint cap. The pool shows
+   the count of dice remaining the same way a point shows its value, with a
+   faint "d?" cap standing in for the "/max" suffix. */
+#glct-tracker-hud .t-point,
+#glct-tracker-hud .t-pool{flex:1;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
+#glct-tracker-hud .t-point .nm,
+#glct-tracker-hud .t-pool .nm{flex:1;min-width:0;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#glct-tracker-hud .t-point .chev,
+#glct-tracker-hud .t-pool .chev{font-size:10px;width:10px;opacity:0;font-weight:700;flex:none}
+#glct-tracker-hud .t-point .chev.up,
+#glct-tracker-hud .t-pool .chev.up{color:var(--good);animation:glct-floatUp .6s ease}
+#glct-tracker-hud .t-point .chev.down,
+#glct-tracker-hud .t-pool .chev.down{color:#ff8a7e;animation:glct-floatDown .6s ease}
 @keyframes glct-floatUp{0%{opacity:0;transform:translateY(3px)}30%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
 @keyframes glct-floatDown{0%{opacity:0;transform:translateY(-3px)}30%{opacity:1}100%{opacity:0;transform:translateY(6px)}}
 /* Glow lives here (no overflow:hidden) as a drop-shadow, not as a text-shadow on
    the clipped .reeldig — otherwise the coloured halo is clipped to the reel's
    box and reads as a square behind the number. drop-shadow follows the glyphs. */
-#glct-tracker-hud .t-point .pval{flex:none;display:inline-flex;align-items:flex-end;gap:1px;
+#glct-tracker-hud .t-point .pval,
+#glct-tracker-hud .t-pool .pval{flex:none;display:inline-flex;align-items:flex-end;gap:1px;
   filter:drop-shadow(0 0 9px var(--glowsoft));transition:filter .35s ease}
 #glct-tracker-hud .reeldig{display:inline-flex;align-items:center;height:1.05em;overflow:hidden;font-family:var(--clock-font);font-weight:800;
   font-size:25px;font-variant-numeric:tabular-nums;line-height:1.05;color:#fff;flex:none;
   transition:color .35s ease}
-/* Faint "/max" cap shown after the value when a maximum is configured. */
-#glct-tracker-hud .t-point .reelmax{font-family:var(--clock-font);font-weight:700;font-size:12px;line-height:1;color:#fff;opacity:.26;
+/* Faint cap shown after the value: "/max" for a point, "d?" for a pool. */
+#glct-tracker-hud .t-point .reelmax,
+#glct-tracker-hud .t-pool .reelmax{font-family:var(--clock-font);font-weight:700;font-size:12px;line-height:1;color:#fff;opacity:.26;
   font-variant-numeric:tabular-nums;padding-bottom:.18em}
 /* Value text recolours at the ceiling / floor (floor is colour-only — min isn't shown). */
 #glct-tracker-hud .t-point .pval.at-max .reeldig{color:var(--good)}
 #glct-tracker-hud .t-point .pval.at-max{filter:drop-shadow(0 0 10px rgba(103,211,155,.6))}
-#glct-tracker-hud .t-point .pval.at-min .reeldig{color:#ff8a7e}
-#glct-tracker-hud .t-point .pval.at-min{filter:drop-shadow(0 0 10px rgba(224,88,79,.55))}
+#glct-tracker-hud .t-point .pval.at-min .reeldig,
+#glct-tracker-hud .t-pool .pval.at-min .reeldig{color:#ff8a7e}
+#glct-tracker-hud .t-point .pval.at-min,
+#glct-tracker-hud .t-pool .pval.at-min{filter:drop-shadow(0 0 10px rgba(224,88,79,.55))}
 #glct-tracker-hud .reeldig .reel{display:inline-block;height:1.05em;width:.62em;overflow:hidden;text-align:center}
 #glct-tracker-hud .reeldig .strip{display:flex;flex-direction:column;transition:transform .5s cubic-bezier(.2,.85,.22,1)}
 #glct-tracker-hud .reeldig .strip span{height:1.05em;line-height:1.05em}
@@ -565,27 +580,9 @@
 #glct-tracker-hud .t-clock .frac{font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:15px;font-weight:700;color:#dfe6f3;flex:none}
 #glct-tracker-hud .t-clock .frac b{color:#fff}
 
-/* POOL */
-#glct-tracker-hud .t-pool{flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
-#glct-tracker-hud .t-pool .nm{flex:1 1 auto;min-width:0;max-width:180px}
-#glct-tracker-hud .t-pool .dice{flex:none;display:flex;gap:4px;align-items:center;justify-content:flex-end;overflow:visible}
-#glct-tracker-hud .t-pool .die{width:22px;height:22px;border-radius:6px;flex:none;display:grid;place-items:center;
-  background:linear-gradient(150deg,#eef2fb,#aeb9d2);box-shadow:0 2px 4px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.8),0 0 8px var(--glowsoft);
-  transition:transform .2s ease}
-#glct-tracker-hud .t-pool .die .dot{width:5px;height:5px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#39424f,#0c0f16)}
-/* a die rolling in when the pool is (re)filled */
-#glct-tracker-hud .t-pool .die.rollin{animation:glct-dieroll .42s cubic-bezier(.34,1.45,.5,1)}
-@keyframes glct-dieroll{0%{transform:scale(.3) rotate(-120deg);opacity:0}60%{opacity:1}100%{transform:scale(1) rotate(0)}}
-/* a discarded die: flares red, tumbles and shrinks away before it's removed */
-#glct-tracker-hud .t-pool .die.discarding{z-index:1;pointer-events:none;animation:glct-diediscard .44s cubic-bezier(.4,0,.7,1) forwards}
-@keyframes glct-diediscard{
-  0%{transform:scale(1) rotate(0);opacity:1;filter:none}
-  28%{transform:scale(1.2) rotate(-14deg);filter:brightness(1.15) saturate(2) sepia(.7) hue-rotate(-35deg)}
-  100%{transform:scale(0) rotate(48deg);opacity:0;filter:brightness(.7) sepia(1) hue-rotate(-35deg)}}
-#glct-tracker-hud .t-pool .more{font-size:9px;color:#aab4c8;font-weight:700}
-#glct-tracker-hud .t-pool .cnt{flex:none;font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;color:#dfe6f3}
-#glct-tracker-hud .t-pool .cnt b{color:#fff}
-#glct-tracker-hud .t-pool .play{flex:none;font-size:9px;color:var(--good)}
+/* POOL — layout/number styling shared with POINT above; only the "players may
+   roll" tag is pool-specific. */
+#glct-tracker-hud .t-pool .play{flex:none;font-size:9px;color:var(--good);margin-left:6px}
 
 /* TASK + HAZARD shared box layout */
 #glct-tracker-hud .t-task{flex:1;display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
@@ -623,6 +620,19 @@
 @keyframes glct-hazhead{0%,100%{box-shadow:0 0 7px var(--dangerglow)}50%{box-shadow:0 0 18px #ff9a8f}}
 #glct-tracker-hud .trow.hazard.full{animation:glct-dreadfull 1s ease-in-out infinite}
 @keyframes glct-dreadfull{0%,100%{box-shadow:inset 0 0 26px rgba(224,88,79,.32)}50%{box-shadow:inset 0 0 46px rgba(224,88,79,.6)}}
+
+/* BAD CLOCK — an ominous clock whose completion is bad news. Wears the same
+   hazard-red identity: the pie fills red (segments already use --tint), the row
+   simmers with dread, and a scan line drifts across it. */
+#glct-tracker-hud .trow.badclock{--tint:var(--danger);--glow:var(--dangerglow);--glowsoft:var(--dangersoft);animation:glct-dread 3.2s ease-in-out infinite}
+#glct-tracker-hud .trow.badclock::before{background:linear-gradient(90deg,rgba(224,88,79,.22),transparent 62%);opacity:.7}
+#glct-tracker-hud .trow.badclock .nm{color:#e8a39d}
+#glct-tracker-hud .trow.badclock .t-clock .pie .ring{stroke:rgba(224,88,79,.4)}
+#glct-tracker-hud .trow.badclock .t-clock .frac{color:#e8a39d}
+#glct-tracker-hud .trow.badclock .t-clock .frac b{color:#ffd9d4}
+/* Compact card keeps the red identity. */
+#glct-tracker-hud .trow.badclock .tmini .tm-name{color:#e8a39d}
+#glct-tracker-hud .trow.badclock .tmini.complete .tm-sub{color:#ff9a8f}
 
 /* SEPARATOR — a purely visual divider, ~1/3 the height of a normal row */
 #glct-tracker-hud .trow.sep{min-height:0;height:15px;gap:6px}
@@ -691,11 +701,6 @@
 #glct-tracker-hud .tmini .tm-sub{flex:none;font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:9px;font-weight:700;color:#cfd7e6;line-height:1}
 #glct-tracker-hud .tmini .tm-sub b{color:#fff}
 #glct-tracker-hud .tmini svg.pie{display:block}
-#glct-tracker-hud .tmini .tm-die{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;
-  background:linear-gradient(150deg,#eef2fb,#aeb9d2);box-shadow:0 2px 4px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.8)}
-#glct-tracker-hud .tmini .tm-die .dot{width:6px;height:6px;border-radius:50%;background:radial-gradient(circle at 38% 34%,#39424f,#0c0f16)}
-#glct-tracker-hud .tmini.empty .tm-die{filter:grayscale(1) brightness(.55)}
-#glct-tracker-hud .tmini.empty .tm-sub b{color:#ff7a6f}
 #glct-tracker-hud .tmini.complete .tm-sub,#glct-tracker-hud .tmini.full .tm-val b{color:var(--good)}
 /* Separator card: a slim vertical hairline. */
 #glct-tracker-hud .tmini.sep{justify-content:center}

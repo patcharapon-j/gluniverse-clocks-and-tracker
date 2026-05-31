@@ -76,6 +76,7 @@ export class TrackerEditor {
         parts.push(row(L("GLCT.tracker.field.name"), text("name", t.name)));
         parts.push(row(L("GLCT.tracker.field.slices"), num("slices", t.slices, 1, 24)));
         parts.push(row(L("GLCT.tracker.field.value"), num("value", t.value, 0)));
+        parts.push(row(L("GLCT.tracker.field.badClock"), check("bad", t.bad)));
         break;
       case "pool":
         parts.push(row(L("GLCT.tracker.field.name"), text("name", t.name)));
@@ -109,7 +110,7 @@ export class TrackerEditor {
     const base = { visibleToPlayers: ck("visibleToPlayers") };
     switch (type) {
       case "point": return { ...base, name: (v("name") || "").trim() || L("GLCT.tracker.types.point"), value: nn("value"), min: opt("min"), max: opt("max") };
-      case "clock": return { ...base, name: (v("name") || "").trim() || L("GLCT.tracker.types.clock"), slices: nn("slices", 6), value: nn("value") };
+      case "clock": return { ...base, name: (v("name") || "").trim() || L("GLCT.tracker.types.clock"), slices: nn("slices", 6), value: nn("value"), bad: ck("bad") };
       case "pool": return {
         ...base, name: (v("name") || "").trim() || L("GLCT.tracker.types.pool"),
         count: nn("count", 5), size: nn("size", 6), discard: nn("discard", 2),
