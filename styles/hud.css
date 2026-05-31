@@ -69,8 +69,8 @@
 #glct-hud .date .m{font-size:16px;font-weight:760;letter-spacing:.2px;line-height:1.05;white-space:nowrap;
   background:linear-gradient(180deg,#fff,#ccd5e8);-webkit-background-clip:text;background-clip:text;color:transparent}
 #glct-hud .date .m sup{font-size:8px;font-weight:600;-webkit-text-fill-color:var(--muted)}
-/* month·year + moon + season share the date cell's bottom line */
-#glct-hud .date .dmeta{display:flex;align-items:center;gap:7px}
+/* the day/month line carries the moon + season inline beside it */
+#glct-hud .date .dline{display:flex;align-items:center;gap:7px}
 #glct-hud .date .mo{font-size:9.5px;color:#aab4c8;white-space:nowrap}
 
 /* day-quarter tracker (lives under the clock now): four squares; future=hollow,
@@ -78,17 +78,17 @@
    an inner stretch-progress fill. */
 #glct-hud .shifts{display:flex;gap:4px;align-items:center;justify-content:center}
 #glct-hud .shifts .s{width:9px;height:9px;border-radius:3px;border:1.5px solid rgba(255,255,255,.22);background:transparent;
-  position:relative;overflow:hidden;transition:width .5s cubic-bezier(.34,1.3,.4,1),background .4s,border-color .4s}
+  position:relative;overflow:hidden;transition:width .5s cubic-bezier(.34,1.3,.4,1),height .4s ease,border-radius .4s ease,padding .4s ease,background .4s,border-color .4s}
 #glct-hud .shifts .s.done{background:rgba(255,255,255,.3);border-color:transparent}
-#glct-hud .shifts .s.on{width:auto;height:16px;padding:0 8px;border-radius:6px;border-color:transparent;
-  background:rgba(255,255,255,.08);box-shadow:0 0 10px var(--glow)}
+#glct-hud .shifts .s.on{display:inline-flex;align-items:center;justify-content:center;width:auto;height:18px;
+  padding:0 9px;border:none;border-radius:6px;background:rgba(255,255,255,.08);box-shadow:0 0 10px var(--glow)}
 #glct-hud .shifts .s.on::after{content:"";position:absolute;inset:0;width:var(--fill,0%);z-index:0;
   background:linear-gradient(90deg,var(--tint),color-mix(in srgb,var(--tint) 70%,#fff));
   box-shadow:0 0 8px var(--glow);transition:width .4s ease}
 #glct-hud .shifts .s-name{display:none}
-#glct-hud .shifts .s.on .s-name{display:inline-block;position:relative;z-index:1;
+#glct-hud .shifts .s.on .s-name{display:inline-block;position:relative;z-index:1;line-height:1;
   font-family:"Oxanium","Segoe UI",system-ui,sans-serif;font-size:9.5px;font-weight:740;letter-spacing:.04em;
-  white-space:nowrap;line-height:16px;color:#fff;text-shadow:0 0 8px var(--glowsoft),0 1px 1px rgba(0,0,0,.55)}
+  white-space:nowrap;color:#fff;text-shadow:0 0 8px var(--glowsoft),0 1px 1px rgba(0,0,0,.55)}
 #glct-hud .moon{position:relative;width:12px;height:12px;border-radius:50%;overflow:hidden;
   background:radial-gradient(circle at 38% 34%,#eef2fb,#a9b5ce);box-shadow:0 0 8px rgba(207,216,234,.4),inset -2px -2px 3px rgba(0,0,0,.25)}
 #glct-hud .moon .shadow{position:absolute;top:-1px;height:14px;width:14px;border-radius:50%;background:#0a0d13;transition:left .7s cubic-bezier(.4,0,.2,1)}
