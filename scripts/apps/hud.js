@@ -315,14 +315,15 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._setText("[data-rem]", this._remText(st));
     this._setText("[data-shiftof]", game.i18n.format("GLCT.hud.watchOf", { n: st.shiftIndex + 1, total: SHIFTS_PER_DAY }));
 
-    // mission dock button reflects whether a countdown is running
+    // mission dock button reflects whether a countdown is running (+ live count)
     root.querySelector("[data-missionbtn]")?.classList.toggle("on", st.mission.active);
+    this._setText("[data-missioncount]", st.mission.active && !st.mission.reached ? String(st.mission.stretchesLeft) : "");
 
     // shift-mode toggle button reflects the current granularity
     const modeBtn = root.querySelector("[data-modebtn]");
     if (modeBtn) {
       modeBtn.classList.toggle("on", sm);
-      modeBtn.textContent = game.i18n.localize(sm ? "GLCT.controls.shiftModeOn" : "GLCT.controls.shiftModeOff");
+      this._setText("[data-modetext]", game.i18n.localize(sm ? "GLCT.controls.shiftModeOn" : "GLCT.controls.shiftModeOff"));
     }
 
     // slot-reel clocks

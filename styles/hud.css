@@ -171,6 +171,13 @@
 #glct-hud .c:active{transform:translateY(1px)}
 #glct-hud .c.rw{box-shadow:inset 0 0 0 1.5px rgba(255,140,120,.7)}
 #glct-hud .c.sep{color:var(--muted)}
+/* dock buttons carry Font Awesome glyphs now — align icon + label on one row */
+#glct-hud .c{display:inline-flex;align-items:center;gap:5px;line-height:1}
+#glct-hud .c i{font-size:11px;line-height:1}
+#glct-hud .c.ico{padding:5px 8px}
+#glct-hud .c.ico i{font-size:12.5px}
+#glct-hud .c.mission .cnt{font-variant-numeric:tabular-nums;font-weight:800;font-size:10px}
+#glct-hud .c.mission .cnt:empty{display:none}
 #glct-hud .player-hidden{display:none}
 
 /* ===== collapsed pill with shift+stretch dual-ring ===== */
