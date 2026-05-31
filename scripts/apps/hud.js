@@ -62,6 +62,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _prevShift = null;
   _prevShiftDial = null;
   _reels = [];
+  _missReel = [];
   _ringPies = [];
   _ringSqs = [];
   _dialPies = [];
@@ -174,7 +175,35 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     // slot-reel clocks
     this._reels = [...root.querySelectorAll("[data-reelclock]")].map(host => this._buildClock(host));
 
+    // mission countdown reel (up to 3 digits; leading zeros collapse away)
+    const missHost = root.querySelector("[data-missreel]");
+    this._missReel = missHost ? this._buildMissReel(missHost) : [];
+
     this._built = true;
+  }
+
+  /** Build the mission countdown reel: 3 digit wheels, each a 0-9 strip. */
+  _buildMissReel(host) {
+    host.replaceChildren();
+    const reels = [];
+    for (let i = 0; i < 3; i++) {
+      const r = document.createElement("span"); r.className = "mreel";
+      const s = document.createElement("span"); s.className = "mstrip";
+      for (let n = 0; n < 10; n++) { const d = document.createElement("span"); d.textContent = n; s.appendChild(d); }
+      r.appendChild(s); host.appendChild(r); reels.push({ reel: r, strip: s });
+    }
+    return reels;
+  }
+
+  /** Show `val` on the mission reel, collapsing leading-zero wheels. */
+  _setMissReel(reels, val) {
+    const str = String(Math.max(0, Math.min(999, Math.round(val))));
+    const lead = reels.length - str.length;
+    reels.forEach((o, i) => {
+      const pos = i - lead;
+      if (pos < 0) { o.reel.classList.add("hide"); o.strip.style.transform = "translateY(0)"; }
+      else { o.reel.classList.remove("hide"); o.strip.style.transform = `translateY(-${+str[pos]}em)`; }
+    });
   }
 
   _svg(tag, attrs) {
@@ -360,6 +389,16 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     if (headPip) { headPip.classList.remove("pop"); void headPip.offsetWidth; headPip.classList.add("pop"); }
     root.querySelectorAll(".hourgrp").forEach((g, h) => g.classList.toggle("curr", h === st.hourOfShift));
+
+    // mission countdown readout (the rich meter-side reel + objective chip)
+    root.querySelector(".hud-root")?.classList.toggle("mreached", m.active && m.reached);
+    if (m.active) {
+      this._setMissReel(this._missReel, m.stretchesLeft);
+      this._setText("[data-missunit]", game.i18n.localize(m.reached ? "GLCT.hud.missionReachedShort" : "GLCT.hud.missionUnit"));
+      this._setText("[data-misslabel]", m.label || "");
+      const chip = root.querySelector("[data-misschip]");
+      if (chip) chip.style.display = m.label ? "" : "none";
+    }
 
     // dual-ring (collapsed pill); in shift mode, fade past quadrants too
     this._ringPies.forEach((p, i) => {

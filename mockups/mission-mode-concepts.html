@@ -10,7 +10,7 @@
     --ink:#eef1f7; --muted:#98a2b6; --hair:rgba(255,255,255,.08);
     --tint:#6b86d6; --tint2:#1a2233; --glow:rgba(120,150,225,.5); --glowsoft:rgba(120,150,225,.18);
     --edge:rgba(255,255,255,.13);
-    --mission:#ffc454; --missionsoft:rgba(255,196,84,.5);
+    --mission:#37d99a; --missionsoft:rgba(55,217,154,.5);
     --clock-font:"Oxanium","Segoe UI",system-ui,sans-serif;
   }
   *{box-sizing:border-box}
@@ -82,9 +82,11 @@
   .missline{display:flex;align-items:center;gap:9px;margin-left:4px}
   .mc-ico{display:grid;place-items:center;color:var(--mission);width:18px;height:18px}
   .mc-ico svg{width:17px;height:17px}
-  .mreelwrap{display:inline-flex;align-items:baseline;gap:5px}
+  /* glow as drop-shadow on the un-clipped wrapper, NOT a text-shadow on the
+     overflow-hidden reel (which clips the halo into a square behind the digit) */
+  .mreelwrap{display:inline-flex;align-items:baseline;gap:5px;filter:drop-shadow(0 0 9px var(--missionsoft))}
   .mreel{display:inline-block;height:1em;overflow:hidden;font-family:var(--clock-font);font-weight:800;font-size:30px;
-    line-height:1;color:#fff;text-shadow:0 0 16px var(--missionsoft);font-variant-numeric:tabular-nums;width:.62em;text-align:center}
+    line-height:1;color:#fff;font-variant-numeric:tabular-nums;width:.62em;text-align:center}
   .mstrip{display:flex;flex-direction:column;transition:transform .5s cubic-bezier(.2,.85,.22,1)}
   .mstrip span{height:1em;line-height:1em}
   .mc-unit{font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#8a93a6;font-weight:800}
@@ -155,7 +157,8 @@
   .reached .pip.head{background:#8af0bd;box-shadow:0 0 16px rgba(103,211,155,.95)}
 
   /* shared "reached" digit recolour for subtle/minimal (no stamp, just a tint) */
-  .variant-subtle.reached .mreel,.variant-minimal.reached .mreel{color:#8af0bd;text-shadow:0 0 14px rgba(103,211,155,.7)}
+  .variant-subtle.reached .mreel,.variant-minimal.reached .mreel{color:#8af0bd}
+  .variant-subtle.reached .mreelwrap,.variant-minimal.reached .mreelwrap{filter:drop-shadow(0 0 11px rgba(103,211,155,.7))}
 
   @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>

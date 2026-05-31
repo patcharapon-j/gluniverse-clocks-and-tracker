@@ -11,6 +11,8 @@
   "GLCT.hud.gmTimeHint": "GM only — exact time & stretch progress within this watch",
   "GLCT.hud.missionLeft": "{n} stretches to go",
   "GLCT.hud.missionReached": "Target reached",
+  "GLCT.hud.missionUnit": "to go",
+  "GLCT.hud.missionReachedShort": "Reached",
 
   "GLCT.controls.advanceStretch": "+ Stretch",
   "GLCT.controls.advanceHour": "+ Hour",
