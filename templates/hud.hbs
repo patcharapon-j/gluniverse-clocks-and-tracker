@@ -18,17 +18,12 @@
 
       <div class="cell date">
         <span class="wd" data-wd></span>
-        <span class="m"><span data-dy></span><sup data-ord></sup> <span data-moshort></span></span>
-        <span class="mo" data-mo></span>
-      </div>
-
-      <div class="cell watch">
-        <span class="name" data-watch></span>
-        <span class="row">
-          <span class="shifts" data-shifts></span>
+        <span class="dline">
+          <span class="m"><span data-dy></span><sup data-ord></sup> <span data-moshort></span></span>
           <span class="moon"><span class="shadow" data-moon></span></span>
           <span class="season" data-season></span>
         </span>
+        <span class="mo" data-mo></span>
       </div>
 
       <div class="cell shift-hero" data-shifthero>
@@ -51,8 +46,8 @@
       </div>
 
       <div class="cell clock-cell">
-        <span class="lbl">{{localize 'GLCT.hud.timeLabel'}}</span>
         <span class="clock"><span class="pulse"></span><span class="reelclock" data-reelclock></span></span>
+        <span class="shifts" data-shifts></span>
       </div>
 
       <div class="cell meter">
@@ -65,12 +60,13 @@
         </span>
       </div>
 
-      <div class="cell event-cell" data-action="openCalendar">
-        <span class="lbl">{{localize 'GLCT.calendarView.title'}}</span>
-        <span class="event" data-event><span class="dot"></span><span data-eventtxt></span></span>
-      </div>
-
     </div>
+  </div>
+
+  {{!-- Upcoming-event badge: tucked under the bar's left edge (by the date),
+        so it never widens the main row. --}}
+  <div class="event-badge" data-action="openCalendar" title="{{localize 'GLCT.calendarView.title'}}">
+    <span class="event" data-event><span class="dot"></span><span data-eventtxt></span></span>
   </div>
 
   {{#if isGM}}

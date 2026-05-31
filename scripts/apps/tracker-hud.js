@@ -252,9 +252,9 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       void row.offsetWidth;
 
       row.classList.add("expanded");
-      row.style.left = "7px";
+      row.style.left = "5px";                                // match the compact .trk-rows padding
       row.style.top = `${cy}px`;                             // stay on its own band, just stretch wide
-      row.style.width = `${host.clientWidth - 14}px`;
+      row.style.width = `${host.clientWidth - 10}px`;
       row.style.height = "40px";
 
       popTimer = setTimeout(settle, DWELL);
@@ -517,7 +517,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     switch (t.type) {
       case "clock": {
         const slices = Math.max(1, Math.trunc(Number(t.slices) || 6));
-        const { svg, segs } = this._makePie(slices, 34);
+        const { svg, segs } = this._makePie(slices, 24);
         core.appendChild(svg);
         const sub = this._el("div", "tm-sub"); el.appendChild(sub);
         paint = (tr) => {

@@ -239,7 +239,10 @@ export class CalendarView extends HandlebarsApplicationMixin(ApplicationV2) {
   async _onRender(context, options) {
     await super._onRender(context, options);
     const grid = this.element.querySelector(".cal-grid");
-    if (grid) grid.style.gridTemplateColumns = `repeat(${context.wdCount}, 1fr)`;
+    // minmax(0,1fr) lets columns shrink below their content; without it a long
+    // event name forces a column wider than its share and the grid overflows the
+    // fixed-width window off the screen.
+    if (grid) grid.style.gridTemplateColumns = `repeat(${context.wdCount}, minmax(0, 1fr))`;
   }
 
   /* ----------------------------- day detail ----------------------------- */
