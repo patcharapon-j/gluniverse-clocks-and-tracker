@@ -15,7 +15,7 @@ A premium, tactile in-game **calendar and time HUD** for Foundry VTT, built on F
 - **Slot-reel clock** — digits spin into place like a slot machine when time changes.
 - **Animated time passage** — advancing an hour or a shift visibly *ticks* forward one stretch at a time; day-or-larger jumps snap instantly.
 - **Custom calendars** — GM-editable calendar config supporting any month/weekday/season layout, leap years, and intercalary months. Ships with **Gregorian**, **Golarion** (Pathfinder), and **Harptos** (Forgotten Realms) presets. Import/export as JSON.
-- **Events & holidays** — single day, day range, or whole month. Mark each event visible or hidden to players. Players get a read-only calendar view.
+- **Events & holidays** — single day, day range, or whole month. Mark each event visible or hidden to players, or pin one to always show its countdown on the HUD. Players get a read-only calendar view.
 - **Combat aware** — reflects combat state on the HUD (time only advances when the GM advances it).
 - **Per-shift theming** — subtle color tint and an optional full-scene glow that shifts with the time of day.
 - **Tracker dock** — a *separate* compact floating HUD where the GM keeps live, at-a-glance trackers and shows them to players (read-only). Six types, each a single tidy row:
@@ -69,7 +69,9 @@ Open **Game Settings → Configure Settings → GLUniverse Clocks & Tracker → 
 
 ### Events & holidays
 
-Each event has a name, a scope (single **day**, **day range**, or whole **month**), a date, and a **visible to players** toggle. Today's events show on the HUD; the next upcoming visible event shows its countdown.
+Each event has a name, a scope (single **day**, **day range**, or whole **month**), a date, and a **visible to players** toggle. Today's events show on the HUD; the next upcoming visible event shows its countdown. When there's nothing to show, the badge hides itself entirely rather than displaying a placeholder.
+
+The GM can also flag an event as **Always show on HUD** (a pin). Pinned events keep their countdown on the badge no matter how far off they are, so an important date stays trackable even when it isn't the nearest one — toggle the pin from the create/edit form or the 📌 button in the events list.
 
 Events also carry two optional notes: a **public note** every player can read and a **private note** only the GM sees. Event names appear directly in the calendar grid — multi-day events render as a single connected band across the days they span. **Click any day** to open a detail panel listing that day's events and notes; the GM can edit, delete, or add an event/note for that day right there. Rest days (weekends) are highlighted in the grid.
 

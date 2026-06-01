@@ -80,6 +80,7 @@
   "GLCT.events.endMonth": "End month",
   "GLCT.events.endDay": "End day",
   "GLCT.events.visibleToPlayers": "Visible to players",
+  "GLCT.events.pinned": "Always show on HUD",
   "GLCT.events.notePublic": "Public note",
   "GLCT.events.notePublicHint": "Shown to all players",
   "GLCT.events.notePrivate": "Private note (GM)",

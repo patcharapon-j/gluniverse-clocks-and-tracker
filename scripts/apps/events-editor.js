@@ -25,7 +25,8 @@ export class EventsEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       addEvent: EventsEditor.prototype._onAdd,
       editEvent: EventsEditor.prototype._onEdit,
       deleteEvent: EventsEditor.prototype._onDelete,
-      toggleVis: EventsEditor.prototype._onToggleVis
+      toggleVis: EventsEditor.prototype._onToggleVis,
+      togglePin: EventsEditor.prototype._onTogglePin
     }
   };
 
@@ -78,6 +79,8 @@ export class EventsEditor extends HandlebarsApplicationMixin(ApplicationV2) {
         <label>${game.i18n.localize("GLCT.events.endDay")}</label>      <input type="number" name="endDay" min="1" value="${e.endDay ?? e.day ?? 1}">
         <label>${game.i18n.localize("GLCT.events.visibleToPlayers")}</label>
         <input type="checkbox" name="visibleToPlayers" ${e.visibleToPlayers ? "checked" : ""}>
+        <label>${game.i18n.localize("GLCT.events.pinned")}</label>
+        <input type="checkbox" name="pinned" ${e.pinned ? "checked" : ""}>
         <label class="glct-evform-wide">${game.i18n.localize("GLCT.events.notePublic")}</label>
         <textarea name="notePublic" rows="2" class="glct-evform-wide" placeholder="${game.i18n.localize("GLCT.events.notePublicHint")}">${esc(e.notePublic)}</textarea>
         <label class="glct-evform-wide">${game.i18n.localize("GLCT.events.notePrivate")}</label>
@@ -104,6 +107,7 @@ export class EventsEditor extends HandlebarsApplicationMixin(ApplicationV2) {
               endMonth: Number(f.endMonth.value),
               endDay: Math.max(1, Number(f.endDay.value)),
               visibleToPlayers: f.visibleToPlayers.checked,
+              pinned: f.pinned.checked,
               notePublic: f.notePublic.value.trim(),
               notePrivate: f.notePrivate.value.trim()
             };
@@ -175,6 +179,16 @@ export class EventsEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     const e = events.find(x => x.id === id);
     if (!e) return;
     e.visibleToPlayers = !e.visibleToPlayers;
+    await EventsEditor.setEvents(events);
+    this.render();
+  }
+
+  async _onTogglePin(ev, target) {
+    const id = target.closest("[data-event-id]")?.dataset.eventId;
+    const events = EventsEditor.getEvents();
+    const e = events.find(x => x.id === id);
+    if (!e) return;
+    e.pinned = !e.pinned;
     await EventsEditor.setEvents(events);
     this.render();
   }

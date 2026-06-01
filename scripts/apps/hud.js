@@ -437,20 +437,34 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       rect.style.transform = `scaleY(${k})`; rect.style.fill = fill; rect.style.filter = filt;
     });
 
-    // event chip
-    const chip = root.querySelector("[data-event]");
-    if (chip) {
-      const today = st.events.today?.[0];
-      if (today) {
-        chip.classList.add("today");
-        this._setText("[data-eventtxt]", game.i18n.format("GLCT.events.today", { name: today.name }));
-      } else {
-        chip.classList.remove("today");
-        const txt = st.events.next
-          ? game.i18n.format("GLCT.events.next", { name: st.events.next.name, days: st.events.next.days })
-          : "—";
-        this._setText("[data-eventtxt]", txt);
-      }
+    // event chips — today's events, any GM-pinned upcoming events, then the
+    // single nearest upcoming event. When there's nothing to show, the whole
+    // badge is hidden rather than rendering an empty placeholder.
+    const wrap = root.querySelector("[data-events]");
+    const badge = root.querySelector(".event-badge");
+    if (wrap && badge) {
+      const ev = st.events ?? {};
+      const pinned = ev.pinned ?? [];
+      const chips = [];
+      for (const t of ev.today ?? [])
+        chips.push({ cls: "today", txt: game.i18n.format("GLCT.events.today", { name: t.name }) });
+      for (const p of pinned)
+        chips.push({ cls: "pinned", txt: game.i18n.format("GLCT.events.next", { name: p.name, days: p.days }) });
+      // the nearest upcoming event, unless it's already shown as a pinned chip
+      if (ev.next && !pinned.some(p => p.name === ev.next.name && p.days === ev.next.days))
+        chips.push({ cls: "", txt: game.i18n.format("GLCT.events.next", { name: ev.next.name, days: ev.next.days }) });
+
+      badge.classList.toggle("empty", chips.length === 0);
+      wrap.replaceChildren(...chips.map(c => {
+        const chip = document.createElement("span");
+        chip.className = `event${c.cls ? " " + c.cls : ""}`;
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        const txt = document.createElement("span");
+        txt.textContent = c.txt;
+        chip.append(dot, txt);
+        return chip;
+      }));
     }
 
     Hooks.callAll(`${MODULE_ID}.timeChanged`, st);
