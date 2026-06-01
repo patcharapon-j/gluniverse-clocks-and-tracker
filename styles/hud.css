@@ -218,7 +218,7 @@
 
 /* Upcoming-event badge: floats just beneath the bar, hugging its left edge (the
    date side), so the event readout never widens the main info row. */
-#glct-hud .event-badge{align-self:flex-start;margin:6px 0 0 8px;cursor:pointer;max-width:300px}
+#glct-hud .event-badge{align-self:flex-start;margin:0 0 6px 8px;cursor:pointer;max-width:300px}
 #glct-hud .event-badge .events{display:flex;flex-wrap:wrap;gap:4px}
 #glct-hud .hud-root.is-collapsed .event-badge,
 #glct-hud .event-badge.empty{display:none}

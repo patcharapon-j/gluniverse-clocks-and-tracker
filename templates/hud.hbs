@@ -1,4 +1,11 @@
 <div class="hud-root {{#if collapsed}}is-collapsed{{/if}} {{#if shiftMode}}shift-mode{{/if}}">
+
+  {{!-- Upcoming-event badge: tucked above the bar's left edge (by the date),
+        so it never widens the main row. --}}
+  <div class="event-badge" data-action="openCalendar" title="{{localize 'GLCT.calendarView.title'}}">
+    <span class="events" data-events></span>
+  </div>
+
   <div class="bar {{#if collapsed}}collapsed{{/if}}" data-bar>
     <div class="sweep"></div>
     <div class="main">
@@ -61,12 +68,6 @@
       </div>
 
     </div>
-  </div>
-
-  {{!-- Upcoming-event badge: tucked under the bar's left edge (by the date),
-        so it never widens the main row. --}}
-  <div class="event-badge" data-action="openCalendar" title="{{localize 'GLCT.calendarView.title'}}">
-    <span class="events" data-events></span>
   </div>
 
   {{#if isGM}}
