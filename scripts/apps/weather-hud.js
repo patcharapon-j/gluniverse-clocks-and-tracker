@@ -123,6 +123,7 @@ export class WeatherHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
     this._paintHero(cur);
     this._paintFlower(cur);
+    this._paintForecast(cur);
     this._paintStrip(cur);
   }
 
@@ -262,6 +263,37 @@ export class WeatherHud extends HandlebarsApplicationMixin(ApplicationV2) {
       className: "wx-tag wx-tag-now", innerHTML: '<i class="fa-solid fa-location-dot"></i>',
       title: game.i18n.localize("GLCT.weather.editor.currentHex")
     });
+  }
+
+  /**
+   * Next-step odds row: a compact chip per possible next condition, each showing
+   * its weather icon + the probability of landing there next step. Follows the
+   * flower's visibility (it exposes the Navigation Hex's behaviour, so it's hidden
+   * from players unless the flower is revealed).
+   */
+  _paintForecast(cur) {
+    const wrap = this.element.querySelector("[data-forecastwrap]");
+    const row = this.element.querySelector("[data-forecast]");
+    if (!wrap || !row) return;
+    const odds = WeatherStore.viewerSeesFlower ? WeatherEngine.forecast(cur) : null;
+    if (!odds?.length) { wrap.hidden = true; row.replaceChildren(); return; }
+    wrap.hidden = false;
+
+    const pct = p => Math.max(1, Math.round(p * 100));   // never show a real outcome as 0%
+    const chips = odds.map(o => {
+      const chip = document.createElement("span");
+      chip.className = "wx-fc" + (o.ominous ? " ominous" : "") + (o.stay ? " stay" : "");
+      chip.style.setProperty("--glct-weather-glow", o.tintGlow ?? "#7fb4e6");
+      const stay = o.stay ? ` · ${game.i18n.localize("GLCT.weather.dir.stay")}` : "";
+      chip.title = `${o.label} — ${pct(o.prob)}%${stay}`;
+      const i = document.createElement("i");
+      i.className = o.icon ?? "fa-solid fa-cloud";
+      const n = document.createElement("b");
+      n.textContent = `${pct(o.prob)}%`;
+      chip.append(i, n);
+      return chip;
+    });
+    row.replaceChildren(...chips);
   }
 
   _paintStrip(cur) {

@@ -230,6 +230,21 @@
   box-shadow:0 0 10px color-mix(in srgb,var(--glct-weather-glow) 40%,transparent)}
 #glct-weather-hud .wx-shist.ominous{color:#ffb4ad}
 
+/* Next-step odds row */
+#glct-weather-hud .wx-forecast-wrap{display:flex;align-items:center;gap:8px;padding:8px 12px 2px}
+#glct-weather-hud .wx-forecast{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+#glct-weather-hud .wx-fc{--glct-weather-glow:#7fb4e6;flex:none;display:inline-flex;align-items:center;gap:4px;
+  height:19px;padding:0 6px 0 5px;border-radius:9px;cursor:default;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.01));
+  border:1px solid color-mix(in srgb,var(--glct-weather-glow) 32%,var(--hair));
+  color:#cdd6e6;transition:.18s}
+#glct-weather-hud .wx-fc i{font-size:9px;color:color-mix(in srgb,var(--glct-weather-glow) 70%,#cdd6e6)}
+#glct-weather-hud .wx-fc b{font:800 9.5px/1 "Oxanium","Segoe UI",system-ui,sans-serif;letter-spacing:.02em;color:#e7eefb}
+#glct-weather-hud .wx-fc.stay{border-style:dashed;opacity:.92}
+#glct-weather-hud .wx-fc.stay i{color:#8b97ad}
+#glct-weather-hud .wx-fc.ominous{border-color:color-mix(in srgb,#ff6a5e 45%,var(--hair))}
+#glct-weather-hud .wx-fc.ominous i{color:#ffb4ad}
+
 /* GM controls */
 #glct-weather-hud .wx-controls{display:flex;gap:6px;padding:0 12px 12px}
 #glct-weather-hud .wx-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:1;

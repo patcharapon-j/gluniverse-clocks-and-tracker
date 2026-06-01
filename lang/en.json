@@ -167,6 +167,8 @@
   "GLCT.weather.hazard": "Hazardous weather",
   "GLCT.weather.windowTitle": "Weather — Hex Flower",
   "GLCT.weather.recent": "Recent",
+  "GLCT.weather.forecast": "Next",
+  "GLCT.weather.forecastHint": "Chance of each condition on the next step, from the current hex under the Navigation Hex dice.",
   "GLCT.weather.noHistory": "No history yet.",
   "GLCT.weather.rollNow": "Roll Weather",
   "GLCT.weather.rollHint": "Left-click to advance one step · Right-click to rewind",
