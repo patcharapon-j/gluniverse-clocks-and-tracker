@@ -216,6 +216,7 @@ export class TimeEngine {
     const yearLen = this.daysPerYear;
 
     const today = [];
+    const pinned = [];   // events the GM flagged to always show, ordered by nearness
     let next = null;
 
     for (const e of visible) {
@@ -225,10 +226,13 @@ export class TimeEngine {
       // distance (in days) to this event's start, wrapping across the year
       const startDOY = this.dayOfYear(e.month ?? 0, (e.day ?? 1) - 1);
       const delta = ((startDOY - curDOY) % yearLen + yearLen) % yearLen;
-      if (delta > 0 && (!next || delta < next.days)) next = { name: e.name, days: delta };
+      if (delta <= 0) continue;
+      if (e.pinned) pinned.push({ name: e.name, days: delta });
+      if (!next || delta < next.days) next = { name: e.name, days: delta };
     }
 
-    return { today, next };
+    pinned.sort((a, b) => a.days - b.days);
+    return { today, next, pinned };
   }
 
   static matchesToday(e, curMonth, curDay) {

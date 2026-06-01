@@ -12,6 +12,10 @@
     <li class="ev-row" data-event-id="{{this.id}}">
       <span class="ev-name">{{this.name}}</span>
       <span class="ev-when">{{this.when}}</span>
+      <button type="button" class="ev-pin {{#if this.pinned}}on{{/if}}" data-action="togglePin"
+              title="{{localize 'GLCT.events.pinned'}}">
+        <i class="fa-solid fa-thumbtack"></i>
+      </button>
       <button type="button" class="ev-vis {{#if this.visibleToPlayers}}on{{/if}}" data-action="toggleVis"
               title="{{localize 'GLCT.events.visibleToPlayers'}}">
         <i class="fa-solid {{#if this.visibleToPlayers}}fa-eye{{else}}fa-eye-slash{{/if}}"></i>

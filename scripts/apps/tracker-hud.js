@@ -51,6 +51,8 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _rows = new Map();   // id -> { el, paint, flash, vsig }
   _sig = null;         // last structural signature array
+  _ctx = null;         // open context menu element, if any
+  _ctxOff = null;      // teardown for the menu's window listeners
 
   /** Compact ("playing-card") mode is a per-client preference. */
   get compact() {
@@ -69,6 +71,11 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._applyPosition();
     this._wireDockChrome();
     this.update();
+  }
+
+  async _onClose(options) {
+    this._closeContextMenu();
+    await super._onClose(options);
   }
 
   /* ------------------------------ painting ------------------------------ */
@@ -123,6 +130,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _buildRows(list) {
     const host = this.element.querySelector("[data-rows]");
     if (!host) return;
+    this._closeContextMenu();                   // a rebuild invalidates any open menu
     this._rows.forEach(r => r.cancelPop?.());   // clear any pop-out timers/placeholders first
     host.replaceChildren();
     this._rows.clear();
@@ -159,20 +167,8 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const body = this._buildBody(t);
     row.appendChild(body.content);
-
-    if (isGM) {
-      const tools = this._el("div", "tools");
-      const eye = this._el("button", "eye" + (t.visibleToPlayers ? "" : " off"));
-      eye.innerHTML = t.visibleToPlayers ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
-      eye.title = game.i18n.localize("GLCT.tracker.toggleVis");
-      eye.addEventListener("click", e => { e.stopPropagation(); TrackerStore.setVisibility(t.id, !t.visibleToPlayers); });
-      const edit = this._el("button"); edit.innerHTML = '<i class="fa-solid fa-gear"></i>'; edit.title = game.i18n.localize("GLCT.tracker.edit");
-      edit.addEventListener("click", e => { e.stopPropagation(); this._editTracker(t.id); });
-      const del = this._el("button"); del.innerHTML = '<i class="fa-solid fa-xmark"></i>'; del.title = game.i18n.localize("GLCT.tracker.delete");
-      del.addEventListener("click", e => { e.stopPropagation(); this._deleteTracker(t.id); });
-      tools.append(eye, edit, del);
-      row.appendChild(tools);
-    }
+    // GM management (edit / visibility / delete) and value stepping now live on a
+    // right-click context menu rather than hover buttons — see _openContextMenu.
 
     if (t.type !== "hazard" && t.type !== "separator") {
       const ovl = this._el("div", "rovl");
@@ -185,7 +181,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const mini = this._buildMini(t);
     row.appendChild(mini.el);
 
-    this._wireRowInteractions(row, body.content, t.type);
+    this._wireRowInteractions(row, t.type, body.content, body.stepEls ?? []);
 
     // --- compact pop-out -------------------------------------------------
     // While the dock is collapsed, a value change lifts this card out of the
@@ -319,7 +315,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       last = v;
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [val] };
   }
 
   /** Render an integer as per-digit reels; animates when the digit layout is stable. */
@@ -400,7 +396,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
         game.i18n.localize(bad ? "GLCT.tracker.doom" : "GLCT.tracker.filled"));
       last = v;
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [pie, frac] };
   }
 
   /* ---- POOL (point-style remaining count; 3D roll handled by Dice So Nice in chat) ---- */
@@ -435,7 +431,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       this._setOverlay(c, cur === 0 ? "empty" : null, game.i18n.localize("GLCT.tracker.empty"));
       last = cur;
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [val] };
   }
 
   /* ---- TASK (discrete boxes) ---- */
@@ -462,7 +458,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       this._setOverlay(c, v >= boxes ? "done" : null, game.i18n.localize("GLCT.tracker.completed"));
       last = v;
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [br] };
   }
 
   /* ---- HAZARD (red dread boxes; no overlay) ---- */
@@ -490,7 +486,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       c.closest(".trow")?.classList.toggle("full", v >= boxes);
       last = v;
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [br] };
   }
 
   /* ---- SEPARATOR (purely visual divider with optional centered label) ---- */
@@ -503,7 +499,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       lab.textContent = txt;
       lab.style.display = txt ? "" : "none";
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [] };
   }
 
   /* ---- COMPACT MINI (vertical "playing-card" face for collapsed mode) ---- */
@@ -591,24 +587,111 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /* ------------------------------ interactions ------------------------------ */
 
-  _wireRowInteractions(row, body, type) {
-    if (type === "separator") { body.style.cursor = "default"; return; }  // purely decorative
+  _wireRowInteractions(row, type, content, stepEls) {
     const isGM = game.user.isGM;
-    // Players only ever interact with a pool they're allowed to roll; everything
-    // else is read-only, so don't tease them with a clickable cursor.
-    const interactive = isGM || (type === "pool" && TrackerStore.get(row.dataset.id)?.playerRoll);
-    if (!interactive) body.style.cursor = "default";
-    body.addEventListener("click", () => {
-      if (type === "pool") { TrackerStore.rollPool(row.dataset.id); return; }
-      if (!isGM) return;
-      TrackerStore.step(row.dataset.id, +1);
+    const id = row.dataset.id;
+
+    // The value zone keeps the simple gesture: left-click increments, right-click
+    // decrements (pool: left rolls, right resets). Right-clicking anywhere else on
+    // the row — the name/title and the spacing up to the value — opens the GM
+    // context menu instead. Players never get the menu, so they're unaffected.
+    if (type !== "separator") content.style.cursor = isGM ? "context-menu" : "default";
+    if (isGM) {
+      row.addEventListener("contextmenu", ev => {
+        ev.preventDefault();
+        this._openContextMenu(ev, TrackerStore.get(id));
+      });
+    }
+
+    if (type === "separator") return;   // purely decorative, no value to step
+
+    // Who may step the value: the GM always; a player only on a pool they may roll.
+    const canStep = isGM || (type === "pool" && TrackerStore.get(id)?.playerRoll);
+    for (const el of stepEls) {
+      el.style.cursor = canStep ? "pointer" : "default";
+      el.addEventListener("click", ev => {
+        ev.stopPropagation();
+        if (type === "pool") { if (canStep) TrackerStore.rollPool(id); return; }
+        if (!isGM) return;
+        TrackerStore.step(id, +1);
+      });
+      el.addEventListener("contextmenu", ev => {
+        ev.preventDefault();
+        ev.stopPropagation();          // keep stepping on the value; don't open the menu
+        if (type === "pool") { if (isGM) TrackerStore.resetPool(id); return; }
+        if (!isGM) return;
+        TrackerStore.step(id, -1);
+      });
+    }
+  }
+
+  /* ------------------------------ context menu ------------------------------ */
+
+  /** Build the ordered list of menu entries for a tracker (management only —
+   *  value stepping lives on the value zone's left/right click). */
+  _contextItems(t) {
+    const L = k => game.i18n.localize(k);
+    const items = [];
+    items.push({ icon: "fa-gear", label: L("GLCT.tracker.edit"), run: () => this._editTracker(t.id) });
+    items.push({
+      icon: t.visibleToPlayers ? "fa-eye-slash" : "fa-eye",
+      label: L(t.visibleToPlayers ? "GLCT.tracker.ctx.hide" : "GLCT.tracker.ctx.show"),
+      run: () => TrackerStore.setVisibility(t.id, !t.visibleToPlayers)
     });
-    body.addEventListener("contextmenu", ev => {
-      ev.preventDefault();
-      if (!isGM) return;
-      if (type === "pool") { TrackerStore.resetPool(row.dataset.id); return; }
-      TrackerStore.step(row.dataset.id, -1);
-    });
+    items.push({ sep: true });
+    items.push({ icon: "fa-trash", label: L("GLCT.tracker.delete"), danger: true, run: () => this._deleteTracker(t.id) });
+    return items;
+  }
+
+  /** Pop a floating context menu at the cursor; dismissed on outside click / Escape. */
+  _openContextMenu(ev, t) {
+    if (!t || !game.user.isGM) return;
+    this._closeContextMenu();
+
+    const menu = this._el("div", "trk-ctx");
+    for (const it of this._contextItems(t)) {
+      if (it.sep) { menu.appendChild(this._el("div", "ctx-sep")); continue; }
+      const b = this._el("button", "ctx-item" + (it.danger ? " danger" : ""));
+      b.appendChild(this._el("i", "fa-solid " + it.icon));
+      b.appendChild(this._el("span", null, it.label));
+      b.addEventListener("click", e => { e.stopPropagation(); this._closeContextMenu(); it.run(); });
+      menu.appendChild(b);
+    }
+
+    // Mount outside .trk-dock (which clips overflow); .glct-trk-root grants pointer events.
+    const root = this.element.querySelector(".glct-trk-root") ?? this.element;
+    menu.style.visibility = "hidden";
+    root.appendChild(menu);
+
+    // Clamp to the viewport so the menu never spills off-screen.
+    const mw = menu.offsetWidth, mh = menu.offsetHeight;
+    const x = Math.max(6, Math.min(ev.clientX, window.innerWidth - mw - 6));
+    const y = Math.max(6, Math.min(ev.clientY, window.innerHeight - mh - 6));
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    menu.style.visibility = "";
+    requestAnimationFrame(() => menu.classList.add("show"));
+    this._ctx = menu;
+
+    const onDown = e => { if (!menu.contains(e.target)) this._closeContextMenu(); };
+    const onKey = e => { if (e.key === "Escape") { e.preventDefault(); this._closeContextMenu(); } };
+    // Defer wiring so the opening right-click doesn't immediately dismiss it.
+    setTimeout(() => {
+      if (!this._ctx) return;
+      window.addEventListener("pointerdown", onDown, true);
+      window.addEventListener("contextmenu", onDown, true);
+      window.addEventListener("keydown", onKey, true);
+    }, 0);
+    this._ctxOff = () => {
+      window.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("contextmenu", onDown, true);
+      window.removeEventListener("keydown", onKey, true);
+    };
+  }
+
+  _closeContextMenu() {
+    this._ctxOff?.(); this._ctxOff = null;
+    this._ctx?.remove(); this._ctx = null;
   }
 
   _wireReorder(host) {
@@ -657,6 +740,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _onToggleCompact() {
+    this._closeContextMenu();
     const next = !this.compact;
     try { await game.settings.set(MODULE_ID, SETTINGS.trackerHudCompact, next); } catch { /* ignore */ }
     // Tear down any in-flight pop-outs (timers, placeholders, inline geometry)

@@ -15,17 +15,17 @@ A premium, tactile in-game **calendar and time HUD** for Foundry VTT, built on F
 - **Slot-reel clock** — digits spin into place like a slot machine when time changes.
 - **Animated time passage** — advancing an hour or a shift visibly *ticks* forward one stretch at a time; day-or-larger jumps snap instantly.
 - **Custom calendars** — GM-editable calendar config supporting any month/weekday/season layout, leap years, and intercalary months. Ships with **Gregorian**, **Golarion** (Pathfinder), and **Harptos** (Forgotten Realms) presets. Import/export as JSON.
-- **Events & holidays** — single day, day range, or whole month. Mark each event visible or hidden to players. Players get a read-only calendar view.
+- **Events & holidays** — single day, day range, or whole month. Mark each event visible or hidden to players, or pin one to always show its countdown on the HUD. Players get a read-only calendar view.
 - **Combat aware** — reflects combat state on the HUD (time only advances when the GM advances it).
 - **Per-shift theming** — subtle color tint and an optional full-scene glow that shifts with the time of day.
 - **Tracker dock** — a *separate* compact floating HUD where the GM keeps live, at-a-glance trackers and shows them to players (read-only). Six types, each a single tidy row:
-  - **Point** — a prominent numeral with a bold label; left-click +1, right-click −1. Optional **min** and **max** bounds clamp the value; when a max is set it shows a faint `/max` after the numeral, and the numeral recolours when the value reaches the ceiling (green) or floor (red, the min itself stays hidden).
-  - **Clock** — a Blades-in-the-Dark segmented progress clock; left-click advances a slice, right-click steps back. Flag it **ominous (bad clock)** and it turns hazard-red with a dread glow — filling it stamps a red **DOOM** instead of the usual green **FILLED**.
+  - **Point** — a prominent numeral with a bold label; left-click the number +1, right-click it −1. Optional **min** and **max** bounds clamp the value; when a max is set it shows a faint `/max` after the numeral, and the numeral recolours when the value reaches the ceiling (green) or floor (red, the min itself stays hidden).
+  - **Clock** — a Blades-in-the-Dark segmented progress clock; left-click the dial advances a slice, right-click steps back. Flag it **ominous (bad clock)** and it turns hazard-red with a dread glow — filling it stamps a red **DOOM** instead of the usual green **FILLED**.
   - **Resource Pool** — a pool of dice; clicking rolls them and drops any die at or below the discard range, posting a compact chat card and rolling real 3D dice via **Dice So Nice** when installed (the dock count holds until the 3D dice settle). The dock reads like a Point tracker — the **dice remaining** is the hero numeral with a faint `d?` size cap, and a chevron flicks up on a refill, down on a discard. Empty the pool and it shows a bold **EMPTY**. Optionally lets players roll it.
   - **Task** — a row of boxes that fill toward **COMPLETED**, with a title & subtitle.
   - **Hazard** — a doom clock in danger-red with a persistent dread glow & ember flicker.
   - **Separator** — a slim, label-bearing divider to group the dock into sections (purely visual).
-  - Full CRUD per tracker (incl. **player visibility**); drag the grip to reorder — changes sync to players instantly.
+  - Full CRUD per tracker (incl. **player visibility**) from a **right-click context menu** on a row's name/label area — its value stays click-to-step; drag the grip to reorder — changes sync to players instantly.
 
 ---
 
@@ -59,8 +59,8 @@ This always installs the latest release. Then enable **GLUniverse — Clocks & T
 | Manage events (GM) | From the calendar view → Manage Events |
 | Toggle the tracker dock | `Alt+R`, or the checklist button in the scene controls |
 | Add a tracker (GM) | The **+** on the dock header |
-| Advance / rewind a tracker (GM) | **Left-click** a row to advance, **right-click** to step back (pool: left-click rolls, right-click resets) |
-| Edit / hide / delete a tracker (GM) | Hover a row → gear / eye / ✕ |
+| Advance / rewind a tracker (GM) | **Left-click** the value to advance, **right-click** the value to step back (pool: left-click rolls, right-click resets) |
+| Tracker controls (GM) | **Right-click** a row's **name / label area** for a context menu: edit, show or hide from players, delete |
 | Reorder trackers (GM) | Drag a row's grip |
 
 ### Configuring a calendar (GM)
@@ -69,7 +69,9 @@ Open **Game Settings → Configure Settings → GLUniverse Clocks & Tracker → 
 
 ### Events & holidays
 
-Each event has a name, a scope (single **day**, **day range**, or whole **month**), a date, and a **visible to players** toggle. Today's events show on the HUD; the next upcoming visible event shows its countdown.
+Each event has a name, a scope (single **day**, **day range**, or whole **month**), a date, and a **visible to players** toggle. Today's events show on the HUD; the next upcoming visible event shows its countdown. When there's nothing to show, the badge hides itself entirely rather than displaying a placeholder.
+
+The GM can also flag an event as **Always show on HUD** (a pin). Pinned events keep their countdown on the badge no matter how far off they are, so an important date stays trackable even when it isn't the nearest one — toggle the pin from the create/edit form or the 📌 button in the events list.
 
 Events also carry two optional notes: a **public note** every player can read and a **private note** only the GM sees. Event names appear directly in the calendar grid — multi-day events render as a single connected band across the days they span. **Click any day** to open a detail panel listing that day's events and notes; the GM can edit, delete, or add an event/note for that day right there. Rest days (weekends) are highlighted in the grid.
 
