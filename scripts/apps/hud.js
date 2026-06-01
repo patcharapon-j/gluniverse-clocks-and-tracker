@@ -176,14 +176,12 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       bar.classList.toggle("wx-ominous", !!e.ominous);
     }
 
-    // full-bar diorama + the legibility scrim behind the left text. While the bar
-    // is collapsed the diorama still paints, but as a single FROZEN frame —
-    // "everything still" — so the compact pill carries the current weather and its
-    // glass-edge refraction without spinning a canvas; during a value-flash peek
-    // (bar temporarily expanded) it animates as normal. A backgrounded tab fully
-    // drops it (decision D4).
+    // full-bar diorama + the legibility scrim behind the left text. The diorama
+    // keeps animating whether the bar is full or collapsed — when compact, the live
+    // particle field plays behind the pill (re-seeded to the smaller area by resize)
+    // so the current weather reads at a glance with its glass-edge refraction. Only
+    // a backgrounded tab fully drops it (decision D4).
     if (host) {
-      const collapsed = this.collapsed && !this._peeking;
       if (document.hidden) {
         host.classList.add("off");
         scrim?.classList.add("off");
@@ -192,12 +190,10 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
         host.classList.remove("off");
         scrim?.classList.remove("off");
         bar?.classList.add("has-wx");
-        bar?.classList.toggle("wx-still", collapsed);
         if (!this._wx) this._wx = WeatherEffect.create(host, e);
         else this._wx.setSpec(e);
         this._wx?.resize();
-        if (collapsed) this._wx?.still();   // freeze the field behind the pill
-        else this._wx?.resume();
+        this._wx?.resume();   // keep the field animating in full and compact modes
       }
     }
   }

@@ -74,11 +74,11 @@
 
 /* ---- Compact pill weather: the diorama fills the WHOLE pill ----
    When the bar is collapsed there's no date stack to protect, so the left-edge
-   feather is dropped: the frozen particle field (rendered still by the app),
+   feather is dropped: the live particle field (kept animating by the app),
    a soft tint wash, a legibility scrim and the liquid-glass rim all wrap the
-   entire compact pill so the current weather reads at a glance. .wx-still is set
-   while the field is frozen; the styling itself follows the collapsed class so a
-   value-flash peek (which un-collapses) smoothly returns to the full-bar look. */
+   entire compact pill so the current weather reads at a glance. The styling
+   follows the collapsed class so a value-flash peek (which un-collapses)
+   smoothly returns to the full-bar look. */
 #glct-hud .bar.collapsed.has-wx .bar-wx{
   -webkit-mask-image:none;mask-image:none;
   background:radial-gradient(125% 150% at 50% 0%,
