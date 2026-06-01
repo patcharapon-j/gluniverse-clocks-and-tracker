@@ -162,8 +162,13 @@ export class TrackerStore {
     if (!t || t.type !== "pool") return;
     if (game.user.isGM) return this._doRollPool(id, game.user.id);
     if (!t.playerRoll) return;
-    const gm = game.users.activeGM;
-    if (!gm) { ui.notifications?.warn(game.i18n.localize("GLCT.tracker.noGM")); return; }
+    // Route to a GM over the socket. We only need *some* active GM to be present;
+    // the receiving side decides which one actually handles it. (Don't gate on the
+    // `activeGM` getter here — if it momentarily reads null the roll would be lost.)
+    if (!game.users.some(u => u.isGM && u.active)) {
+      ui.notifications?.warn(game.i18n.localize("GLCT.tracker.noGM"));
+      return;
+    }
     game.socket.emit(SOCKET, { action: "rollPool", id, userId: game.user.id });
   }
 
@@ -277,12 +282,21 @@ export class TrackerStore {
     }
   }
 
+  /** The one GM responsible for handling routed player requests: the active GM
+   *  with the lowest id, computed explicitly so we don't depend on the `activeGM`
+   *  getter (which can read null and would then drop the request on every GM). */
+  static _isResponsibleGM() {
+    if (!game.user?.isGM) return false;
+    const gms = game.users.filter(u => u.isGM && u.active).sort((a, b) => a.id.localeCompare(b.id));
+    return gms[0]?.id === game.user.id;
+  }
+
   /** Wire the GM socket listener once (called from the ready hook). */
   static registerSocket() {
     game.socket.on(SOCKET, async (data) => {
-      if (!data || !game.user.isGM) return;
+      if (!data) return;
       // Only the primary active GM acts, to avoid double-handling on multi-GM tables.
-      if (game.users.activeGM?.id !== game.user.id) return;
+      if (!this._isResponsibleGM()) return;
       if (data.action === "rollPool") await this._doRollPool(data.id, data.userId);
     });
   }
