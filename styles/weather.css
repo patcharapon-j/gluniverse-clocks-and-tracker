@@ -81,6 +81,15 @@
 #glct-hud .bar.has-wx .date .wd,
 #glct-hud .bar.has-wx .date .mo{text-shadow:0 1px 2px rgba(0,0,0,.7)}
 
+/* All left-section date text goes pure white under an active effect, so the
+   weekday / day / month / year / season read cleanly over a bright, colourful
+   weather wash (their normal muted/gradient colours wash out against it). */
+#glct-hud .bar.has-wx .date .wd,
+#glct-hud .bar.has-wx .date .mo,
+#glct-hud .bar.has-wx .date .season{color:#fff}
+#glct-hud .bar.has-wx .date .m,
+#glct-hud .bar.has-wx .date .m sup{background:none;-webkit-text-fill-color:#fff;color:#fff}
+
 /* Weather readout — compact, nested inside the date cluster (left section) so it
    reads as part of that group rather than a separate box on the right. A hairline
    on the left separates it from the date stack. icon · condition · intensity; the
