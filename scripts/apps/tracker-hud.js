@@ -255,7 +255,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       row.style.left = "5px";                                // match the compact .trk-rows padding
       row.style.top = `${cy}px`;                             // stay on its own band, just stretch wide
       row.style.width = `${host.clientWidth - 10}px`;
-      row.style.height = "40px";
+      row.style.height = "28px";
 
       popTimer = setTimeout(settle, DWELL);
     };
@@ -376,7 +376,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _bodyClock(t) {
     const c = this._el("div", "t-clock");
     const slices = Math.max(1, Math.trunc(Number(t.slices) || 6));
-    const { svg: s, segs } = this._makePie(slices, 38);
+    const { svg: s, segs } = this._makePie(slices, 26);
     const pie = this._el("div", "piewrap"); pie.appendChild(s);
     const nm = this._el("div", "nm", t.name ?? "");
     const frac = this._el("div", "frac");

@@ -469,7 +469,7 @@
 
 /* ============================================================
    TRACKER HUD — a separate compact floating dock.
-   One ~40px row per tracker in a single glass panel. Clean white
+   One ~28px row per tracker in a single glass panel. Clean white
    accent for all types; only Hazard is red. Ported from the
    approved tracker-concepts mockup, scoped to #glct-tracker-hud.
    ============================================================ */
@@ -485,25 +485,25 @@
 #glct-tracker-hud .glct-trk-root{pointer-events:none}
 #glct-tracker-hud .glct-trk-root > *{pointer-events:auto}
 
-#glct-tracker-hud .trk-dock{min-width:232px;width:max-content;max-width:calc(100vw - 28px);
-  border-radius:13px;overflow:hidden;isolation:isolate;position:relative;
+#glct-tracker-hud .trk-dock{min-width:168px;width:max-content;max-width:calc(100vw - 28px);
+  border-radius:11px;overflow:hidden;isolation:isolate;position:relative;
   background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 30%),
     linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.22)),linear-gradient(160deg,#161d2c,#080b11 72%);
   border:1px solid var(--edge);
   box-shadow:0 24px 60px rgba(0,0,0,.6),0 2px 0 rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.15),inset 0 -12px 26px rgba(0,0,0,.36);
   backdrop-filter:blur(16px) saturate(1.15);transition:min-width .3s ease}
-#glct-tracker-hud .trk-head{display:flex;align-items:center;gap:7px;height:23px;padding:0 6px 0 9px;position:relative;z-index:5;
+#glct-tracker-hud .trk-head{display:flex;align-items:center;gap:5px;height:18px;padding:0 4px 0 7px;position:relative;z-index:5;
   border-bottom:1px solid var(--hair);cursor:grab;user-select:none}
 #glct-tracker-hud .dh-grip{display:flex;gap:3px}
 #glct-tracker-hud .dh-grip i{width:3px;height:3px;border-radius:99px;background:rgba(255,255,255,.32)}
 #glct-tracker-hud .dh-title{flex:1;font-size:8.5px;letter-spacing:.24em;text-transform:uppercase;color:#7c869c;font-weight:700}
 #glct-tracker-hud .dh-count{font-size:9px;color:#5b6478;font-variant-numeric:tabular-nums}
-#glct-tracker-hud .dh-add{width:18px;height:18px;border:none;border-radius:5px;cursor:pointer;display:grid;place-items:center;
-  background:rgba(255,255,255,.07);color:#aab4c8;font-size:12px;line-height:1;transition:.15s}
+#glct-tracker-hud .dh-add{width:15px;height:15px;border:none;border-radius:4px;cursor:pointer;display:grid;place-items:center;
+  background:rgba(255,255,255,.07);color:#aab4c8;font-size:11px;line-height:1;transition:.15s}
 #glct-tracker-hud .dh-add:hover{background:rgba(255,255,255,.16);color:#fff}
-#glct-tracker-hud .trk-empty{padding:11px 12px;text-align:center;color:#5b6478;font-size:10.5px;line-height:1.5}
+#glct-tracker-hud .trk-empty{padding:8px 10px;text-align:center;color:#5b6478;font-size:9.5px;line-height:1.45}
 
-#glct-tracker-hud .trow{position:relative;display:flex;align-items:center;gap:7px;height:40px;padding:0 7px 0 6px;
+#glct-tracker-hud .trow{position:relative;display:flex;align-items:center;gap:5px;height:28px;padding:0 6px 0 5px;
   isolation:isolate;transition:background .25s,width .42s cubic-bezier(.4,0,.2,1),height .42s cubic-bezier(.4,0,.2,1)}
 #glct-tracker-hud .trow + .trow{border-top:1px solid var(--hair)}
 #glct-tracker-hud .trow:hover{background:rgba(255,255,255,.025)}
@@ -512,13 +512,13 @@
 #glct-tracker-hud .trow .grip{display:grid;grid-template-columns:repeat(2,3px);gap:2px;cursor:grab;opacity:.4;transition:.2s;flex:none;padding:2px}
 #glct-tracker-hud .trow:hover .grip{opacity:.85}
 #glct-tracker-hud .trow .grip i{width:3px;height:3px;border-radius:99px;background:rgba(255,255,255,.45)}
-#glct-tracker-hud .trow .nm{font-size:13px;letter-spacing:.03em;text-transform:uppercase;font-weight:700;
+#glct-tracker-hud .trow .nm{font-size:11px;letter-spacing:.03em;text-transform:uppercase;font-weight:700;
   color:#eaeffa;text-shadow:0 0 10px var(--glowsoft);min-width:0;max-width:200px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #glct-tracker-hud .trow .tools{display:flex;gap:2px;opacity:0;transition:.18s;pointer-events:none;flex:none;position:relative;z-index:4}
 #glct-tracker-hud .trow:hover .tools{opacity:1;pointer-events:auto}
-#glct-tracker-hud .trow .tools button{width:18px;height:18px;display:grid;place-items:center;border:none;border-radius:5px;cursor:pointer;
-  background:rgba(255,255,255,.07);color:#aab4c8;font-size:9px;line-height:1;transition:.13s}
+#glct-tracker-hud .trow .tools button{width:15px;height:15px;display:grid;place-items:center;border:none;border-radius:4px;cursor:pointer;
+  background:rgba(255,255,255,.07);color:#aab4c8;font-size:8px;line-height:1;transition:.13s}
 #glct-tracker-hud .trow .tools button:hover{background:rgba(255,255,255,.18);color:#fff}
 #glct-tracker-hud .trow .tools button.eye.off{color:#5b6478}
 #glct-tracker-hud .trow.hiddenfromplayers::after{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
@@ -528,7 +528,7 @@
 #glct-tracker-hud .rovl{position:absolute;inset:0;z-index:6;display:grid;place-items:center;pointer-events:none;opacity:0;
   transition:opacity .4s ease;backdrop-filter:blur(1px)}
 #glct-tracker-hud .rovl.show{opacity:1}
-#glct-tracker-hud .rovl .ot{font-family:var(--clock-font);font-weight:800;letter-spacing:.2em;font-size:17px;text-transform:uppercase;
+#glct-tracker-hud .rovl .ot{font-family:var(--clock-font);font-weight:800;letter-spacing:.2em;font-size:13px;text-transform:uppercase;
   transform:scale(.7);transition:transform .45s cubic-bezier(.34,1.6,.5,1)}
 #glct-tracker-hud .rovl.show .ot{transform:scale(1)}
 #glct-tracker-hud .rovl.empty{background:linear-gradient(90deg,rgba(20,6,6,.78),rgba(28,8,8,.6))}
@@ -550,7 +550,7 @@
 #glct-tracker-hud .t-point .nm,
 #glct-tracker-hud .t-pool .nm{flex:1;min-width:0;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #glct-tracker-hud .t-point .chev,
-#glct-tracker-hud .t-pool .chev{font-size:10px;width:10px;opacity:0;font-weight:700;flex:none}
+#glct-tracker-hud .t-pool .chev{font-size:9px;width:9px;opacity:0;font-weight:700;flex:none}
 #glct-tracker-hud .t-point .chev.up,
 #glct-tracker-hud .t-pool .chev.up{color:var(--good);animation:glct-floatUp .6s ease}
 #glct-tracker-hud .t-point .chev.down,
@@ -564,11 +564,11 @@
 #glct-tracker-hud .t-pool .pval{flex:none;display:inline-flex;align-items:flex-end;gap:1px;
   filter:drop-shadow(0 0 9px var(--glowsoft));transition:filter .35s ease}
 #glct-tracker-hud .reeldig{display:inline-flex;align-items:center;height:1.05em;overflow:hidden;font-family:var(--clock-font);font-weight:800;
-  font-size:25px;font-variant-numeric:tabular-nums;line-height:1.05;color:#fff;flex:none;
+  font-size:18px;font-variant-numeric:tabular-nums;line-height:1.05;color:#fff;flex:none;
   transition:color .35s ease}
 /* Faint cap shown after the value: "/max" for a point, "d?" for a pool. */
 #glct-tracker-hud .t-point .reelmax,
-#glct-tracker-hud .t-pool .reelmax{font-family:var(--clock-font);font-weight:700;font-size:12px;line-height:1;color:#fff;opacity:.26;
+#glct-tracker-hud .t-pool .reelmax{font-family:var(--clock-font);font-weight:700;font-size:10px;line-height:1;color:#fff;opacity:.26;
   font-variant-numeric:tabular-nums;padding-bottom:.18em}
 /* Value text recolours at the ceiling / floor (floor is colour-only — min isn't shown). */
 #glct-tracker-hud .t-point .pval.at-max .reeldig{color:var(--good)}
@@ -583,8 +583,8 @@
 #glct-tracker-hud .reeldig .sign{padding-right:.04em}
 
 /* CLOCK */
-#glct-tracker-hud .t-clock{flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
-#glct-tracker-hud .t-clock .piewrap{flex:none;display:grid;place-items:center;width:38px;height:38px}
+#glct-tracker-hud .t-clock{flex:1;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
+#glct-tracker-hud .t-clock .piewrap{flex:none;display:grid;place-items:center;width:26px;height:26px}
 #glct-tracker-hud .t-clock svg.pie{display:block}
 #glct-tracker-hud .t-clock .pie .seg{fill:rgba(255,255,255,.06);stroke:#0a0e15;stroke-width:1.6;transition:fill .4s ease,filter .4s ease}
 #glct-tracker-hud .t-clock .pie .seg.fill{fill:var(--tint);filter:drop-shadow(0 0 3px var(--glow))}
@@ -592,7 +592,7 @@
 @keyframes glct-segpop{0%{fill:#fff;filter:drop-shadow(0 0 9px #fff)}100%{}}
 #glct-tracker-hud .t-clock .pie .ring{fill:none;stroke:rgba(255,255,255,.18);stroke-width:1.6}
 #glct-tracker-hud .t-clock .nm{flex:1}
-#glct-tracker-hud .t-clock .frac{font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:15px;font-weight:700;color:#dfe6f3;flex:none}
+#glct-tracker-hud .t-clock .frac{font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:12px;font-weight:700;color:#dfe6f3;flex:none}
 #glct-tracker-hud .t-clock .frac b{color:#fff}
 
 /* POOL — layout/number styling shared with POINT above; only the "players may
@@ -600,15 +600,15 @@
 #glct-tracker-hud .t-pool .play{flex:none;font-size:9px;color:var(--good);margin-left:6px}
 
 /* TASK + HAZARD shared box layout */
-#glct-tracker-hud .t-task{flex:1;display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
+#glct-tracker-hud .t-task{flex:1;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;position:relative;z-index:2;min-width:0}
 #glct-tracker-hud .t-task .titles{flex:1;min-width:0;max-width:200px;display:flex;flex-direction:column;justify-content:center;line-height:1.05}
-#glct-tracker-hud .t-task .titles .tt{font-size:13px;font-weight:740;letter-spacing:.02em;text-transform:uppercase;
+#glct-tracker-hud .t-task .titles .tt{font-size:11px;font-weight:740;letter-spacing:.02em;text-transform:uppercase;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   background:linear-gradient(180deg,#fff,#cdd6e8);-webkit-background-clip:text;background-clip:text;color:transparent}
 #glct-tracker-hud .t-task .titles .st{font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:#7c869c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Boxes keep their full size; the dock grows wider to fit a long row. */
-#glct-tracker-hud .boxrow{display:flex;gap:3px;align-items:center;flex:none}
-#glct-tracker-hud .box{width:18px;height:18px;flex:none;border-radius:5px;border:1.5px solid rgba(255,255,255,.24);background:rgba(255,255,255,.03);
+#glct-tracker-hud .boxrow{display:flex;gap:2px;align-items:center;flex:none}
+#glct-tracker-hud .box{width:13px;height:13px;flex:none;border-radius:4px;border:1.25px solid rgba(255,255,255,.24);background:rgba(255,255,255,.03);
   position:relative;transition:border-color .35s,background .35s,box-shadow .35s}
 #glct-tracker-hud .box.fill{border-color:transparent;background:linear-gradient(180deg,#fff,var(--tint));
   box-shadow:0 0 7px var(--glow),inset 0 1px 0 rgba(255,255,255,.5)}
@@ -650,7 +650,7 @@
 #glct-tracker-hud .trow.badclock .tmini.complete .tm-sub{color:#ff9a8f}
 
 /* SEPARATOR — a purely visual divider, ~1/3 the height of a normal row */
-#glct-tracker-hud .trow.sep{min-height:0;height:15px;gap:6px}
+#glct-tracker-hud .trow.sep{min-height:0;height:11px;gap:6px}
 #glct-tracker-hud .trow.sep::before{display:none}
 #glct-tracker-hud .trow.sep:hover{background:none}
 #glct-tracker-hud .trow.sep .grip{opacity:.25;padding:0}
