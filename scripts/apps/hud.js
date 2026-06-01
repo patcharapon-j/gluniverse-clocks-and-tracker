@@ -269,16 +269,20 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._dialPies = []; this._dialPtr = null;
     if (dialHost) {
       dialHost.replaceChildren();
-      const svg = this._svg("svg", { viewBox: "0 0 40 40", width: 38, height: 38, class: "ring" });
+      // Sized to read as large as the collapsed-pill watch dial: the pie nearly
+      // fills the box (r=18 of the 40-unit viewBox) and the SVG renders at 44px,
+      // so the wedge diameter (~40px) matches the compact view's scaled-up ring.
+      const svg = this._svg("svg", { viewBox: "0 0 40 40", width: 44, height: 44, class: "ring" });
       for (let i = 0; i < SHIFTS_PER_DAY; i++) {
-        const p = this._svg("path", { d: this._wedge(20, 20, 15, i * 90 - 45, (i + 1) * 90 - 45), class: "pie" });
+        const p = this._svg("path", { d: this._wedge(20, 20, 18, i * 90 - 45, (i + 1) * 90 - 45), class: "pie" });
         svg.appendChild(p); this._dialPies.push(p);
       }
-      svg.appendChild(this._svg("circle", { cx: 20, cy: 20, r: 3, class: "hub" }));
-      // pointer = a group rotated about the centre; the bead sits at the top
-      // (the bisector of watch 0), so rotating by shift*90° lands on each watch.
+      svg.appendChild(this._svg("circle", { cx: 20, cy: 20, r: 3.4, class: "hub" }));
+      // pointer = a group rotated about the centre; the bead rides just inside the
+      // (now wider) rim at the top — the bisector of watch 0 — so rotating by
+      // shift*90° lands it on each watch.
       this._dialPtr = this._svg("g", { class: "dialptr" });
-      this._dialPtr.appendChild(this._svg("circle", { cx: 20, cy: 6.5, r: 2.3, class: "marker" }));
+      this._dialPtr.appendChild(this._svg("circle", { cx: 20, cy: 3.6, r: 2.4, class: "marker" }));
       svg.appendChild(this._dialPtr);
       dialHost.appendChild(svg);
       this._dialRot = 0;
