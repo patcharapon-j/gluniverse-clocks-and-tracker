@@ -607,6 +607,17 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Who may step the value: the GM always; a player only on a pool they may roll.
     const canStep = isGM || (type === "pool" && TrackerStore.get(id)?.playerRoll);
+
+    // A rollable pool reads as one big "roll" button: a click anywhere on its body
+    // — the number, the name, or the ▶ "players may roll" affordance — rolls it.
+    // Players especially expect that play glyph to do something; previously only the
+    // number zone was wired, so clicking the affordance was inert. The GM's context
+    // menu lives on the right-click (a separate event), so it stays unaffected.
+    if (type === "pool" && canStep) {
+      content.style.cursor = "pointer";
+      content.addEventListener("click", () => TrackerStore.rollPool(id));
+    }
+
     for (const el of stepEls) {
       el.style.cursor = canStep ? "pointer" : "default";
       el.addEventListener("click", ev => {
