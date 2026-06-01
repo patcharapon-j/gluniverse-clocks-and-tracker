@@ -293,10 +293,11 @@
    World-wide GM toggle. The HH:MM clock + stretch meter + watch strip step
    aside; a 4-quadrant dial promotes the current watch to hero. game.time still
    advances in stretches underneath — this only changes presentation. */
-#glct-hud .shift-hero{display:none;flex-direction:row;align-items:center;gap:12px;padding:8px 18px 7px}
+#glct-hud .shift-hero{display:none;flex-direction:row;align-items:center;gap:12px;padding:2px 18px}
 #glct-hud .hud-root.shift-mode .shift-hero{display:flex}
-/* let the bar grow to fit the (taller) watch hero so the name never clips the top edge */
-#glct-hud .hud-root.shift-mode .main{height:auto;min-height:58px}
+/* Watch view keeps the exact same bar height as the stretch view — the bigger
+   dial and the watch-name stack are sized to fit the standard 54px row. */
+#glct-hud .hud-root.shift-mode .main{height:54px;min-height:0}
 #glct-hud .hud-root.shift-mode .clock-cell,
 #glct-hud .hud-root.shift-mode .meter,
 #glct-hud .hud-root.shift-mode .watch{display:none}

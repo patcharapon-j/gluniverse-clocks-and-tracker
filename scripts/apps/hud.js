@@ -76,6 +76,11 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _dialRot = 0;
   _barT = null;         // pending bar-width-tween cleanup timeout
   _wx = null;           // WeatherEffect (chip Pixi diorama), lazily created
+  _sig = null;          // signature of the last painted display values
+  _peeking = false;     // mid value-flash (compact bar temporarily expanded)
+  _peekEndT = null;     // pending re-collapse timeout after a peek
+  _peekTransT = null;   // pending cleanup of the peek's transform-transition
+  _peekStyle = null;    // saved inline transform to restore after a peek clamp
 
   get collapsed() {
     try { return game.settings.get(MODULE_ID, SETTINGS.hudCollapsed); } catch { return false; }
@@ -97,6 +102,9 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _onRender(context, options) {
     await super._onRender(context, options);
+    // a fresh DOM drops any in-flight value-flash (peek) state
+    clearTimeout(this._peekEndT); clearTimeout(this._barT); clearTimeout(this._peekTransT);
+    this._peeking = false; this._peekStyle = null;
     this._wx?.destroy(); this._wx = null;   // the chip host is recreated on re-render
     this._buildDynamic();
     this._applyPosition();
@@ -106,6 +114,8 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _onClose(options) {
+    clearTimeout(this._peekEndT); clearTimeout(this._barT); clearTimeout(this._peekTransT);
+    this._peeking = false;
     this._wx?.destroy();
     this._wx = null;
     return super._onClose(options);
@@ -166,21 +176,28 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       bar.classList.toggle("wx-ominous", !!e.ominous);
     }
 
-    // full-bar diorama + the legibility scrim behind the left text
+    // full-bar diorama + the legibility scrim behind the left text. While the bar
+    // is collapsed the diorama still paints, but as a single FROZEN frame —
+    // "everything still" — so the compact pill carries the current weather and its
+    // glass-edge refraction without spinning a canvas; during a value-flash peek
+    // (bar temporarily expanded) it animates as normal. A backgrounded tab fully
+    // drops it (decision D4).
     if (host) {
-      if (this.collapsed || document.hidden) {
+      const collapsed = this.collapsed && !this._peeking;
+      if (document.hidden) {
         host.classList.add("off");
         scrim?.classList.add("off");
-        bar?.classList.remove("has-wx");
-        this._wx?.pause();          // don't spin a canvas behind a collapsed bar
+        this._wx?.pause();          // nothing visible to paint while backgrounded
       } else {
         host.classList.remove("off");
         scrim?.classList.remove("off");
         bar?.classList.add("has-wx");
+        bar?.classList.toggle("wx-still", collapsed);
         if (!this._wx) this._wx = WeatherEffect.create(host, e);
         else this._wx.setSpec(e);
         this._wx?.resize();
-        this._wx?.resume();
+        if (collapsed) this._wx?.still();   // freeze the field behind the pill
+        else this._wx?.resume();
       }
     }
   }
@@ -252,16 +269,20 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._dialPies = []; this._dialPtr = null;
     if (dialHost) {
       dialHost.replaceChildren();
-      const svg = this._svg("svg", { viewBox: "0 0 40 40", width: 38, height: 38, class: "ring" });
+      // Sized to read as large as the collapsed-pill watch dial: the pie nearly
+      // fills the box (r=18 of the 40-unit viewBox) and the SVG renders at 44px,
+      // so the wedge diameter (~40px) matches the compact view's scaled-up ring.
+      const svg = this._svg("svg", { viewBox: "0 0 40 40", width: 44, height: 44, class: "ring" });
       for (let i = 0; i < SHIFTS_PER_DAY; i++) {
-        const p = this._svg("path", { d: this._wedge(20, 20, 15, i * 90 - 45, (i + 1) * 90 - 45), class: "pie" });
+        const p = this._svg("path", { d: this._wedge(20, 20, 18, i * 90 - 45, (i + 1) * 90 - 45), class: "pie" });
         svg.appendChild(p); this._dialPies.push(p);
       }
-      svg.appendChild(this._svg("circle", { cx: 20, cy: 20, r: 3, class: "hub" }));
-      // pointer = a group rotated about the centre; the bead sits at the top
-      // (the bisector of watch 0), so rotating by shift*90° lands on each watch.
+      svg.appendChild(this._svg("circle", { cx: 20, cy: 20, r: 3.4, class: "hub" }));
+      // pointer = a group rotated about the centre; the bead rides just inside the
+      // (now wider) rim at the top — the bisector of watch 0 — so rotating by
+      // shift*90° lands it on each watch.
       this._dialPtr = this._svg("g", { class: "dialptr" });
-      this._dialPtr.appendChild(this._svg("circle", { cx: 20, cy: 6.5, r: 2.3, class: "marker" }));
+      this._dialPtr.appendChild(this._svg("circle", { cx: 20, cy: 3.6, r: 2.4, class: "marker" }));
       svg.appendChild(this._dialPtr);
       dialHost.appendChild(svg);
       this._dialRot = 0;
@@ -374,7 +395,147 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   update() {
     if (!this.rendered || !this._built) return;
-    this._paint(TimeEngine.getStateAt(TimeEngine.worldTime));
+    const st = TimeEngine.getStateAt(TimeEngine.worldTime);
+
+    // Value flash while compact: when a displayed value actually changes and the
+    // bar is collapsed, expand the bar *first* (showing the OLD values), then let
+    // _paint ease the reels/pips to the new values, then collapse back — so the
+    // update reads as a brief peek rather than a silent change behind the pill.
+    const sig = this._displaySig(st);
+    const changed = this._sig !== null && sig !== this._sig;
+    this._sig = sig;
+    if (changed && this.collapsed) this._beginPeek();
+
+    this._paint(st);
+  }
+
+  /** A compact signature of every value shown on the bar/pill, so update() can
+      tell a real change from a no-op repaint (a re-render, a resize, etc.). */
+  _displaySig(st) {
+    const m = st.mission;
+    return [
+      st.clock, st.shiftIndex, st.stretchInShift,
+      st.date.weekday, st.date.day, st.date.monthAbbr, st.date.year,
+      m.active, m.reached, m.stretchesLeft
+    ].join("|");
+  }
+
+  /* ------------------------------ value flash ------------------------------ */
+
+  /**
+   * Compact value-flash: expand the collapsed bar so the changed values animate
+   * in, then re-collapse. The `collapsed` *setting* is never touched — only the
+   * visual classes — so the user's compact preference survives the flash. The
+   * bar is centre-anchored, so a width change grows symmetrically about its
+   * centre; _clampPeek then nudges the whole HUD inward if the wider bar would
+   * spill past a screen edge, and the offset is restored on collapse.
+   *
+   * Call order matters: we expand and commit the OLD reel/pip positions while the
+   * cells are freshly visible, so the _paint that follows (in update()) eases
+   * them to the new values instead of snapping.
+   */
+  _beginPeek() {
+    const root = this.element.querySelector(".hud-root");
+    const bar = this.element.querySelector("[data-bar]");
+    if (!root || !bar) return;
+
+    clearTimeout(this._peekEndT);
+
+    if (!this._peeking) {
+      this._peeking = true;
+      // measure the collapsed width, reveal the full card, measure the expanded
+      // width, then tween between the two explicit values (the .bar CSS width
+      // transition eases it) — auto→auto can't animate on its own.
+      const w0 = bar.getBoundingClientRect().width;
+      bar.classList.remove("collapsed");
+      root.classList.remove("is-collapsed");
+      bar.classList.add("peeking");
+      const w1 = bar.getBoundingClientRect().width;   // forces layout → commits old reels
+      this._clampPeek();                              // keep the wider bar on-screen
+      bar.style.transition = "none";
+      bar.style.width = `${w0}px`;
+      void bar.offsetWidth;
+      bar.style.transition = "";
+      bar.style.width = `${w1}px`;
+      clearTimeout(this._barT);
+      this._barT = setTimeout(() => { bar.style.width = ""; this._wx?.resize(); }, 420);
+      this._paintWeather();   // wake + resize the diorama for the expanded width
+    }
+
+    // Hold the expanded card long enough for the reel/pip/ring transitions to
+    // settle, then collapse back. Each new change reschedules the end so a burst
+    // of updates flashes once rather than flickering.
+    this._peekEndT = setTimeout(() => this._endPeek(), 2200);
+  }
+
+  /**
+   * Collapse the bar after a value flash and glide the clamped offset back. The
+   * shrink mirrors _beginPeek: measure the expanded width, peek the collapsed
+   * width, then tween between them so the card eases shut instead of snapping;
+   * the `collapsed` classes are re-applied only once the shrink completes.
+   */
+  _endPeek() {
+    clearTimeout(this._peekEndT); this._peekEndT = null;
+    if (!this._peeking) return;
+    this._peeking = false;
+    const root = this.element.querySelector(".hud-root");
+    const bar = this.element.querySelector("[data-bar]");
+    this._restorePeek();   // glide the HUD back to centre
+
+    if (!bar || !root || !this.collapsed) {
+      bar?.classList.remove("peeking");
+      if (bar) bar.style.width = "";
+      this._paintWeather();
+      return;
+    }
+
+    const w1 = bar.getBoundingClientRect().width;
+    bar.classList.add("collapsed"); root.classList.add("is-collapsed");
+    const w0 = bar.getBoundingClientRect().width;     // collapsed (pill) width
+    bar.classList.remove("collapsed"); root.classList.remove("is-collapsed");
+    bar.style.transition = "none";
+    bar.style.width = `${w1}px`;
+    void bar.offsetWidth;
+    bar.style.transition = "";
+    bar.style.width = `${w0}px`;
+    clearTimeout(this._barT);
+    this._barT = setTimeout(() => {
+      bar.classList.add("collapsed"); root.classList.add("is-collapsed");
+      bar.classList.remove("peeking");
+      bar.style.width = "";
+      this._paintWeather();   // freeze the compact diorama again
+    }, 420);
+  }
+
+  /**
+   * Shift the (centre-anchored) HUD inward if the currently-laid-out bar pokes
+   * past a viewport edge, so the expanded card never clips off-screen. Stored as
+   * an extra translate on top of the -50% centring; restored in _restorePeek.
+   */
+  _clampPeek() {
+    const el = this.element;
+    const bar = el.querySelector("[data-bar]");
+    if (!bar) return;
+    this._peekStyle = { transform: el.style.transform, transition: el.style.transition };
+    const m = 6;   // viewport margin
+    const r = bar.getBoundingClientRect();
+    let shift = 0;
+    if (r.left < m) shift = m - r.left;
+    else if (r.right > window.innerWidth - m) shift = (window.innerWidth - m) - r.right;
+    el.style.transition = "transform .42s cubic-bezier(.4,0,.2,1)";
+    el.style.transform = shift ? `translateX(calc(-50% + ${Math.round(shift)}px))` : "translateX(-50%)";
+  }
+
+  _restorePeek() {
+    const el = this.element;
+    const prev = this._peekStyle?.transition || "";
+    // glide the clamp offset back to the centre, then drop the temporary
+    // transform-transition so it never lags a later drag / reposition.
+    el.style.transition = "transform .42s cubic-bezier(.4,0,.2,1)";
+    el.style.transform = this._peekStyle?.transform || "translateX(-50%)";
+    clearTimeout(this._peekTransT);
+    this._peekTransT = setTimeout(() => { el.style.transition = prev; }, 440);
+    this._peekStyle = null;
   }
 
   _paint(st) {
@@ -666,11 +827,22 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     await TimeEngine.nextShift();
   }
   async _onToggleCollapse() {
+    // A manual toggle wins over any in-flight value flash: cancel the peek and
+    // drop its temporary classes/offset before applying the new collapsed state.
+    clearTimeout(this._peekEndT); this._peekEndT = null;
+    clearTimeout(this._barT); this._barT = null;
+    const wasPeeking = this._peeking;
+    this._peeking = false;
+    const bar = this.element.querySelector("[data-bar]");
+    bar?.classList.remove("peeking");
+    if (bar) bar.style.width = "";
+    if (wasPeeking) this._restorePeek();
+
     const next = !this.collapsed;
     try { await game.settings.set(MODULE_ID, SETTINGS.hudCollapsed, next); } catch { /* ignore */ }
-    this.element.querySelector("[data-bar]")?.classList.toggle("collapsed", next);
+    bar?.classList.toggle("collapsed", next);
     this.element.querySelector(".hud-root")?.classList.toggle("is-collapsed", next);
-    this._paintWeather();   // hide + pause the chip's Pixi ticker while collapsed
+    this._paintWeather();   // freeze the compact diorama / wake it when expanded
   }
   async _onSetTime() {
     if (!game.user.isGM) return;
