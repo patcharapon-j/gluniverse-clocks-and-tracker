@@ -43,8 +43,12 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
-  await GlctHud.open();
+  // Wire the player→GM pool-roll socket listener *first*, before anything that
+  // awaits or can throw (opening a HUD, the weather walk). Otherwise a hiccup
+  // earlier in this hook could leave a GM without the listener while their own
+  // HUD still works — which silently drops players' routed pool rolls.
   TrackerStore.registerSocket();
+  await GlctHud.open();
   if (!setting(SETTINGS.trackerHudHidden, false)) await TrackerHud.open();
   applySceneTint(TimeEngine.getState());
 

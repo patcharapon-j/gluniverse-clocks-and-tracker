@@ -169,7 +169,21 @@ export class TrackerStore {
       ui.notifications?.warn(game.i18n.localize("GLCT.tracker.noGM"));
       return;
     }
-    game.socket.emit(SOCKET, { action: "rollPool", id, userId: game.user.id });
+    // The responsible GM acknowledges receipt. If no ack comes back the request
+    // never reached an authoritative client — almost always because the world's
+    // server process predates this module declaring `"socket": true` (Foundry
+    // wires a module's socket channel at server start, so a plain reload isn't
+    // enough). Surface that instead of failing silently, which just reads as
+    // "clicking the pool does nothing".
+    const token = foundry.utils.randomID();
+    (this._pendingRolls ??= new Map());
+    const timer = setTimeout(() => {
+      if (this._pendingRolls.delete(token)) {
+        ui.notifications?.warn(game.i18n.localize("GLCT.tracker.rollUnreachable"));
+      }
+    }, 5000);
+    this._pendingRolls.set(token, timer);
+    game.socket.emit(SOCKET, { action: "rollPool", id, userId: game.user.id, token });
   }
 
   /** Authoritative roll, executed on a GM client only. */
@@ -295,9 +309,23 @@ export class TrackerStore {
   static registerSocket() {
     game.socket.on(SOCKET, async (data) => {
       if (!data) return;
+      // The requesting player clears its own reachability timeout when the GM's
+      // acknowledgement comes back. Handle this before the GM gate below, which
+      // would otherwise short-circuit on the (non-GM) player's own client.
+      if (data.action === "rollPoolAck") {
+        if (data.toUserId !== game.user.id) return;
+        const timer = this._pendingRolls?.get(data.token);
+        if (timer) { clearTimeout(timer); this._pendingRolls.delete(data.token); }
+        return;
+      }
       // Only the primary active GM acts, to avoid double-handling on multi-GM tables.
       if (!this._isResponsibleGM()) return;
-      if (data.action === "rollPool") await this._doRollPool(data.id, data.userId);
+      if (data.action === "rollPool") {
+        // Acknowledge first so the player's timeout clears even though the roll
+        // itself may take a moment (3D dice animation, chat card).
+        if (data.token) game.socket.emit(SOCKET, { action: "rollPoolAck", token: data.token, toUserId: data.userId });
+        await this._doRollPool(data.id, data.userId);
+      }
     });
   }
 }
