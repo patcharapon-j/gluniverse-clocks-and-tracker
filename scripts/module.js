@@ -43,8 +43,12 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
+  // Wire GM-side pool-roll persistence *first*, before anything that awaits or
+  // can throw (opening a HUD, the weather walk). Otherwise a hiccup earlier in
+  // this hook could leave a GM without the handler while their own HUD still
+  // works — which would stop players' pool rolls from updating the shared count.
+  TrackerStore.registerHandlers();
   await GlctHud.open();
-  TrackerStore.registerSocket();
   if (!setting(SETTINGS.trackerHudHidden, false)) await TrackerHud.open();
   applySceneTint(TimeEngine.getState());
 
