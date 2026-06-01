@@ -616,6 +616,24 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     if (type === "pool" && canStep) {
       content.style.cursor = "pointer";
       content.addEventListener("click", () => TrackerStore.rollPool(id));
+
+      // The compact "playing-card" face is a separate element that *replaces* the
+      // body while the dock is collapsed (the body gets pointer-events:none), so it
+      // needs its own roll wiring — otherwise a player in compact mode has nothing
+      // clickable. A double-tap on a card expands the dock, so we defer the single
+      // click briefly and cancel it on a double-click so expanding doesn't also roll.
+      const mini = row.querySelector(".tmini");
+      if (mini) {
+        mini.style.cursor = "pointer";
+        let clickTimer = null;
+        mini.addEventListener("click", () => {
+          if (clickTimer) return;
+          clickTimer = setTimeout(() => { clickTimer = null; TrackerStore.rollPool(id); }, 240);
+        });
+        mini.addEventListener("dblclick", () => {
+          if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+        });
+      }
     }
 
     for (const el of stepEls) {
