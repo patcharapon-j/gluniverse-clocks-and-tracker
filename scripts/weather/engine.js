@@ -153,6 +153,70 @@ export class WeatherEngine {
     return rec;
   }
 
+  /* ------------------------------ forecast (next-step odds) ------------------------------ */
+
+  /**
+   * Every equally-likely roll total for a dice formula, as a flat array (so its
+   * length is the denominator and each entry's frequency is its weight). 2d6 →
+   * 36 totals (2..12), d6+d8 → 48 totals (2..14).
+   */
+  static _diceTotals(dice) {
+    const faces = dice === "d6+d8" ? [6, 8] : [6, 6];
+    let totals = [0];
+    for (const f of faces) {
+      const next = [];
+      for (const t of totals) for (let i = 1; i <= f; i++) next.push(t + i);
+      totals = next;
+    }
+    return totals;
+  }
+
+  /**
+   * Probability of each possible next condition from the current hex, under the
+   * active Navigation Hex (decision #15 modifier defaults to 0). Enumerates every
+   * equally-likely roll total, resolves the walk (honouring blocked faces + edge
+   * rules), then groups the landing hexes by condition (label+icon).
+   *
+   * Returns a list sorted by descending probability:
+   *   { label, icon, prob (0..1), ominous, tintGlow, stay (includes current hex) }
+   */
+  static forecast(cur = this.getCurrent()) {
+    if (!cur?.season || !cur.nav) return null;
+    const { climate, seasonKey, index, season } = cur;
+    const totals = this._diceTotals(cur.nav.dice);
+    const denom = totals.length || 1;
+
+    // roll total → landing index, accumulated as a hit count per destination.
+    const byIndex = new Map();
+    for (const total of totals) {
+      const { to } = this.resolveStep(climate, seasonKey, index, total, 0);
+      byIndex.set(to, (byIndex.get(to) ?? 0) + 1);
+    }
+
+    // collapse destinations that share a condition (same label + icon) so the
+    // reading is "X% Storm" rather than one row per identical hex.
+    const groups = new Map();
+    for (const [to, count] of byIndex) {
+      const hex = season.hexes?.[to] ?? null;
+      const key = `${hex?.label ?? "?"}|${hex?.icon ?? ""}`;
+      const g = groups.get(key) ?? {
+        label: hex?.label ?? "?",
+        icon: hex?.icon ?? "fa-solid fa-cloud",
+        count: 0,
+        ominous: !!hex?.effect?.ominous,
+        tintGlow: hex?.effect?.tintGlow ?? "#7fb4e6",
+        stay: false
+      };
+      g.count += count;
+      if (to === index) g.stay = true;
+      groups.set(key, g);
+    }
+
+    return [...groups.values()]
+      .map(g => ({ ...g, prob: g.count / denom }))
+      .sort((a, b) => b.prob - a.prob || b.stay - a.stay);
+  }
+
   /* ------------------------------ public mutations (GM) ------------------------------ */
 
   /**

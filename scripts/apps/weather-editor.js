@@ -261,9 +261,23 @@ export class WeatherEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       tile.style.setProperty("--glct-weather-glow", e.tintGlow ?? "#7fb4e6");
       tile.title = hex?.label ?? "";
       const ic = document.createElement("i"); ic.className = hex?.icon ?? "fa-solid fa-cloud"; tile.appendChild(ic);
+      // a green flag tag on the start hex makes "the walk begins here" unmistakable
+      if (h.index === this._working.startHexIndex) {
+        tile.appendChild(Object.assign(document.createElement("span"), {
+          className: "wx-tag wx-tag-start", innerHTML: '<i class="fa-solid fa-flag"></i>',
+          title: game.i18n.localize("GLCT.weather.editor.startHex")
+        }));
+      }
+      // a red ✕ on each blocked face — clearer than one corner Ø badge
       if (hex?.disallow?.length) {
         tile.classList.add("blocked");
-        tile.appendChild(Object.assign(document.createElement("span"), { className: "wx-block-badge", textContent: "Ø", title: hex.disallow.join(", ") }));
+        for (const dir of hex.disallow) {
+          if (!WEATHER_DIRECTIONS.includes(dir)) continue;
+          tile.appendChild(Object.assign(document.createElement("span"), {
+            className: `wx-dir-x wx-dir-x-${dir}`, textContent: "✕",
+            title: game.i18n.localize(`GLCT.weather.dir.${dir}`)
+          }));
+        }
       }
       tile.addEventListener("click", () => { this._selected = h.index; this._buildFlower(); this._buildHexForm(); });
       host.appendChild(tile);

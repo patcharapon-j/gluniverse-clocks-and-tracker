@@ -36,6 +36,12 @@
       <div class="wx-flower" data-flower></div>
     </div>
 
+    {{!-- Next-step odds: P(next condition) from the current hex under the NH --}}
+    <div class="wx-forecast-wrap" data-forecastwrap hidden>
+      <span class="wx-strip-lbl">{{localize 'GLCT.weather.forecast'}}</span>
+      <div class="wx-forecast" data-forecast title="{{localize 'GLCT.weather.forecastHint'}}"></div>
+    </div>
+
     {{!-- Recent history strip (visible to players) --}}
     <div class="wx-strip-wrap">
       <span class="wx-strip-lbl">{{localize 'GLCT.weather.recent'}}</span>
