@@ -14,7 +14,9 @@ export const HOOKS = {
   /** Fired when events/holidays are edited: (events) => void */
   eventsChanged: `${MODULE_ID}.eventsChanged`,
   /** Fired when trackers are created/edited/reordered/deleted: (trackers) => void */
-  trackersChanged: `${MODULE_ID}.trackersChanged`
+  trackersChanged: `${MODULE_ID}.trackersChanged`,
+  /** Fired (callAll) after the weather walk advances/rewinds/resets: (payload) => void */
+  weatherChanged: `${MODULE_ID}.weatherChanged`
 };
 
 /** World-setting keys. */
@@ -32,7 +34,17 @@ export const SETTINGS = {
   trackers: "trackers",            // Array: GM-managed tracker definitions (world)
   trackerHudPosition: "trackerHudPosition", // Object {top,left} (client)
   trackerHudHidden: "trackerHudHidden",     // Boolean (client): dock hidden on this screen
-  trackerHudCompact: "trackerHudCompact"    // Boolean (client): dock collapsed to playing-card minis
+  trackerHudCompact: "trackerHudCompact",   // Boolean (client): dock collapsed to playing-card minis
+
+  // ---- Weather (Hex Flower Game Engine) ----
+  weatherEnabled: "weatherEnabled",                   // Boolean (world): master opt-in (default false)
+  weather: "weather",                                 // Object (world): full config + live walk state (§4.5)
+  weatherCadenceMode: "weatherCadenceMode",           // String (world): "auto" | "manual"
+  weatherCadencePeriod: "weatherCadencePeriod",       // String (world): "day" | "days:N" | "shift"
+  weatherPlayerFlowerVisible: "weatherPlayerFlowerVisible", // Boolean (world): reveal the flower to players
+  weatherShowDice: "weatherShowDice",                 // Boolean (world): animate Dice So Nice 3D dice on weather rolls
+  weatherHudPosition: "weatherHudPosition",           // Object (client): Hex Flower window position
+  weatherHudHidden: "weatherHudHidden"                // Boolean (client): window hidden on this screen
 };
 
 /** The tracker types the dock can render. */
@@ -55,3 +67,43 @@ export const DEFAULT_SHIFT_NAMES = ["Night Watch", "Dawn Watch", "Day Watch", "D
 
 /** Step names usable by GM controls / keybindings. */
 export const STEPS = ["stretch", "hour", "shift", "day"];
+
+/* ============================================================
+   Weather — Hex Flower Game Engine constants.
+   The flower is a fixed 19-hex topology (see weather/hex-geometry.js).
+   Weather outcomes are a composable "motion archetype × style (tints)";
+   shipped "kinds" are named archetype+tint presets (see weather/presets.js).
+   ============================================================ */
+
+/** The 6 hex-face directions, clockwise from the top (matches HEX_LAYOUT). */
+export const WEATHER_DIRECTIONS = ["up", "upperRight", "lowerRight", "down", "lowerLeft", "upperLeft"];
+
+/** Human display order for the Navigation-Hex editor (clock-face). */
+export const WEATHER_DIRECTION_LABELS = {
+  up: "GLCT.weather.dir.up",
+  upperRight: "GLCT.weather.dir.upperRight",
+  lowerRight: "GLCT.weather.dir.lowerRight",
+  down: "GLCT.weather.dir.down",
+  lowerLeft: "GLCT.weather.dir.lowerLeft",
+  upperLeft: "GLCT.weather.dir.upperLeft"
+};
+
+/** Pixi motion archetypes the effects engine implements (decision #8, §4.6). */
+export const WEATHER_ARCHETYPES = [
+  "clear", "streaks", "flakes", "volume", "flashes", "motes", "embers", "gusts", "shards"
+];
+
+/** Archetypes that read better with additive blending (glowing particles). */
+export const WEATHER_ADDITIVE_ARCHETYPES = ["flashes", "motes", "embers"];
+
+/** Drift directions an archetype may honour. */
+export const WEATHER_DRIFTS = ["fall", "rise", "left", "right", "still"];
+
+/** Supported Navigation-Hex dice systems (extensible). */
+export const WEATHER_DICE = ["2d6", "d6+d8"];
+
+/** Number of history steps retained on the walk (decision #4). */
+export const WEATHER_HISTORY_CAP = 60;
+
+/** Maximum auto-steps executed for one big time skip (decision #3). */
+export const WEATHER_STEP_CAP = 60;

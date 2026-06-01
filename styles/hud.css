@@ -64,7 +64,11 @@
 #glct-hud .grip i{width:3px;height:3px;border-radius:99px;background:rgba(255,255,255,.22);transition:.3s}
 #glct-hud .bar:hover .grip i{background:rgba(255,255,255,.42)}
 
-#glct-hud .date{padding-left:10px}
+/* the date cell is a row: the date stack on the left, an optional compact weather
+   readout nested beside it (.wxmini, styled in weather.css). With weather hidden,
+   only the stack renders so the layout is identical to before. */
+#glct-hud .date{padding-left:10px;flex-direction:row;align-items:center;gap:11px}
+#glct-hud .date .datestack{display:flex;flex-direction:column;justify-content:center;gap:2px}
 #glct-hud .date .wd{font-size:8px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
 #glct-hud .date .m{font-size:16px;font-weight:760;letter-spacing:.2px;line-height:1.05;white-space:nowrap;
   background:linear-gradient(180deg,#fff,#ccd5e8);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -352,11 +356,14 @@
    onto the Oxanium stack explicitly (the JSON editor re-sets monospace). */
 .glct-calendar,.glct-events,.glct-caledit,.glct-settime,.glct-trk-form,.glct-trk-pick{
   font-family:"Oxanium","Segoe UI",system-ui,sans-serif}
-.glct-calendar :is(input,select,button,textarea),
-.glct-events :is(input,select,button,textarea),
-.glct-caledit :is(input,select,button,textarea),
-.glct-settime :is(input,select,button,textarea),
-.glct-trk-form :is(input,select,button,textarea){font-family:inherit}
+/* …but NOT the window-header control buttons: those carry a Font Awesome glyph
+   directly on the <button> (via ::before), so forcing the display font onto them
+   renders the close/control icons as tofu rectangles. Exclude .header-control. */
+.glct-calendar :is(input,select,button,textarea):not(.header-control),
+.glct-events :is(input,select,button,textarea):not(.header-control),
+.glct-caledit :is(input,select,button,textarea):not(.header-control),
+.glct-settime :is(input,select,button,textarea):not(.header-control),
+.glct-trk-form :is(input,select,button,textarea):not(.header-control){font-family:inherit}
 
 /* ===================== read-only calendar view ===================== */
 .glct-calendar .glct-cal{--tint:#6b86d6;--accent:#ffc454;padding:4px 6px 10px;color:#eef1f7}

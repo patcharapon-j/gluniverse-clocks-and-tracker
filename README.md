@@ -26,6 +26,12 @@ A premium, tactile in-game **calendar and time HUD** for Foundry VTT, built on F
   - **Hazard** — a doom clock in danger-red with a persistent dread glow & ember flicker.
   - **Separator** — a slim, label-bearing divider to group the dock into sections (purely visual).
   - Full CRUD per tracker (incl. **player visibility**) from a **right-click context menu** on a row's name/label area — its value stays click-to-step; drag the grip to reorder — changes sync to players instantly.
+- **Weather (Hex Flower)** — an opt-in weather engine built on Goblin's Henchman's *Hex Flower Game Engine*: a 19-hex "flower" of weather conditions that a current-position marker walks around one step at a time, driven by a **Navigation Hex** (roll dice → hex-face direction) whose mapping carries the trend. It is wired into the time system — the flower **auto-walks as in-game days pass** (configurable) and uses a **different flower + Navigation Hex per calendar season**, remapping your position by coordinate when the season turns.
+  - **Weather chip on the HUD** — a localized PixiJS "diorama" (animated rain / snow / lightning / fog / embers…) with the tint confined to the chip only (the rest of the bar keeps its shift colour), the condition label & temperature, and a hazard dread-pulse for ominous weather. Click it to open the flower window.
+  - **Hex Flower window** — the 19 hexes rendered with the current cell glowing and the marker animating hex-to-hex on each step, a player-visible history strip, and GM controls (Roll-now / right-click rewind / reset / reveal-to-players). Players see the current condition + history; the full flower is GM-only unless revealed.
+  - **Composable effects** — every condition is a *motion archetype × two tints*, so fantasy weather (acid rain, crimson lightning, ashfall, arcane mist, ember storms…) is just an archetype plus a colour — no new code. Effects pause when the HUD is collapsed or the tab is backgrounded, and respect `prefers-reduced-motion`.
+  - **Visual editor** — click a hex to edit its label/icon/description/temperature/effect with a live preview; edit each season's Navigation Hex with a live trend/probability preview and per-face edge rules; pick the **Temperate** (4-season) or **Homage** (single-flower) preset, or import/export JSON.
+  - Ships **disabled by default**, so calendar-only worlds are unaffected.
 
 ---
 
@@ -62,6 +68,17 @@ This always installs the latest release. Then enable **GLUniverse — Clocks & T
 | Advance / rewind a tracker (GM) | **Left-click** the value to advance, **right-click** the value to step back (pool: left-click rolls, right-click resets) |
 | Tracker controls (GM) | **Right-click** a row's **name / label area** for a context menu: edit, show or hide from players, delete |
 | Reorder trackers (GM) | Drag a row's grip |
+| Toggle the weather flower | `Alt+W`, or the cloud-bolt button in the scene controls (once weather is enabled) |
+| Roll the weather (GM) | **Roll Weather** in the flower window — **right-click** it to rewind a step |
+| Force a condition (GM) | Click any hex in the flower window |
+
+### Weather (GM)
+
+Weather ships **off**. Turn it on in **Game Settings → Configure Settings → GLUniverse Clocks & Tracker → Enable Weather**, then the **Edit Weather** menu opens the visual editor (or apply the **Temperate** preset and Save). Once enabled and configured, a weather chip appears on the HUD and the Hex Flower window can be opened with `Alt+W`.
+
+- **Cadence** — choose **Auto** (the weather walks forward as in-game time passes) or **Manual** (only your Roll-now control advances it), and the **step period** (every day / N days / watch). A big time skip walks several steps at once (capped) and posts a single digest chat card instead of one per step.
+- **Seasons** — each season has its own flower and Navigation Hex. When the calendar season turns, your position is kept by coordinate and the new season's flower takes over.
+- **Player visibility** — players always see the current condition + recent history and the announcement chat card. Reveal the full flower (read-only) with the eye toggle in the window or the **Reveal Flower to Players** setting.
 
 ### Configuring a calendar (GM)
 
