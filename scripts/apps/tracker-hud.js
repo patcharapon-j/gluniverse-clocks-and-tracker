@@ -51,6 +51,8 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _rows = new Map();   // id -> { el, paint, flash, vsig }
   _sig = null;         // last structural signature array
+  _ctx = null;         // open context menu element, if any
+  _ctxOff = null;      // teardown for the menu's window listeners
 
   /** Compact ("playing-card") mode is a per-client preference. */
   get compact() {
@@ -69,6 +71,11 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._applyPosition();
     this._wireDockChrome();
     this.update();
+  }
+
+  async _onClose(options) {
+    this._closeContextMenu();
+    await super._onClose(options);
   }
 
   /* ------------------------------ painting ------------------------------ */
@@ -123,6 +130,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _buildRows(list) {
     const host = this.element.querySelector("[data-rows]");
     if (!host) return;
+    this._closeContextMenu();                   // a rebuild invalidates any open menu
     this._rows.forEach(r => r.cancelPop?.());   // clear any pop-out timers/placeholders first
     host.replaceChildren();
     this._rows.clear();
@@ -159,20 +167,8 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const body = this._buildBody(t);
     row.appendChild(body.content);
-
-    if (isGM) {
-      const tools = this._el("div", "tools");
-      const eye = this._el("button", "eye" + (t.visibleToPlayers ? "" : " off"));
-      eye.innerHTML = t.visibleToPlayers ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
-      eye.title = game.i18n.localize("GLCT.tracker.toggleVis");
-      eye.addEventListener("click", e => { e.stopPropagation(); TrackerStore.setVisibility(t.id, !t.visibleToPlayers); });
-      const edit = this._el("button"); edit.innerHTML = '<i class="fa-solid fa-gear"></i>'; edit.title = game.i18n.localize("GLCT.tracker.edit");
-      edit.addEventListener("click", e => { e.stopPropagation(); this._editTracker(t.id); });
-      const del = this._el("button"); del.innerHTML = '<i class="fa-solid fa-xmark"></i>'; del.title = game.i18n.localize("GLCT.tracker.delete");
-      del.addEventListener("click", e => { e.stopPropagation(); this._deleteTracker(t.id); });
-      tools.append(eye, edit, del);
-      row.appendChild(tools);
-    }
+    // GM management (edit / visibility / delete) and value stepping now live on a
+    // right-click context menu rather than hover buttons — see _openContextMenu.
 
     if (t.type !== "hazard" && t.type !== "separator") {
       const ovl = this._el("div", "rovl");
@@ -592,8 +588,19 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   /* ------------------------------ interactions ------------------------------ */
 
   _wireRowInteractions(row, body, type) {
-    if (type === "separator") { body.style.cursor = "default"; return; }  // purely decorative
     const isGM = game.user.isGM;
+    // The GM gets a right-click context menu on the whole row that gathers every
+    // control (advance/rewind, edit, visibility, delete) — replacing the old
+    // hover tool buttons. Players never had right-click, so they're unaffected.
+    if (isGM) {
+      row.addEventListener("contextmenu", ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        this._openContextMenu(ev, TrackerStore.get(row.dataset.id));
+      });
+    }
+
+    if (type === "separator") { body.style.cursor = "default"; return; }  // purely decorative
     // Players only ever interact with a pool they're allowed to roll; everything
     // else is read-only, so don't tease them with a clickable cursor.
     const interactive = isGM || (type === "pool" && TrackerStore.get(row.dataset.id)?.playerRoll);
@@ -603,12 +610,83 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       if (!isGM) return;
       TrackerStore.step(row.dataset.id, +1);
     });
-    body.addEventListener("contextmenu", ev => {
-      ev.preventDefault();
-      if (!isGM) return;
-      if (type === "pool") { TrackerStore.resetPool(row.dataset.id); return; }
-      TrackerStore.step(row.dataset.id, -1);
+  }
+
+  /* ------------------------------ context menu ------------------------------ */
+
+  /** Build the ordered list of menu entries for a tracker. */
+  _contextItems(t) {
+    const L = k => game.i18n.localize(k);
+    const items = [];
+    if (t.type === "pool") {
+      items.push({ icon: "fa-dice-d6", label: L("GLCT.tracker.ctx.roll"), run: () => TrackerStore.rollPool(t.id) });
+      items.push({ icon: "fa-rotate-left", label: L("GLCT.tracker.ctx.reset"), run: () => TrackerStore.resetPool(t.id) });
+      items.push({ sep: true });
+    } else if (t.type !== "separator") {
+      items.push({ icon: "fa-plus", label: L("GLCT.tracker.ctx.advance"), run: () => TrackerStore.step(t.id, +1) });
+      items.push({ icon: "fa-minus", label: L("GLCT.tracker.ctx.rewind"), run: () => TrackerStore.step(t.id, -1) });
+      items.push({ sep: true });
+    }
+    items.push({ icon: "fa-gear", label: L("GLCT.tracker.edit"), run: () => this._editTracker(t.id) });
+    items.push({
+      icon: t.visibleToPlayers ? "fa-eye-slash" : "fa-eye",
+      label: L(t.visibleToPlayers ? "GLCT.tracker.ctx.hide" : "GLCT.tracker.ctx.show"),
+      run: () => TrackerStore.setVisibility(t.id, !t.visibleToPlayers)
     });
+    items.push({ sep: true });
+    items.push({ icon: "fa-trash", label: L("GLCT.tracker.delete"), danger: true, run: () => this._deleteTracker(t.id) });
+    return items;
+  }
+
+  /** Pop a floating context menu at the cursor; dismissed on outside click / Escape. */
+  _openContextMenu(ev, t) {
+    if (!t || !game.user.isGM) return;
+    this._closeContextMenu();
+
+    const menu = this._el("div", "trk-ctx");
+    for (const it of this._contextItems(t)) {
+      if (it.sep) { menu.appendChild(this._el("div", "ctx-sep")); continue; }
+      const b = this._el("button", "ctx-item" + (it.danger ? " danger" : ""));
+      b.appendChild(this._el("i", "fa-solid " + it.icon));
+      b.appendChild(this._el("span", null, it.label));
+      b.addEventListener("click", e => { e.stopPropagation(); this._closeContextMenu(); it.run(); });
+      menu.appendChild(b);
+    }
+
+    // Mount outside .trk-dock (which clips overflow); .glct-trk-root grants pointer events.
+    const root = this.element.querySelector(".glct-trk-root") ?? this.element;
+    menu.style.visibility = "hidden";
+    root.appendChild(menu);
+
+    // Clamp to the viewport so the menu never spills off-screen.
+    const mw = menu.offsetWidth, mh = menu.offsetHeight;
+    const x = Math.max(6, Math.min(ev.clientX, window.innerWidth - mw - 6));
+    const y = Math.max(6, Math.min(ev.clientY, window.innerHeight - mh - 6));
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    menu.style.visibility = "";
+    requestAnimationFrame(() => menu.classList.add("show"));
+    this._ctx = menu;
+
+    const onDown = e => { if (!menu.contains(e.target)) this._closeContextMenu(); };
+    const onKey = e => { if (e.key === "Escape") { e.preventDefault(); this._closeContextMenu(); } };
+    // Defer wiring so the opening right-click doesn't immediately dismiss it.
+    setTimeout(() => {
+      if (!this._ctx) return;
+      window.addEventListener("pointerdown", onDown, true);
+      window.addEventListener("contextmenu", onDown, true);
+      window.addEventListener("keydown", onKey, true);
+    }, 0);
+    this._ctxOff = () => {
+      window.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("contextmenu", onDown, true);
+      window.removeEventListener("keydown", onKey, true);
+    };
+  }
+
+  _closeContextMenu() {
+    this._ctxOff?.(); this._ctxOff = null;
+    this._ctx?.remove(); this._ctx = null;
   }
 
   _wireReorder(host) {
@@ -657,6 +735,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _onToggleCompact() {
+    this._closeContextMenu();
     const next = !this.compact;
     try { await game.settings.set(MODULE_ID, SETTINGS.trackerHudCompact, next); } catch { /* ignore */ }
     // Tear down any in-flight pop-outs (timers, placeholders, inline geometry)
