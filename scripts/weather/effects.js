@@ -59,7 +59,6 @@ export class WeatherEffect {
     this.spec = null;
     this.particles = [];
     this._paused = true;
-    this._freeze = false;   // when set, the field stays a frozen still frame (compact bar)
     this._flashT = 0;
     this._strike = 0;
     this._reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
@@ -511,32 +510,16 @@ export class WeatherEffect {
   }
 
   resume() {
-    this._freeze = false;   // an explicit resume (bar expanded) clears the still hold
     if (this._reduced) { this._renderStatic(); return; }
     if (!this._paused) return;
     this._paused = false;
     this.app?.ticker?.start();
   }
 
-  /**
-   * Render a single frozen frame and keep the ticker stopped — the "still"
-   * diorama shown behind the collapsed/compact bar. The particle field is fully
-   * seeded (every sprite spawns spread across the area), so one render paints a
-   * populated, motionless scene rather than an empty canvas. The `_freeze` flag
-   * makes the visibility handler repaint-and-hold rather than resume on return.
-   */
-  still() {
-    this._freeze = true;
-    this._paused = true;
-    try { this.app?.ticker?.stop(); } catch { /* ignore */ }
-    try { this.app?.renderer?.render(this.app.stage); } catch { /* ignore */ }
-  }
-
   /** Pause when the tab is hidden or the host is display:none (collapsed/hidden);
-      otherwise resume — unless the field is held frozen, which we just repaint. */
+      otherwise resume the live field (compact and full bar both animate). */
   _syncPause() {
     if (document.hidden || !this.host?.offsetParent) this.pause();
-    else if (this._freeze) this.still();
     else this.resume();
   }
 
