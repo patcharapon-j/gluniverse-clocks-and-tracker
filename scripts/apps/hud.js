@@ -117,16 +117,19 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._wx?.destroy(); this._wx = null;   // the chip host is recreated on re-render
     this._buildDynamic();
     this._applyPosition();
+    this._wireViewportClamp();
     this._activateInteractions();
     this.update();
     this._paintWeather();
   }
 
   async _onClose(options) {
-    clearTimeout(this._peekEndT); clearTimeout(this._barT); clearTimeout(this._peekTransT);
+    clearTimeout(this._peekEndT); clearTimeout(this._barT); clearTimeout(this._peekTransT); clearTimeout(this._clampT);
     this._peeking = false;
     this._wx?.destroy();
     this._wx = null;
+    if (this._onViewportResize) window.removeEventListener("resize", this._onViewportResize);
+    if (this._resizeRAF) { cancelAnimationFrame(this._resizeRAF); this._resizeRAF = null; }
     return super._onClose(options);
   }
 
@@ -828,9 +831,47 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       : null;
     if (Number.isFinite(cx) && Number.isFinite(pos.top)) {
       el.style.left = `${cx}px`; el.style.top = `${pos.top}px`;
+      this._clampToViewport();   // a saved position may be off-screen on a smaller window
     } else {
       el.style.left = "50%"; el.style.top = "6px";
     }
+  }
+
+  /**
+   * Keep the bar fully on-screen. The HUD is centre-anchored (`left` holds the
+   * centre-x, `translateX(-50%)` recentres it), so we bound the centre by half
+   * the width. Used after restoring a saved position, on every drag frame, and
+   * on viewport resize, so the HUD can never be stranded past a window edge.
+   */
+  _clampToViewport() {
+    const el = this.element;
+    if (!el) return;
+    // Only act on a px-anchored HUD; the default "50%" centring is fluid and
+    // already safe, so we leave it untouched (and never freeze it to pixels).
+    if (!el.style.left.endsWith("px")) return;
+    const r = el.getBoundingClientRect();
+    if (!r.width && !r.height) return;
+    const m = 6, hw = r.width / 2;
+    const minCx = m + hw, maxCx = window.innerWidth - m - hw;
+    let cx = r.left + hw;
+    // If the bar is wider than the viewport, centre it rather than over-clamp.
+    cx = minCx > maxCx ? window.innerWidth / 2 : Math.min(Math.max(cx, minCx), maxCx);
+    const top = Math.min(Math.max(r.top, m), Math.max(m, window.innerHeight - m - r.height));
+    el.style.left = `${Math.round(cx)}px`;
+    el.style.top = `${Math.round(top)}px`;
+  }
+
+  /** Re-clamp on window resize so a shrinking viewport can't strand the HUD. */
+  _wireViewportClamp() {
+    this._onViewportResize ??= () => {
+      if (this._resizeRAF) return;
+      this._resizeRAF = requestAnimationFrame(() => {
+        this._resizeRAF = null;
+        if (this.rendered) this._applyPosition();
+      });
+    };
+    window.removeEventListener("resize", this._onViewportResize);
+    window.addEventListener("resize", this._onViewportResize);
   }
 
   _onDragStart(ev) {
@@ -847,7 +888,10 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       if (!moved && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4) {
         moved = true; el.style.transform = "translateX(-50%)";
       }
-      if (moved) { el.style.left = `${e.clientX - ox}px`; el.style.top = `${e.clientY - oy}px`; }
+      if (moved) {
+        el.style.left = `${e.clientX - ox}px`; el.style.top = `${e.clientY - oy}px`;
+        this._clampToViewport();   // never let a drag carry the HUD off-screen
+      }
     };
     const up = async () => {
       window.removeEventListener("pointermove", move);
@@ -887,6 +931,10 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     bar?.classList.toggle("collapsed", next);
     this.element.querySelector(".hud-root")?.classList.toggle("is-collapsed", next);
     this._paintWeather();   // freeze the compact diorama / wake it when expanded
+    // The width changed — re-fit once the bar's width transition settles so an
+    // expand near a screen edge can't push the HUD off it.
+    clearTimeout(this._clampT);
+    this._clampT = setTimeout(() => this._clampToViewport(), 460);
   }
   async _onSetTime() {
     if (!game.user.isGM) return;
@@ -931,7 +979,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       bar.style.transition = "";       // restore the stylesheet's width easing
       bar.style.width = `${w1}px`;
       clearTimeout(this._barT);
-      this._barT = setTimeout(() => { bar.style.width = ""; }, 420);
+      this._barT = setTimeout(() => { bar.style.width = ""; this._clampToViewport(); }, 420);
     }
 
     if (bar) { bar.classList.remove("swept"); void bar.offsetWidth; bar.classList.add("swept"); }

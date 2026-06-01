@@ -69,12 +69,16 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._rows.clear();
     this._sig = null;
     this._applyPosition();
+    this._wireViewportClamp();
     this._wireDockChrome();
     this.update();
   }
 
   async _onClose(options) {
     this._closeContextMenu();
+    clearTimeout(this._clampT);
+    if (this._onViewportResize) window.removeEventListener("resize", this._onViewportResize);
+    if (this._resizeRAF) { cancelAnimationFrame(this._resizeRAF); this._resizeRAF = null; }
     await super._onClose(options);
   }
 
@@ -777,6 +781,10 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._rows.forEach(r => r.cancelPop?.());
     this.element.querySelector("[data-dock]")?.classList.toggle("compact", next);
     this.update();   // reconcile every row to its current value after the toggle
+    // The dock's width changed — re-clamp once the layout settles so a wider
+    // (standard) dock near a screen edge can't be pushed off it.
+    clearTimeout(this._clampT);
+    this._clampT = setTimeout(() => this._clampToViewport(), 60);
   }
 
   _onDragDock(ev) {
@@ -791,7 +799,10 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       if (!moved && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4) {
         moved = true; el.style.right = "auto";
       }
-      if (moved) { el.style.left = `${e.clientX - ox}px`; el.style.top = `${e.clientY - oy}px`; }
+      if (moved) {
+        el.style.left = `${e.clientX - ox}px`; el.style.top = `${e.clientY - oy}px`;
+        this._clampToViewport();   // never let a drag carry the dock off-screen
+      }
     };
     const up = async () => {
       window.removeEventListener("pointermove", move);
@@ -812,9 +823,45 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     try { pos = game.settings.get(MODULE_ID, SETTINGS.trackerHudPosition) ?? {}; } catch { /* ignore */ }
     if (Number.isFinite(pos.left) && Number.isFinite(pos.top)) {
       el.style.left = `${pos.left}px`; el.style.top = `${pos.top}px`; el.style.right = "auto";
+      this._clampToViewport();   // a saved position may be off-screen on a smaller window
     } else {
       el.style.right = "14px"; el.style.top = "96px"; el.style.left = "auto";
     }
+  }
+
+  /**
+   * Keep the dock fully on-screen. Top-left anchored, so we bound `left`/`top`
+   * by the dock's own width/height. Used after restoring a saved position, on
+   * every drag frame, and on viewport resize, so the dock can never be
+   * stranded past a window edge.
+   */
+  _clampToViewport() {
+    const el = this.element;
+    if (!el) return;
+    // Only act on a left-anchored dock; the default right-edge anchoring is
+    // fluid and already safe, so we leave it untouched.
+    if (el.style.right !== "auto") return;
+    const r = el.getBoundingClientRect();
+    if (!r.width && !r.height) return;
+    const m = 6;
+    const left = Math.min(Math.max(r.left, m), Math.max(m, window.innerWidth - m - r.width));
+    const top = Math.min(Math.max(r.top, m), Math.max(m, window.innerHeight - m - r.height));
+    el.style.left = `${Math.round(left)}px`;
+    el.style.top = `${Math.round(top)}px`;
+    el.style.right = "auto";
+  }
+
+  /** Re-clamp on window resize so a shrinking viewport can't strand the dock. */
+  _wireViewportClamp() {
+    this._onViewportResize ??= () => {
+      if (this._resizeRAF) return;
+      this._resizeRAF = requestAnimationFrame(() => {
+        this._resizeRAF = null;
+        if (this.rendered) this._applyPosition();
+      });
+    };
+    window.removeEventListener("resize", this._onViewportResize);
+    window.addEventListener("resize", this._onViewportResize);
   }
 
   /* ------------------------------ CRUD entry points ------------------------------ */
