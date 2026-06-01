@@ -54,10 +54,8 @@ Hooks.once("ready", async () => {
 
   // Seed/sync the weather walk once on load (GM only; no-op when disabled).
   if (game.user.isGM) await WeatherEngine.evaluate();
-  // Open the Hex Flower window if weather is enabled + configured and not hidden here.
-  if (WeatherStore.enabled && WeatherStore.configured && !setting(SETTINGS.weatherHudHidden, false)) {
-    await WeatherHud.open();
-  }
+  // Note: the Hex Flower window is NOT auto-opened on launch — open it manually
+  // from the scene controls / macro when you want it.
 });
 
 Hooks.on("updateWorldTime", () => {

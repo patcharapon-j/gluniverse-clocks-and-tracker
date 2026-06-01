@@ -72,30 +72,34 @@
   mask-image:linear-gradient(90deg,#000 0,#000 20%,transparent 38%,transparent 100%);
   transition:box-shadow .6s ease}
 
-/* ---- Compact pill weather: the diorama fills the WHOLE pill ----
-   When the bar is collapsed there's no date stack to protect, so the left-edge
-   feather is dropped: the live particle field (kept animating by the app),
-   a soft tint wash, a legibility scrim and the liquid-glass rim all wrap the
-   entire compact pill so the current weather reads at a glance. The styling
-   follows the collapsed class so a value-flash peek (which un-collapses)
-   smoothly returns to the full-bar look. */
+/* ---- Compact pill weather: the diorama hugs the LEFT HALF of the pill ----
+   When the bar is collapsed the live particle field, tint wash, legibility scrim
+   and liquid-glass rim sit behind the ring on the left half of the pill and feather
+   out before the clock/date on the right — they do NOT span the whole pill. The
+   same left→transparent mask as the full bar clips all three layers; only the stop
+   positions widen to ~half (vs. the full bar's left third). Styling follows the
+   collapsed class so a value-flash peek (which un-collapses) returns to full-bar. */
 #glct-hud .bar.collapsed.has-wx .bar-wx{
-  -webkit-mask-image:none;mask-image:none;
-  background:radial-gradient(125% 150% at 50% 0%,
-    color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 26%,transparent),
-    color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 11%,transparent) 66%,
-    transparent)}
+  background:linear-gradient(100deg,
+    color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 30%,transparent) 0%,
+    color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 13%,transparent) 30%,
+    transparent 58%);
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 36%,transparent 58%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0,#000 36%,transparent 58%,transparent 100%)}
 #glct-hud .bar.collapsed.has-wx .bar-wx-scrim{
-  -webkit-mask-image:none;mask-image:none;
-  background:linear-gradient(180deg, rgba(8,11,17,.42), rgba(8,11,17,.66))}
+  background:linear-gradient(100deg, rgba(8,11,17,.5) 0%, rgba(8,11,17,.3) 30%, rgba(8,11,17,0) 56%);
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 40%,transparent 60%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0,#000 40%,transparent 60%,transparent 100%)}
 #glct-hud .bar.collapsed.wx-ominous .bar-wx-scrim{
-  background:linear-gradient(180deg, rgba(14,8,9,.48), rgba(14,8,9,.72))}
+  background:linear-gradient(100deg, rgba(14,8,9,.56) 0%, rgba(14,8,9,.34) 30%, rgba(14,8,9,0) 56%)}
 #glct-hud .bar.collapsed.has-wx::after{
-  -webkit-mask-image:none;mask-image:none;
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 40%,transparent 60%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0,#000 40%,transparent 60%,transparent 100%);
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 55%,transparent),
     inset 0 1px 0 color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 60%,#fff),
-    inset 0 0 16px -3px color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 50%,transparent)}
+    inset 0 0 16px -3px color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 50%,transparent),
+    inset 14px 0 26px -16px color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 70%,transparent)}
 
 /* Under an active effect the date stack gets a deeper shadow so it reads cleanly
    against the brighter, tinted left edge. The day/month line is gradient-clipped
@@ -205,7 +209,14 @@
   color:color-mix(in srgb,var(--glct-weather-tint) 60%,#fff);
   padding:1px 7px;border-radius:99px;background:color-mix(in srgb,var(--glct-weather-glow) 16%,transparent);
   border:1px solid color-mix(in srgb,var(--glct-weather-glow) 30%,transparent)}
-#glct-weather-hud .wx-cur-desc{font-size:10.5px;line-height:1.4;color:#c2cbdb;margin-top:2px}
+/* Description can run long — cap it to a few lines then let it scroll in place
+   instead of stretching the hero card. Thin gutter so text clears the scrollbar. */
+#glct-weather-hud .wx-cur-desc{font-size:10.5px;line-height:1.4;color:#c2cbdb;margin-top:2px;
+  max-height:5.6em;overflow-y:auto;overflow-x:hidden;padding-right:4px;
+  scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 45%,transparent) transparent}
+#glct-weather-hud .wx-cur-desc::-webkit-scrollbar{width:6px}
+#glct-weather-hud .wx-cur-desc::-webkit-scrollbar-thumb{
+  background:color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 45%,transparent);border-radius:99px}
 #glct-weather-hud .wx-cur-note{font-size:10px;line-height:1.4;color:#e7c98a;margin-top:3px;
   padding:5px 8px;border-radius:7px;background:rgba(217,176,102,.1);border-left:2px solid rgba(217,176,102,.5)}
 #glct-weather-hud .wx-current.ominous .wx-cur-label{background:none;-webkit-text-fill-color:#ffd9d4;color:#ffd9d4}
