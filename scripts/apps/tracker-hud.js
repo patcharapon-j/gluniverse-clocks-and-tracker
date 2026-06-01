@@ -181,7 +181,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const mini = this._buildMini(t);
     row.appendChild(mini.el);
 
-    this._wireRowInteractions(row, body.content, t.type);
+    this._wireRowInteractions(row, t.type, body.content, body.stepEls ?? []);
 
     // --- compact pop-out -------------------------------------------------
     // While the dock is collapsed, a value change lifts this card out of the
@@ -315,7 +315,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       last = v;
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [val] };
   }
 
   /** Render an integer as per-digit reels; animates when the digit layout is stable. */
@@ -396,7 +396,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
         game.i18n.localize(bad ? "GLCT.tracker.doom" : "GLCT.tracker.filled"));
       last = v;
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [pie, frac] };
   }
 
   /* ---- POOL (point-style remaining count; 3D roll handled by Dice So Nice in chat) ---- */
@@ -431,7 +431,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       this._setOverlay(c, cur === 0 ? "empty" : null, game.i18n.localize("GLCT.tracker.empty"));
       last = cur;
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [val] };
   }
 
   /* ---- TASK (discrete boxes) ---- */
@@ -458,7 +458,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       this._setOverlay(c, v >= boxes ? "done" : null, game.i18n.localize("GLCT.tracker.completed"));
       last = v;
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [br] };
   }
 
   /* ---- HAZARD (red dread boxes; no overlay) ---- */
@@ -486,7 +486,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       c.closest(".trow")?.classList.toggle("full", v >= boxes);
       last = v;
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [br] };
   }
 
   /* ---- SEPARATOR (purely visual divider with optional centered label) ---- */
@@ -499,7 +499,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       lab.textContent = txt;
       lab.style.display = txt ? "" : "none";
     };
-    return { content: c, paint };
+    return { content: c, paint, stepEls: [] };
   }
 
   /* ---- COMPACT MINI (vertical "playing-card" face for collapsed mode) ---- */
@@ -587,46 +587,51 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /* ------------------------------ interactions ------------------------------ */
 
-  _wireRowInteractions(row, body, type) {
+  _wireRowInteractions(row, type, content, stepEls) {
     const isGM = game.user.isGM;
-    // The GM gets a right-click context menu on the whole row that gathers every
-    // control (advance/rewind, edit, visibility, delete) — replacing the old
-    // hover tool buttons. Players never had right-click, so they're unaffected.
+    const id = row.dataset.id;
+
+    // The value zone keeps the simple gesture: left-click increments, right-click
+    // decrements (pool: left rolls, right resets). Right-clicking anywhere else on
+    // the row — the name/title and the spacing up to the value — opens the GM
+    // context menu instead. Players never get the menu, so they're unaffected.
+    if (type !== "separator") content.style.cursor = isGM ? "context-menu" : "default";
     if (isGM) {
       row.addEventListener("contextmenu", ev => {
         ev.preventDefault();
-        ev.stopPropagation();
-        this._openContextMenu(ev, TrackerStore.get(row.dataset.id));
+        this._openContextMenu(ev, TrackerStore.get(id));
       });
     }
 
-    if (type === "separator") { body.style.cursor = "default"; return; }  // purely decorative
-    // Players only ever interact with a pool they're allowed to roll; everything
-    // else is read-only, so don't tease them with a clickable cursor.
-    const interactive = isGM || (type === "pool" && TrackerStore.get(row.dataset.id)?.playerRoll);
-    if (!interactive) body.style.cursor = "default";
-    body.addEventListener("click", () => {
-      if (type === "pool") { TrackerStore.rollPool(row.dataset.id); return; }
-      if (!isGM) return;
-      TrackerStore.step(row.dataset.id, +1);
-    });
+    if (type === "separator") return;   // purely decorative, no value to step
+
+    // Who may step the value: the GM always; a player only on a pool they may roll.
+    const canStep = isGM || (type === "pool" && TrackerStore.get(id)?.playerRoll);
+    for (const el of stepEls) {
+      el.style.cursor = canStep ? "pointer" : "default";
+      el.addEventListener("click", ev => {
+        ev.stopPropagation();
+        if (type === "pool") { if (canStep) TrackerStore.rollPool(id); return; }
+        if (!isGM) return;
+        TrackerStore.step(id, +1);
+      });
+      el.addEventListener("contextmenu", ev => {
+        ev.preventDefault();
+        ev.stopPropagation();          // keep stepping on the value; don't open the menu
+        if (type === "pool") { if (isGM) TrackerStore.resetPool(id); return; }
+        if (!isGM) return;
+        TrackerStore.step(id, -1);
+      });
+    }
   }
 
   /* ------------------------------ context menu ------------------------------ */
 
-  /** Build the ordered list of menu entries for a tracker. */
+  /** Build the ordered list of menu entries for a tracker (management only —
+   *  value stepping lives on the value zone's left/right click). */
   _contextItems(t) {
     const L = k => game.i18n.localize(k);
     const items = [];
-    if (t.type === "pool") {
-      items.push({ icon: "fa-dice-d6", label: L("GLCT.tracker.ctx.roll"), run: () => TrackerStore.rollPool(t.id) });
-      items.push({ icon: "fa-rotate-left", label: L("GLCT.tracker.ctx.reset"), run: () => TrackerStore.resetPool(t.id) });
-      items.push({ sep: true });
-    } else if (t.type !== "separator") {
-      items.push({ icon: "fa-plus", label: L("GLCT.tracker.ctx.advance"), run: () => TrackerStore.step(t.id, +1) });
-      items.push({ icon: "fa-minus", label: L("GLCT.tracker.ctx.rewind"), run: () => TrackerStore.step(t.id, -1) });
-      items.push({ sep: true });
-    }
     items.push({ icon: "fa-gear", label: L("GLCT.tracker.edit"), run: () => this._editTracker(t.id) });
     items.push({
       icon: t.visibleToPlayers ? "fa-eye-slash" : "fa-eye",
