@@ -15,15 +15,16 @@
    ============================================================ */
 
 /* Full-bar diorama: a Pixi canvas spanning the whole bar, behind the content
-   (.main is z-index:2), screen-blended so only the bright tinted particles add a
-   glow while the dark glass underneath is untouched. The effect washes across the
-   bar's LEFT EDGE and feathers toward the centre, so the active weather tints/
+   (.main is z-index:2). Rendered at full strength with NORMAL blend so the tinted
+   particles read solidly over the dark glass (screen blend only ever *added light*,
+   which is why the effect used to look perpetually faint). The effect washes across
+   the bar's LEFT EDGE and feathers toward the centre, so the active weather tints/
    reflects down the left side of the card without reaching the clock/meter. */
-/* Rendered at full strength (no global fade): legibility is preserved by the
-   .bar-wx-scrim below, a dark/tinted backdrop that sits between the diorama and
-   the text. z-index:1 keeps it behind .main (z-index:2). */
+/* No global fade: legibility is preserved by the .bar-wx-scrim below, a dark/tinted
+   backdrop that sits between the diorama and the text. z-index:1 keeps it behind
+   .main (z-index:2). */
 #glct-hud .bar-wx{position:absolute;inset:0;z-index:1;pointer-events:none;
-  opacity:1;mix-blend-mode:screen;border-radius:inherit;overflow:hidden;
+  opacity:1;mix-blend-mode:normal;border-radius:inherit;overflow:hidden;
   -webkit-mask-image:linear-gradient(90deg,#000 0,#000 18%,transparent 42%,transparent 100%);
   mask-image:linear-gradient(90deg,#000 0,#000 18%,transparent 42%,transparent 100%);
   transition:opacity .6s ease}
@@ -47,8 +48,11 @@
     linear-gradient(100deg, rgba(14,8,9,.76) 0%, rgba(14,8,9,.52) 16%, rgba(14,8,9,0) 40%)}
 
 /* Under an active effect the date stack gets a deeper shadow so it reads cleanly
-   against the brighter, tinted left edge. */
-#glct-hud .bar.has-wx .date .m{text-shadow:0 1px 3px rgba(0,0,0,.6),0 0 10px rgba(0,0,0,.45)}
+   against the brighter, tinted left edge. The day/month line is gradient-clipped
+   (background-clip:text), so a text-shadow would bleed through the transparent
+   glyphs and muddy the white — use filter:drop-shadow, which shadows the rendered
+   shape instead. Plain-coloured lines (.wd/.mo) can take a normal text-shadow. */
+#glct-hud .bar.has-wx .date .m{filter:drop-shadow(0 1px 2px rgba(0,0,0,.72))}
 #glct-hud .bar.has-wx .date .wd,
 #glct-hud .bar.has-wx .date .mo{text-shadow:0 1px 2px rgba(0,0,0,.7)}
 
