@@ -72,6 +72,31 @@
   mask-image:linear-gradient(90deg,#000 0,#000 20%,transparent 38%,transparent 100%);
   transition:box-shadow .6s ease}
 
+/* ---- Compact pill weather: the diorama fills the WHOLE pill ----
+   When the bar is collapsed there's no date stack to protect, so the left-edge
+   feather is dropped: the frozen particle field (rendered still by the app),
+   a soft tint wash, a legibility scrim and the liquid-glass rim all wrap the
+   entire compact pill so the current weather reads at a glance. .wx-still is set
+   while the field is frozen; the styling itself follows the collapsed class so a
+   value-flash peek (which un-collapses) smoothly returns to the full-bar look. */
+#glct-hud .bar.collapsed.has-wx .bar-wx{
+  -webkit-mask-image:none;mask-image:none;
+  background:radial-gradient(125% 150% at 50% 0%,
+    color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 26%,transparent),
+    color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 11%,transparent) 66%,
+    transparent)}
+#glct-hud .bar.collapsed.has-wx .bar-wx-scrim{
+  -webkit-mask-image:none;mask-image:none;
+  background:linear-gradient(180deg, rgba(8,11,17,.42), rgba(8,11,17,.66))}
+#glct-hud .bar.collapsed.wx-ominous .bar-wx-scrim{
+  background:linear-gradient(180deg, rgba(14,8,9,.48), rgba(14,8,9,.72))}
+#glct-hud .bar.collapsed.has-wx::after{
+  -webkit-mask-image:none;mask-image:none;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 55%,transparent),
+    inset 0 1px 0 color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 60%,#fff),
+    inset 0 0 16px -3px color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 50%,transparent)}
+
 /* Under an active effect the date stack gets a deeper shadow so it reads cleanly
    against the brighter, tinted left edge. The day/month line is gradient-clipped
    (background-clip:text), so a text-shadow would bleed through the transparent
