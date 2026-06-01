@@ -70,6 +70,14 @@
   "GLCT.editor.export": "Export JSON",
   "GLCT.editor.save": "Save Calendar",
 
+  "GLCT.shiftNames.title": "Watch Names",
+  "GLCT.shiftNames.label": "Edit Watch Names",
+  "GLCT.shiftNames.hint": "Rename the four daily watches (shifts) shown in the HUD, in chronological order from midnight. Leave a field blank to use its default name.",
+  "GLCT.shiftNames.resetBtn": "Reset to Defaults",
+  "GLCT.shiftNames.saveBtn": "Save Names",
+  "GLCT.shiftNames.saved": "Watch names saved.",
+  "GLCT.shiftNames.reset": "Watch names reset to defaults.",
+
   "GLCT.events.title": "Events & Holidays",
   "GLCT.events.add": "Add Event",
   "GLCT.events.edit": "Edit Event",

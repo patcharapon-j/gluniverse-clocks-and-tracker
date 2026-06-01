@@ -6,11 +6,13 @@ import { applyCalendar } from "./calendar/calendar.js";
 import { GlctHud } from "./apps/hud.js";
 import { TrackerHud } from "./apps/tracker-hud.js";
 import { registerCalendarMenu } from "./apps/calendar-editor.js";
+import { registerShiftNamesMenu } from "./apps/shift-names-editor.js";
 
 export function registerSettings() {
   const choices = Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.name]));
 
   registerCalendarMenu();
+  registerShiftNamesMenu();
 
   game.settings.register(MODULE_ID, SETTINGS.calendarId, {
     name: "GLCT.settings.calendar.name",
