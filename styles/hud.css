@@ -471,6 +471,11 @@
   border:1px solid rgba(255,255,255,.12);color:#eef1f7;border-radius:8px;cursor:pointer;font-weight:600;padding:6px 11px}
 .glct-caledit .ced-actions button:hover,.glct-caledit .ced-row button:hover{background:rgba(255,255,255,.13)}
 .glct-caledit .ced-save{background:rgba(120,150,225,.25)!important;border-color:rgba(120,150,225,.5)!important}
+.glct-shiftedit .sne-row{gap:10px}
+.glct-shiftedit .sne-swatch{flex:0 0 auto;width:14px;height:14px;border-radius:50%;
+  background:var(--sne-tint,#6b86d6);box-shadow:0 0 6px var(--sne-tint,#6b86d6);border:1px solid rgba(255,255,255,.25)}
+.glct-shiftedit .sne-row input{flex:1;background:#0b0f17;color:#eef1f7;border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;padding:6px 9px;font-weight:600}
 
 /* ============================================================
    TRACKER HUD — a separate compact floating dock.
