@@ -25,8 +25,15 @@
    .main (z-index:2). */
 #glct-hud .bar-wx{position:absolute;inset:0;z-index:1;pointer-events:none;
   opacity:1;mix-blend-mode:normal;border-radius:inherit;overflow:hidden;
-  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 18%,transparent 42%,transparent 100%);
-  mask-image:linear-gradient(90deg,#000 0,#000 18%,transparent 42%,transparent 100%);
+  /* A tinted colour wash sits BEHIND the particles so the gaps between them are
+     filled with weather colour — the effect reads as a solid pane rather than a
+     sparse scatter of dots. Confined to the left edge by the mask below. */
+  background:linear-gradient(100deg,
+    color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 38%,transparent) 0%,
+    color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 18%,transparent) 26%,
+    transparent 52%);
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 18%,transparent 46%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0,#000 18%,transparent 46%,transparent 100%);
   transition:opacity .6s ease}
 #glct-hud .bar-wx.off{opacity:0}
 #glct-hud .bar-wx .glct-wx-canvas{position:absolute;inset:0}
@@ -40,12 +47,35 @@
   border-radius:inherit;overflow:hidden;opacity:1;transition:opacity .6s ease;
   background:
     linear-gradient(90deg, color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 26%,transparent) 0, transparent 4px),
-    linear-gradient(100deg, rgba(8,11,17,.74) 0%, rgba(8,11,17,.5) 16%, rgba(8,11,17,0) 40%)}
+    linear-gradient(100deg, rgba(8,11,17,.6) 0%, rgba(8,11,17,.36) 17%, rgba(8,11,17,0) 40%)}
 #glct-hud .bar-wx-scrim.off{opacity:0}
 #glct-hud .bar.wx-ominous .bar-wx-scrim{
   background:
     linear-gradient(90deg, rgba(224,88,79,.34) 0, transparent 4px),
-    linear-gradient(100deg, rgba(14,8,9,.76) 0%, rgba(14,8,9,.52) 16%, rgba(14,8,9,0) 40%)}
+    linear-gradient(100deg, rgba(14,8,9,.64) 0%, rgba(14,8,9,.4) 17%, rgba(14,8,9,0) 40%)}
+
+/* Liquid-glass edge refraction. The bar's own rim picks up the weather hue: a
+   faintly tinted border and a soft outer halo in the condition colour (the outer
+   glow is the bar's own box-shadow, so it isn't clipped by overflow:hidden). */
+#glct-hud .bar.has-wx{
+  border-color:color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 30%,var(--edge));
+  box-shadow:0 26px 70px rgba(0,0,0,.6), 0 2px 0 rgba(0,0,0,.4),
+    inset 0 1px 0 rgba(255,255,255,.16), inset 0 -12px 28px rgba(0,0,0,.38), 0 0 46px var(--glowsoft),
+    0 0 26px -2px color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 38%,transparent)}
+
+/* …and a thin overlay drawn on top of the content (z-index:3, above .main) that
+   bends the colour around the inside of the rim — a tinted inner border, a brighter
+   tinted top highlight, and a soft inner bloom feathering in from the left edge —
+   so the glass looks like it's refracting the active condition. pointer-events:none
+   and clipped to the rounded rect by the bar's overflow. */
+#glct-hud .bar.has-wx::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+  border-radius:inherit;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 55%,transparent),
+    inset 0 1px 0 color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 62%,#fff),
+    inset 0 0 14px -2px color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 42%,transparent),
+    inset 14px 0 26px -16px color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 75%,transparent);
+  transition:box-shadow .6s ease}
 
 /* Under an active effect the date stack gets a deeper shadow so it reads cleanly
    against the brighter, tinted left edge. The day/month line is gradient-clipped
