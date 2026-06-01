@@ -20,6 +20,13 @@ import { WeatherEffect } from "../weather/effects.js";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const NS = "http://www.w3.org/2000/svg";
 
+// Compact value-flash choreography (ms). The flash is a deliberate four-beat
+// sequence — open the bar, pause, animate the value change, pause, close —
+// rather than letting the open and the value change overlap.
+const PEEK_OPEN  = 430;   // bar width ease when opening / closing the card
+const PEEK_PAUSE = 300;   // beat held still between each step
+const PEEK_VALUE = 620;   // reel/pip ease as the values change (.52s + a margin)
+
 export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   static instance = null;
 
@@ -78,6 +85,8 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _wx = null;           // WeatherEffect (chip Pixi diorama), lazily created
   _sig = null;          // signature of the last painted display values
   _peeking = false;     // mid value-flash (compact bar temporarily expanded)
+  _peekShown = false;   // the open finished and the value change has been painted
+  _peekShowT = null;    // pending "open done → animate the value change" timeout
   _peekEndT = null;     // pending re-collapse timeout after a peek
   _peekTransT = null;   // pending cleanup of the peek's transform-transition
   _peekStyle = null;    // saved inline transform to restore after a peek clamp
@@ -394,13 +403,20 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const st = TimeEngine.getStateAt(TimeEngine.worldTime);
 
     // Value flash while compact: when a displayed value actually changes and the
-    // bar is collapsed, expand the bar *first* (showing the OLD values), then let
-    // _paint ease the reels/pips to the new values, then collapse back — so the
-    // update reads as a brief peek rather than a silent change behind the pill.
+    // bar is collapsed, run the four-beat peek — open the bar (showing the OLD
+    // values), pause, animate the reels/pips to the new values, pause, close.
+    // _beginPeek owns the paint timing in this case so the value change doesn't
+    // ease in while the card is still sliding open; we skip the immediate paint
+    // and let the peek schedule it once the bar has finished opening.
     const sig = this._displaySig(st);
     const changed = this._sig !== null && sig !== this._sig;
     this._sig = sig;
-    if (changed && this.collapsed) this._beginPeek();
+    if (changed && this.collapsed) { this._beginPeek(); return; }
+
+    // While the compact card is still opening (before its value change has been
+    // revealed), hold off painting so the new values don't snap in mid-open; the
+    // peek's own scheduled paint catches up to the latest state once it opens.
+    if (this._peeking && !this._peekShown) return;
 
     this._paint(st);
   }
@@ -426,42 +442,72 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
    * centre; _clampPeek then nudges the whole HUD inward if the wider bar would
    * spill past a screen edge, and the offset is restored on collapse.
    *
-   * Call order matters: we expand and commit the OLD reel/pip positions while the
-   * cells are freshly visible, so the _paint that follows (in update()) eases
-   * them to the new values instead of snapping.
+   * The flash plays as four distinct beats rather than letting the open and the
+   * value change overlap:
+   *   1. open the bar, committing the OLD reel/pip positions so the change has
+   *      somewhere to animate FROM;
+   *   2. pause for a beat once the open has finished;
+   *   3. ease the reels/pips to the NEW values;
+   *   4. pause, then collapse back.
+   * _beginPeek schedules beats 2–3; _scheduleEndPeek handles the final dwell and
+   * collapse, and a burst of changes keeps pushing the collapse back so the card
+   * flashes once.
    */
   _beginPeek() {
     const root = this.element.querySelector(".hud-root");
     const bar = this.element.querySelector("[data-bar]");
     if (!root || !bar) return;
 
-    clearTimeout(this._peekEndT);
-
-    if (!this._peeking) {
-      this._peeking = true;
-      // measure the collapsed width, reveal the full card, measure the expanded
-      // width, then tween between the two explicit values (the .bar CSS width
-      // transition eases it) — auto→auto can't animate on its own.
-      const w0 = bar.getBoundingClientRect().width;
-      bar.classList.remove("collapsed");
-      root.classList.remove("is-collapsed");
-      bar.classList.add("peeking");
-      const w1 = bar.getBoundingClientRect().width;   // forces layout → commits old reels
-      this._clampPeek();                              // keep the wider bar on-screen
-      bar.style.transition = "none";
-      bar.style.width = `${w0}px`;
-      void bar.offsetWidth;
-      bar.style.transition = "";
-      bar.style.width = `${w1}px`;
-      clearTimeout(this._barT);
-      this._barT = setTimeout(() => { bar.style.width = ""; this._wx?.resize(); }, 420);
-      this._paintWeather();   // wake + resize the diorama for the expanded width
+    // Card already open and the values revealed: ease straight to the newest
+    // values and just push the collapse back.
+    if (this._peeking && this._peekShown) {
+      this._paint(TimeEngine.getStateAt(TimeEngine.worldTime));
+      this._scheduleEndPeek();
+      return;
     }
+    // Still sliding open: the pending reveal (beat 3) grabs the freshest state,
+    // so there's nothing to do but let the open finish.
+    if (this._peeking) return;
 
-    // Hold the expanded card long enough for the reel/pip/ring transitions to
-    // settle, then collapse back. Each new change reschedules the end so a burst
-    // of updates flashes once rather than flickering.
-    this._peekEndT = setTimeout(() => this._endPeek(), 2200);
+    this._peeking = true;
+    this._peekShown = false;
+
+    // Beat 1 — open the card. Measure the collapsed width, reveal the full card,
+    // measure the expanded width, then tween between the two explicit values (the
+    // .bar CSS width transition eases it) — auto→auto can't animate on its own.
+    const w0 = bar.getBoundingClientRect().width;
+    bar.classList.remove("collapsed");
+    root.classList.remove("is-collapsed");
+    bar.classList.add("peeking");
+    const w1 = bar.getBoundingClientRect().width;   // forces layout → commits old reels
+    this._clampPeek();                              // keep the wider bar on-screen
+    bar.style.transition = "none";
+    bar.style.width = `${w0}px`;
+    void bar.offsetWidth;
+    bar.style.transition = "";
+    bar.style.width = `${w1}px`;
+    clearTimeout(this._barT);
+    this._barT = setTimeout(() => { bar.style.width = ""; this._wx?.resize(); }, PEEK_OPEN);
+    this._paintWeather();   // wake + resize the diorama for the expanded width
+
+    // Beats 2–3 — wait for the open to finish, hold a beat, THEN ease the
+    // reels/pips to the new values so the change reads as its own distinct step.
+    clearTimeout(this._peekShowT);
+    this._peekShowT = setTimeout(() => {
+      this._peekShown = true;
+      this._paint(TimeEngine.getStateAt(TimeEngine.worldTime));
+      this._scheduleEndPeek();
+    }, PEEK_OPEN + PEEK_PAUSE);
+  }
+
+  /**
+   * Beat 4 — once the value change has been painted, hold it long enough for the
+   * reel/pip ease to settle plus a final beat, then collapse. Rescheduled on each
+   * fresh change so a burst flashes once rather than flickering shut between updates.
+   */
+  _scheduleEndPeek() {
+    clearTimeout(this._peekEndT);
+    this._peekEndT = setTimeout(() => this._endPeek(), PEEK_VALUE + PEEK_PAUSE);
   }
 
   /**
@@ -472,8 +518,10 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _endPeek() {
     clearTimeout(this._peekEndT); this._peekEndT = null;
+    clearTimeout(this._peekShowT); this._peekShowT = null;
     if (!this._peeking) return;
     this._peeking = false;
+    this._peekShown = false;
     const root = this.element.querySelector(".hud-root");
     const bar = this.element.querySelector("[data-bar]");
     this._restorePeek();   // glide the HUD back to centre
@@ -500,7 +548,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       bar.classList.remove("peeking");
       bar.style.width = "";
       this._paintWeather();   // freeze the compact diorama again
-    }, 420);
+    }, PEEK_OPEN);
   }
 
   /**
