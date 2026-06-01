@@ -155,6 +155,18 @@ export function registerSettings() {
     scope: "world", config: true, type: Boolean, default: true
   });
 
+  // Who sees the weather-change announcement card: posted to everyone, or
+  // whispered to the GMs only (so players discover the weather in-fiction).
+  game.settings.register(MODULE_ID, SETTINGS.weatherCardVisibility, {
+    name: "GLCT.weather.settings.cardVisibility.name",
+    hint: "GLCT.weather.settings.cardVisibility.hint",
+    scope: "world", config: true, type: String, default: "public",
+    choices: {
+      public: "GLCT.weather.settings.cardVisibility.public",
+      gm: "GLCT.weather.settings.cardVisibility.gm"
+    }
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.weatherHudPosition, {
     scope: "client", config: false, type: Object, default: {}
   });

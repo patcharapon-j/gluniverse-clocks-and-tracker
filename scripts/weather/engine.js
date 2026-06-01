@@ -396,10 +396,14 @@ export class WeatherEngine {
   }
 
   static _post(content) {
-    // The current condition is always visible to players (decision #16), so the
-    // announcement card posts publicly. (If a future "hide weather from players"
-    // mode is added, whisper to game.users.filter(u => u.isGM) here per decision D3.)
+    // Card visibility is a GM setting (decision D3): "public" posts to everyone,
+    // "gm" whispers to the GMs only so players discover the weather in-fiction.
+    // The current condition itself is always readable on the HUD/window regardless.
     const speaker = ChatMessage.implementation.getSpeaker({ alias: game.i18n.localize("GLCT.weather.cardAlias") });
-    return ChatMessage.implementation.create({ speaker, content, flags: { [MODULE_ID]: { weatherCard: true } } });
+    const data = { speaker, content, flags: { [MODULE_ID]: { weatherCard: true } } };
+    if (WeatherStore.cardVisibility === "gm") {
+      data.whisper = game.users.filter(u => u.isGM).map(u => u.id);
+    }
+    return ChatMessage.implementation.create(data);
   }
 }

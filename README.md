@@ -78,7 +78,7 @@ Weather ships **off**. Turn it on in **Game Settings → Configure Settings → 
 
 - **Cadence** — choose **Auto** (the weather walks forward as in-game time passes) or **Manual** (only your Roll-now control advances it), and the **step period** (every day / N days / watch). A big time skip walks several steps at once (capped) and posts a single digest chat card instead of one per step.
 - **Seasons** — each season has its own flower and Navigation Hex. When the calendar season turns, your position is kept by coordinate and the new season's flower takes over.
-- **Player visibility** — players always see the current condition + recent history and the announcement chat card. Reveal the full flower (read-only) with the eye toggle in the window or the **Reveal Flower to Players** setting.
+- **Player visibility** — players always see the current condition + recent history on the HUD. The weather-change **announcement card** can be posted **publicly** or whispered to **GM only** via the **Weather Card Visibility** setting (so players discover the weather in-fiction). Reveal the full flower (read-only) with the eye toggle in the window or the **Reveal Flower to Players** setting.
 
 ### Configuring a calendar (GM)
 

@@ -45,6 +45,11 @@ export class WeatherStore {
     try { return !!game.settings.get(MODULE_ID, SETTINGS.weatherShowDice); } catch { return false; }
   }
 
+  /** Who sees the weather-change chat card: "public" (everyone) or "gm" (whispered to GMs). */
+  static get cardVisibility() {
+    try { return game.settings.get(MODULE_ID, SETTINGS.weatherCardVisibility) || "public"; } catch { return "public"; }
+  }
+
   /** The full config object (deep-cloned), guaranteed structurally valid. */
   static get data() {
     let raw = null;

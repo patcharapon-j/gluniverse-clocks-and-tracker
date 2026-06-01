@@ -8,10 +8,12 @@
 
   <div class="bar {{#if collapsed}}collapsed{{/if}}" data-bar>
     <div class="sweep"></div>
-    {{!-- Full-bar weather diorama: a PixiJS layer that spans the whole bar behind
-          the content at low opacity (screen blend), so the active weather quietly
-          washes across the HUD instead of living in a small box. --}}
+    {{!-- Full-bar weather diorama: a PixiJS layer that washes the active weather
+          across the bar's left edge (screen blend, full strength). The scrim below
+          sits between the diorama and the text — a soft dark/tinted backdrop that
+          keeps the date stack legible under a bright effect. --}}
     <div class="bar-wx off" data-wxbar></div>
+    <div class="bar-wx-scrim off" data-wxscrim></div>
     <div class="main">
 
       <div class="cell grip" title="{{localize 'GLCT.hud.dragHint'}}">
