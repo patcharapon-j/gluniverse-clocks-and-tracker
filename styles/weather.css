@@ -152,47 +152,50 @@
 .wx-hex.clickable:hover{transform:translate(-50%,-50%) translateY(-1px) scale(1.05);
   filter:drop-shadow(0 3px 5px rgba(0,0,0,.5)) drop-shadow(0 0 7px color-mix(in srgb,var(--glct-weather-glow) 65%,transparent));z-index:3}
 .wx-hex.clickable:hover > i{color:#fff}
-/* home / start hex: green-tinted bevel + a clear green inner ring + green glow.
-   The flag tag (.wx-tag-start) makes "this is where the walk begins" unmistakable
-   regardless of the weather glow colour. */
-.wx-hex.start{filter:drop-shadow(0 2px 3px rgba(0,0,0,.5)) drop-shadow(0 0 7px rgba(155,225,93,.75))}
-.wx-hex.start::before{background:linear-gradient(155deg,rgba(155,225,93,.85),rgba(255,255,255,.08) 42%,rgba(0,0,0,.42))}
-.wx-hex.start::after{box-shadow:inset 0 0 0 1.6px rgba(170,235,110,.85)}
-/* current cell: a bright white inner ring + glow-washed fill + white icon (the
-   animated marker rides over). The ring reads even before the marker is noticed. */
-.wx-hex.current::after{background:
+/* home / start hex: a crisp GREEN hexagonal rim — the coloured ::before shows
+   through a slightly-more-inset ::after, so the border follows the hex shape
+   (a box-shadow ring would be rectangular). Plus a green glow tracing the
+   silhouette via drop-shadow. The flag tag makes it unmistakable. */
+.wx-hex.start{filter:drop-shadow(0 2px 3px rgba(0,0,0,.5)) drop-shadow(0 0 7px rgba(155,225,93,.8))}
+.wx-hex.start::before{background:linear-gradient(155deg,#c6f29a,#74c43f 58%,#4f9c28)}
+.wx-hex.start::after{inset:2.6px}
+/* current cell: a crisp WHITE hexagonal rim (same rim trick) + glow-washed fill
+   + white icon. The animated marker rides over; the rim reads on its own too. */
+.wx-hex.current::before{background:linear-gradient(155deg,#ffffff,#e6edfb 55%,#aeb9d0)}
+.wx-hex.current::after{inset:2.6px;background:
   radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--glct-weather-glow) 48%,transparent),transparent 64%),
-  linear-gradient(180deg,color-mix(in srgb,var(--glct-weather-tint) 66%,#10141d),color-mix(in srgb,var(--glct-weather-tint) 22%,#080b11));
-  box-shadow:inset 0 0 0 1.6px rgba(255,255,255,.92)}
+  linear-gradient(180deg,color-mix(in srgb,var(--glct-weather-tint) 66%,#10141d),color-mix(in srgb,var(--glct-weather-tint) 22%,#080b11))}
 .wx-hex.current > i{color:#fff;filter:drop-shadow(0 0 8px var(--glct-weather-glow))}
 
 /* ----- on-hex tags & blocked-face marks (shared by HUD flower + editor) ----- */
-/* small round badge pinned to a top corner: green flag = start, blue dot = now */
+/* All marks sit INSIDE the hexagon silhouette (not in the bounding-box corners)
+   so they never spill over neighbouring hexes. Green flag = start, dot = now;
+   both ride in the upper interior, above the centre icon. */
 .wx-hex .wx-tag{position:absolute;z-index:7;transform:translate(-50%,-50%);
-  width:14px;height:14px;display:grid;place-items:center;border-radius:50%;
-  font-size:7.5px;line-height:1;pointer-events:none;
-  box-shadow:0 1px 3px rgba(0,0,0,.65),0 0 0 1.4px rgba(0,0,0,.45)}
-.wx-tag-start{left:15%;top:3%;color:#08230b;
-  background:radial-gradient(closest-side,#cdf59c,#6bbf3a);
-  filter:drop-shadow(0 0 5px rgba(155,225,93,.8))}
-.wx-tag-now{left:85%;top:3%;color:#06223a;
-  background:radial-gradient(closest-side,#eaf4ff,color-mix(in srgb,var(--glct-weather-glow) 75%,#fff));
-  filter:drop-shadow(0 0 6px var(--glct-weather-glow))}
-
-/* a red ✕ sitting directly on each blocked face, so a disallowed direction is
-   obvious at a glance (replaces the single corner Ø). Positioned at the midpoint
-   of the corresponding hexagon edge. */
-.wx-hex .wx-dir-x{position:absolute;z-index:6;transform:translate(-50%,-50%);
   width:13px;height:13px;display:grid;place-items:center;border-radius:50%;
-  font-size:8.5px;font-weight:900;line-height:1;color:#fff;pointer-events:none;
+  font-size:7px;line-height:1;pointer-events:none;
+  box-shadow:0 1px 2px rgba(0,0,0,.7),0 0 0 1.3px rgba(0,0,0,.5)}
+.wx-tag-start{left:31%;top:22%;color:#08230b;
+  background:radial-gradient(closest-side,#cdf59c,#6bbf3a);
+  filter:drop-shadow(0 0 4px rgba(155,225,93,.85))}
+.wx-tag-now{left:69%;top:22%;color:#06223a;
+  background:radial-gradient(closest-side,#eaf4ff,color-mix(in srgb,var(--glct-weather-glow) 75%,#fff));
+  filter:drop-shadow(0 0 5px var(--glct-weather-glow))}
+
+/* a red ✕ for each blocked face, pulled just inside the hexagon toward that
+   face so it clearly reads as "this direction is blocked" without overhanging
+   onto the adjacent hex. Offsets are ~0.72 of the way from centre to each edge. */
+.wx-hex .wx-dir-x{position:absolute;z-index:6;transform:translate(-50%,-50%);
+  width:12px;height:12px;display:grid;place-items:center;border-radius:50%;
+  font-size:8px;font-weight:900;line-height:1;color:#fff;pointer-events:none;
   background:radial-gradient(closest-side,#ec6258,#a8332c);
-  box-shadow:0 0 0 1.5px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.6)}
-.wx-dir-x-up{left:50%;top:0}
-.wx-dir-x-down{left:50%;top:100%}
-.wx-dir-x-upperRight{left:87.5%;top:25%}
-.wx-dir-x-lowerRight{left:87.5%;top:75%}
-.wx-dir-x-upperLeft{left:12.5%;top:25%}
-.wx-dir-x-lowerLeft{left:12.5%;top:75%}
+  box-shadow:0 0 0 1.4px rgba(0,0,0,.55),0 1px 2px rgba(0,0,0,.6)}
+.wx-dir-x-up{left:50%;top:14%}
+.wx-dir-x-down{left:50%;top:86%}
+.wx-dir-x-upperRight{left:77%;top:32%}
+.wx-dir-x-lowerRight{left:77%;top:68%}
+.wx-dir-x-upperLeft{left:23%;top:32%}
+.wx-dir-x-lowerLeft{left:23%;top:68%}
 /* ominous: red dread fill + rim */
 .wx-hex.ominous::before{background:linear-gradient(155deg,rgba(255,150,140,.5),rgba(255,255,255,.05) 40%,rgba(0,0,0,.46))}
 .wx-hex.ominous::after{background:
@@ -387,9 +390,10 @@
   display:grid;place-items:center;background:rgba(255,255,255,.06);color:#aab4c8;font-size:10px;transition:.15s}
 #glct-weather-hud .wx-rb-add:hover{background:rgba(155,225,93,.16);color:#bdf08a;border-color:rgba(155,225,93,.4)}
 
-/* the editor's smaller tiles get slightly smaller face marks + corner tags */
-.glct-wxeditor .wx-hex .wx-dir-x{width:11px;height:11px;font-size:7px}
-.glct-wxeditor .wx-hex .wx-tag{width:12px;height:12px;font-size:6.5px}
+/* the editor's smaller (R=17) tiles get smaller face marks + tags so they stay
+   inside the hexagon and don't crowd the centre icon */
+.glct-wxeditor .wx-hex .wx-dir-x{width:9px;height:9px;font-size:6px;box-shadow:0 0 0 1px rgba(0,0,0,.55),0 1px 2px rgba(0,0,0,.6)}
+.glct-wxeditor .wx-hex .wx-tag{width:10px;height:10px;font-size:5.5px;box-shadow:0 0 0 1px rgba(0,0,0,.5)}
 
 /* editor: region management bar */
 .glct-wxeditor .wxe-regionbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;
