@@ -4,12 +4,14 @@
  * Trackers live in a single world-scope setting (`trackers`), so every GM
  * edit, reorder, roll, or visibility change propagates to all clients via the
  * setting's onChange → TrackerHud.refresh() pipeline (same model the calendar
- * HUD uses). Players read the array but never write it: player-initiated pool
- * rolls are routed to a GM over a socket so the GM stays authoritative over
- * world state and the dice roll (and its Dice So Nice animation + chat card).
+ * HUD uses). Players read the array but never write it: a player-initiated pool
+ * roll rolls + posts its result card on the player's own client, and the
+ * responsible GM persists the new count when that card is created (see
+ * registerHandlers) — keeping the GM authoritative over world state without a
+ * dedicated module socket channel.
  */
 
-import { MODULE_ID, SETTINGS, SOCKET, HOOKS, TRACKER_TYPES } from "../const.js";
+import { MODULE_ID, SETTINGS, HOOKS, TRACKER_TYPES } from "../const.js";
 
 /** Per-type factory defaults for newly created trackers. */
 const DEFAULTS = {
@@ -152,46 +154,29 @@ export class TrackerStore {
   /* ------------------------------- pool rolling ------------------------------- */
 
   /**
-   * Roll a resource pool. GMs roll directly; players route the request to a GM
-   * over the socket (so the roll, the world-state update, and the chat card all
-   * originate from an authoritative client). Only enabled for players when the
-   * pool's `playerRoll` flag is set.
+   * Roll a resource pool.
+   *
+   * The roll, its 3D dice, and the result card all happen on whichever client
+   * clicked: players are allowed to roll dice and post chat messages, so this
+   * needs no GM round-trip. The one thing a player can't do is write the pool's
+   * new count (a world-scope setting), so the result card carries the new
+   * `current` in its flags and the responsible GM persists it from the
+   * `createChatMessage` hook (see registerHandlers). That rides Foundry's
+   * always-present document socket, so — unlike a module socket channel — it
+   * works without the server having to be restarted to register a namespace.
+   *
+   * Players may only roll a pool whose `playerRoll` flag is set.
    */
   static async rollPool(id) {
     const t = this.get(id);
     if (!t || t.type !== "pool") return;
-    if (game.user.isGM) return this._doRollPool(id, game.user.id);
-    if (!t.playerRoll) return;
-    // Route to a GM over the socket. We only need *some* active GM to be present;
-    // the receiving side decides which one actually handles it. (Don't gate on the
-    // `activeGM` getter here — if it momentarily reads null the roll would be lost.)
-    if (!game.users.some(u => u.isGM && u.active)) {
+    if (!game.user.isGM && !t.playerRoll) return;
+    // The roll only matters once the shared count updates, and only a GM can
+    // write that — so a player needs at least one active GM to make it stick.
+    if (!game.user.isGM && !game.users.some(u => u.isGM && u.active)) {
       ui.notifications?.warn(game.i18n.localize("GLCT.tracker.noGM"));
       return;
     }
-    // The responsible GM acknowledges receipt. If no ack comes back the request
-    // never reached an authoritative client — almost always because the world's
-    // server process predates this module declaring `"socket": true` (Foundry
-    // wires a module's socket channel at server start, so a plain reload isn't
-    // enough). Surface that instead of failing silently, which just reads as
-    // "clicking the pool does nothing".
-    const token = foundry.utils.randomID();
-    (this._pendingRolls ??= new Map());
-    const timer = setTimeout(() => {
-      if (this._pendingRolls.delete(token)) {
-        ui.notifications?.warn(game.i18n.localize("GLCT.tracker.rollUnreachable"));
-      }
-    }, 5000);
-    this._pendingRolls.set(token, timer);
-    game.socket.emit(SOCKET, { action: "rollPool", id, userId: game.user.id, token });
-  }
-
-  /** Authoritative roll, executed on a GM client only. */
-  static async _doRollPool(id, requestedBy) {
-    if (!game.user.isGM) return;
-    const all = this.all;
-    const t = all.find(x => x.id === id);
-    if (!t || t.type !== "pool") return;
 
     const n = int(t.current, 0);
     if (n <= 0) return;   // an exhausted pool stays empty until the GM resets it
@@ -202,23 +187,29 @@ export class TrackerStore {
     const faces = roll.dice[0]?.results?.map(r => r.result) ?? [];
     const remaining = faces.filter(v => v > discard).length;
 
-    // Roll the 3D dice for everyone and WAIT for them to finish before the dock
-    // count changes or the result card lands. showForRoll(...synchronize=true)
-    // broadcasts the animation to all clients and resolves when it settles; we
-    // attribute it to the requesting user so the dice show in their colours.
+    // Roll the 3D dice for everyone and WAIT for them to settle before the result
+    // card lands. showForRoll(...synchronize=true) broadcasts the animation to all
+    // clients in the roller's colours and resolves once it finishes.
     if (game.dice3d) {
-      const author = game.users.get(requestedBy) ?? game.user;
-      try { await game.dice3d.showForRoll(roll, author, true); }
+      try { await game.dice3d.showForRoll(roll, game.user, true); }
       catch (err) { console.warn(`${MODULE_ID} | Dice So Nice roll failed`, err); }
     }
 
-    // Post the result card (no Roll attached → Foundry won't also render its own
-    // default dice box, which is what made the card look nested)…
-    await this._postPoolCard({ tracker: t, faces, discard, size, remaining, requestedBy });
-    // …and reveal the new pool count at the same moment.
-    const fresh = this.all;
-    const t2 = fresh.find(x => x.id === id);
-    if (t2 && t2.type === "pool") { t2.current = remaining; await this.save(fresh); }
+    // Post the card; its flag carries the new count for the responsible GM to
+    // persist. (No Roll attached → Foundry won't render a duplicate dice box.)
+    await this._postPoolCard({ tracker: t, faces, discard, size, remaining, requestedBy: game.user.id });
+  }
+
+  /** Persist a rolled pool's new count. GM-only; clamped to the pool's size. */
+  static async _applyPoolResult(id, current) {
+    if (!game.user.isGM) return;
+    const all = this.all;
+    const t = all.find(x => x.id === id);
+    if (!t || t.type !== "pool") return;
+    const v = clamp(int(current, 0), 0, int(t.count, 0));
+    if (t.current === v) return;          // already applied (e.g. a duplicate hook)
+    t.current = v;
+    await this.save(all);
   }
 
   /** Compact, on-brand chat card listing kept vs discarded dice. */
@@ -255,7 +246,7 @@ export class TrackerStore {
     // plain content message (no rolls) to avoid a duplicate default dice box.
     return ChatMessage.implementation.create({
       speaker, content,
-      flags: { [MODULE_ID]: { poolRoll: true, requestedBy } }
+      flags: { [MODULE_ID]: { poolRoll: true, requestedBy, trackerId: tracker.id, current: remaining } }
     });
   }
 
@@ -305,27 +296,18 @@ export class TrackerStore {
     return gms[0]?.id === game.user.id;
   }
 
-  /** Wire the GM socket listener once (called from the ready hook). */
-  static registerSocket() {
-    game.socket.on(SOCKET, async (data) => {
-      if (!data) return;
-      // The requesting player clears its own reachability timeout when the GM's
-      // acknowledgement comes back. Handle this before the GM gate below, which
-      // would otherwise short-circuit on the (non-GM) player's own client.
-      if (data.action === "rollPoolAck") {
-        if (data.toUserId !== game.user.id) return;
-        const timer = this._pendingRolls?.get(data.token);
-        if (timer) { clearTimeout(timer); this._pendingRolls.delete(data.token); }
-        return;
-      }
-      // Only the primary active GM acts, to avoid double-handling on multi-GM tables.
+  /** Wire GM-side pool-roll persistence once (called from the ready hook).
+   *  A pool roll posts a result card on the roller's client; the responsible GM
+   *  applies the new count when that card is created. Riding the core document
+   *  socket means this needs no module socket channel — and so no server restart
+   *  for the manifest's `socket` flag to take effect. */
+  static registerHandlers() {
+    Hooks.on("createChatMessage", (message) => {
+      const flag = message?.flags?.[MODULE_ID];
+      if (!flag?.poolRoll || flag.trackerId == null) return;
+      // Only the primary active GM writes, to avoid double-handling on multi-GM tables.
       if (!this._isResponsibleGM()) return;
-      if (data.action === "rollPool") {
-        // Acknowledge first so the player's timeout clears even though the roll
-        // itself may take a moment (3D dice animation, chat card).
-        if (data.token) game.socket.emit(SOCKET, { action: "rollPoolAck", token: data.token, toUserId: data.userId });
-        await this._doRollPool(data.id, data.userId);
-      }
+      this._applyPoolResult(flag.trackerId, flag.current);
     });
   }
 }

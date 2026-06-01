@@ -122,7 +122,6 @@
   "GLCT.tracker.emptyHint": "No trackers yet — press + to add one.",
   "GLCT.tracker.playersMayRoll": "Players may roll this pool",
   "GLCT.tracker.noGM": "No GM is connected to roll this pool.",
-  "GLCT.tracker.rollUnreachable": "Couldn't reach a GM to roll this pool. If the module was just updated, the GM must fully restart Foundry (not just reload) so player rolls can be routed.",
   "GLCT.tracker.filled": "Filled",
   "GLCT.tracker.doom": "Doom",
   "GLCT.tracker.completed": "Completed",

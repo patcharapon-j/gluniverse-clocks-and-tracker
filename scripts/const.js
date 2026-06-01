@@ -2,9 +2,6 @@
 
 export const MODULE_ID = "gluniverse-clocks-and-tracker";
 
-/** Socket channel for GM-authoritative actions requested by players. */
-export const SOCKET = `module.${MODULE_ID}`;
-
 /** Namespaced hooks other modules / macros can listen to. */
 export const HOOKS = {
   /** Fired (callAll) after the HUD recomputes state: (state) => void */
