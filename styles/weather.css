@@ -15,21 +15,80 @@
    ============================================================ */
 
 /* Full-bar diorama: a Pixi canvas spanning the whole bar, behind the content
-   (.main is z-index:2), screen-blended so only the bright tinted particles add a
-   soft glow while the dark glass underneath is untouched. Faded and edge-masked
-   so the weather washes across the bar without competing with the readouts. */
-/* Confined to ~the left third of the bar (where the weather readout now sits) and
-   feathered toward the centre, so the effect + colour wash never cover the rest of
-   the card — they fade in over the far left only. z-index:1 keeps it strictly
-   behind .main (z-index:2): the diorama sits under the UI and the low opacity
-   keeps text fully legible. */
+   (.main is z-index:2). Rendered at full strength with NORMAL blend so the tinted
+   particles read solidly over the dark glass (screen blend only ever *added light*,
+   which is why the effect used to look perpetually faint). The effect washes across
+   the bar's LEFT EDGE and feathers toward the centre, so the active weather tints/
+   reflects down the left side of the card without reaching the clock/meter. */
+/* No global fade: legibility is preserved by the .bar-wx-scrim below, a dark/tinted
+   backdrop that sits between the diorama and the text. z-index:1 keeps it behind
+   .main (z-index:2). */
 #glct-hud .bar-wx{position:absolute;inset:0;z-index:1;pointer-events:none;
-  opacity:.46;mix-blend-mode:screen;border-radius:inherit;overflow:hidden;
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 1%,#000 14%,transparent 37%,transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0,#000 1%,#000 14%,transparent 37%,transparent 100%);
+  opacity:1;mix-blend-mode:normal;border-radius:inherit;overflow:hidden;
+  /* A tinted colour wash sits BEHIND the particles so the gaps between them are
+     filled with weather colour — the effect reads as a solid pane rather than a
+     sparse scatter of dots. Confined to the left edge by the mask below. */
+  background:linear-gradient(100deg,
+    color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 38%,transparent) 0%,
+    color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 18%,transparent) 26%,
+    transparent 52%);
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 18%,transparent 46%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0,#000 18%,transparent 46%,transparent 100%);
   transition:opacity .6s ease}
 #glct-hud .bar-wx.off{opacity:0}
 #glct-hud .bar-wx .glct-wx-canvas{position:absolute;inset:0}
+
+/* Legibility scrim: a soft dark wash anchored to the left edge (where the date
+   stack lives) that darkens the bright screen-blended weather just enough for the
+   text above it to stay readable, plus a thin tinted glow hugging the left rim so
+   the weather "reflects" down the edge. Sits above the diorama (later in DOM, same
+   z-index) and below .main (z-index:2). Toggled with the diorama. */
+#glct-hud .bar-wx-scrim{position:absolute;inset:0;z-index:1;pointer-events:none;
+  border-radius:inherit;overflow:hidden;opacity:1;transition:opacity .6s ease;
+  background:
+    linear-gradient(90deg, color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 26%,transparent) 0, transparent 4px),
+    linear-gradient(100deg, rgba(8,11,17,.6) 0%, rgba(8,11,17,.36) 17%, rgba(8,11,17,0) 40%)}
+#glct-hud .bar-wx-scrim.off{opacity:0}
+#glct-hud .bar.wx-ominous .bar-wx-scrim{
+  background:
+    linear-gradient(90deg, rgba(224,88,79,.34) 0, transparent 4px),
+    linear-gradient(100deg, rgba(14,8,9,.64) 0%, rgba(14,8,9,.4) 17%, rgba(14,8,9,0) 40%)}
+
+/* Liquid-glass edge refraction — confined to the LEFT ~third of the bar, matching
+   the weather wash (not the whole rim). A thin overlay drawn on top of the content
+   (z-index:3, above .main) bends the colour around the inside of the rim: a tinted
+   inner ring, a brighter tinted top highlight, and a soft bloom feathering in from
+   the left edge. The same left→transparent mask as the diorama clips the inset
+   ring to the left third, so it hugs the left edge and fades out before the clock.
+   pointer-events:none and clipped to the rounded rect by the bar's overflow. */
+#glct-hud .bar.has-wx::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+  border-radius:inherit;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 55%,transparent),
+    inset 0 1px 0 color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 62%,#fff),
+    inset 0 0 14px -2px color-mix(in srgb,var(--glct-weather-glow,#7fb4e6) 42%,transparent),
+    inset 14px 0 26px -16px color-mix(in srgb,var(--glct-weather-tint,#cfe8ff) 75%,transparent);
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 20%,transparent 38%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0,#000 20%,transparent 38%,transparent 100%);
+  transition:box-shadow .6s ease}
+
+/* Under an active effect the date stack gets a deeper shadow so it reads cleanly
+   against the brighter, tinted left edge. The day/month line is gradient-clipped
+   (background-clip:text), so a text-shadow would bleed through the transparent
+   glyphs and muddy the white — use filter:drop-shadow, which shadows the rendered
+   shape instead. Plain-coloured lines (.wd/.mo) can take a normal text-shadow. */
+#glct-hud .bar.has-wx .date .m{filter:drop-shadow(0 1px 2px rgba(0,0,0,.72))}
+#glct-hud .bar.has-wx .date .wd,
+#glct-hud .bar.has-wx .date .mo{text-shadow:0 1px 2px rgba(0,0,0,.7)}
+
+/* All left-section date text goes pure white under an active effect, so the
+   weekday / day / month / year / season read cleanly over a bright, colourful
+   weather wash (their normal muted/gradient colours wash out against it). */
+#glct-hud .bar.has-wx .date .wd,
+#glct-hud .bar.has-wx .date .mo,
+#glct-hud .bar.has-wx .date .season{color:#fff}
+#glct-hud .bar.has-wx .date .m,
+#glct-hud .bar.has-wx .date .m sup{background:none;-webkit-text-fill-color:#fff;color:#fff}
 
 /* Weather readout — compact, nested inside the date cluster (left section) so it
    reads as part of that group rather than a separate box on the right. A hairline
@@ -49,8 +108,11 @@
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);
   filter:drop-shadow(0 0 6px color-mix(in srgb,var(--glct-weather-glow) 55%,transparent))}
 #glct-hud .date .wxmini-text{display:flex;flex-direction:column;line-height:1.05;min-width:0}
+/* A long condition name wraps to (at most) two lines instead of being cut off with
+   an ellipsis; the readout stays narrow so it never widens the date cluster. */
 #glct-hud .date .wxmini-label{font-family:"Oxanium","Segoe UI",system-ui,sans-serif;font-size:11px;font-weight:740;
-  letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:118px;
+  letter-spacing:.02em;max-width:92px;line-height:1.12;overflow-wrap:break-word;word-break:break-word;hyphens:auto;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
   background:linear-gradient(180deg,#fff,#d6deec);-webkit-background-clip:text;background-clip:text;color:transparent}
 #glct-hud .date .wxmini-temp{font-size:7px;letter-spacing:.13em;text-transform:uppercase;color:#9aa3b6;font-weight:700;white-space:nowrap}
 #glct-hud .date .wxmini-temp:empty{display:none}

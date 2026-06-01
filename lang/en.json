@@ -228,6 +228,10 @@
   "GLCT.weather.settings.playerFlower.hint": "When on, players can see the full Hex Flower (read-only). Otherwise they see only the current condition and recent history.",
   "GLCT.weather.settings.showDice.name": "Roll 3D Dice for Weather",
   "GLCT.weather.settings.showDice.hint": "When on, the Navigation Hex roll is thrown as real 3D dice (requires the Dice So Nice! module) on manual steps and single-period auto advances. Multi-day skips stay silent to avoid an animation flood.",
+  "GLCT.weather.settings.cardVisibility.name": "Weather Card Visibility",
+  "GLCT.weather.settings.cardVisibility.hint": "Who sees the weather-change announcement in chat. Public: posted to everyone. GM only: whispered to the GMs, so players discover the weather in-fiction. The current condition stays readable on the HUD either way.",
+  "GLCT.weather.settings.cardVisibility.public": "Public — everyone sees it",
+  "GLCT.weather.settings.cardVisibility.gm": "GM only — whispered",
 
   "GLCT.weather.editor.title": "Weather Editor",
   "GLCT.weather.editor.menuLabel": "Edit Weather",

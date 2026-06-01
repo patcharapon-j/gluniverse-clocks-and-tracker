@@ -130,7 +130,7 @@ Every one of these was deliberately chosen. Do not silently deviate.
 ### Default calls (vetoable, but implement as stated)
 - **D1** Opt-in: world setting **`weatherEnabled`** default **`false`**. Chip hidden until enabled AND a flower is configured.
 - **D2** New plumbing matching existing patterns: `HOOKS.weatherChanged`; scene-control button + **`Alt+W`** keybinding to open the flower window; a **"Weather" settings menu** alongside Edit Calendar / Events / Shift Names.
-- **D3** Announcement card: **public** when weather is player-visible, **GM-whisper** otherwise; posts **only when the condition actually changes** (not on a no-op "stay").
+- **D3** Announcement card: visibility is a GM choice via the **`weatherCardVisibility`** world setting — **`public`** (posted to everyone, default) or **`gm`** (whispered to GMs only, so players discover the weather in-fiction). Posts **only when the condition actually changes** (not on a no-op "stay").
 - **D4** Performance: badge Pixi canvas **pauses** (stop ticker) when the HUD is collapsed/hidden or the tab is backgrounded (`document.hidden` / `visibilitychange`).
 - **D5** Each flower defines a **start hex** (first-run state + reset target).
 

@@ -126,18 +126,22 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!this.rendered) return;
     const cell = this.element.querySelector("[data-weather]");
     const host = this.element.querySelector("[data-wxbar]");
+    const scrim = this.element.querySelector("[data-wxscrim]");
+    const bar = this.element.querySelector("[data-bar]");
 
     const enabled = WeatherStore.enabled && WeatherStore.configured;
     if (!enabled) {
       cell?.classList.add("hidden");
       host?.classList.add("off");
+      scrim?.classList.add("off");
+      bar?.classList.remove("has-wx");
       this._wx?.destroy(); this._wx = null;
       return;
     }
 
     const cur = WeatherEngine.getCurrent();
     const hex = cur?.hex;
-    if (!hex) { cell?.classList.add("hidden"); host?.classList.add("off"); this._wx?.pause(); return; }
+    if (!hex) { cell?.classList.add("hidden"); host?.classList.add("off"); scrim?.classList.add("off"); bar?.classList.remove("has-wx"); this._wx?.pause(); return; }
     const e = hex.effect ?? {};
 
     cell?.classList.remove("hidden");
@@ -154,13 +158,25 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       cell.classList.toggle("ominous", !!e.ominous);
     }
 
-    // full-bar diorama
+    // Carry the weather tint on the bar so the left-edge scrim/glow can pick it up
+    // (scoped var — never the shift-driven HUD colour).
+    if (bar) {
+      bar.style.setProperty("--glct-weather-tint", e.tintParticle ?? "#cfe8ff");
+      bar.style.setProperty("--glct-weather-glow", e.tintGlow ?? "#7fb4e6");
+      bar.classList.toggle("wx-ominous", !!e.ominous);
+    }
+
+    // full-bar diorama + the legibility scrim behind the left text
     if (host) {
       if (this.collapsed || document.hidden) {
         host.classList.add("off");
+        scrim?.classList.add("off");
+        bar?.classList.remove("has-wx");
         this._wx?.pause();          // don't spin a canvas behind a collapsed bar
       } else {
         host.classList.remove("off");
+        scrim?.classList.remove("off");
+        bar?.classList.add("has-wx");
         if (!this._wx) this._wx = WeatherEffect.create(host, e);
         else this._wx.setSpec(e);
         this._wx?.resize();

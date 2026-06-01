@@ -40,6 +40,7 @@ export const SETTINGS = {
   weatherCadencePeriod: "weatherCadencePeriod",       // String (world): "day" | "days:N" | "shift"
   weatherPlayerFlowerVisible: "weatherPlayerFlowerVisible", // Boolean (world): reveal the flower to players
   weatherShowDice: "weatherShowDice",                 // Boolean (world): animate Dice So Nice 3D dice on weather rolls
+  weatherCardVisibility: "weatherCardVisibility",     // String (world): "public" | "gm" — who sees the weather-change chat card
   weatherHudPosition: "weatherHudPosition",           // Object (client): Hex Flower window position
   weatherHudHidden: "weatherHudHidden"                // Boolean (client): window hidden on this screen
 };
