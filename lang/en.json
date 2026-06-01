@@ -236,6 +236,7 @@
   "GLCT.weather.editor.load": "Load",
   "GLCT.weather.editor.climateName": "Climate name",
   "GLCT.weather.editor.startHex": "Start hex",
+  "GLCT.weather.editor.currentHex": "Current hex",
   "GLCT.weather.editor.clickHex": "Click a hex to edit it.",
   "GLCT.weather.editor.hex": "Hex",
   "GLCT.weather.editor.kind": "Weather kind",
@@ -269,8 +270,8 @@
   "GLCT.weather.editor.seasonalHint": "When on, this region uses a different flower + Navigation Hex per calendar season. When off, one flower is used all year.",
   "GLCT.weather.editor.seasonalOnHint": "Seasonal: the calendar season picks the flower (edit each via the tabs below).",
   "GLCT.weather.editor.seasonalOffHint": "Single flower for all time — the calendar season is ignored; only the first flower is used.",
-  "GLCT.weather.editor.disallow": "Blocked faces (Ø)",
-  "GLCT.weather.editor.disallowHint": "Checked directions are blocked from this hex: rolling one keeps the walk here (the cookbook's red Ø).",
+  "GLCT.weather.editor.disallow": "Blocked faces (✕)",
+  "GLCT.weather.editor.disallowHint": "Checked directions are blocked from this hex: rolling one keeps the walk here. Each blocked face is marked with a red ✕ on the flower (the cookbook's red Ø).",
 
   "GLCT.weather.region.label": "Active region",
   "GLCT.weather.region.switchHint": "Switch which region drives the HUD and chat. Every region keeps its own weather.",

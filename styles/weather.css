@@ -152,14 +152,47 @@
 .wx-hex.clickable:hover{transform:translate(-50%,-50%) translateY(-1px) scale(1.05);
   filter:drop-shadow(0 3px 5px rgba(0,0,0,.5)) drop-shadow(0 0 7px color-mix(in srgb,var(--glct-weather-glow) 65%,transparent));z-index:3}
 .wx-hex.clickable:hover > i{color:#fff}
-/* home / start hex: green-tinted bevel + soft green glow */
-.wx-hex.start{filter:drop-shadow(0 2px 3px rgba(0,0,0,.5)) drop-shadow(0 0 5px rgba(155,225,93,.5))}
-.wx-hex.start::before{background:linear-gradient(155deg,rgba(155,225,93,.62),rgba(255,255,255,.05) 42%,rgba(0,0,0,.42))}
-/* current cell: brighter, glow-washed fill + white icon (the marker rides over) */
+/* home / start hex: green-tinted bevel + a clear green inner ring + green glow.
+   The flag tag (.wx-tag-start) makes "this is where the walk begins" unmistakable
+   regardless of the weather glow colour. */
+.wx-hex.start{filter:drop-shadow(0 2px 3px rgba(0,0,0,.5)) drop-shadow(0 0 7px rgba(155,225,93,.75))}
+.wx-hex.start::before{background:linear-gradient(155deg,rgba(155,225,93,.85),rgba(255,255,255,.08) 42%,rgba(0,0,0,.42))}
+.wx-hex.start::after{box-shadow:inset 0 0 0 1.6px rgba(170,235,110,.85)}
+/* current cell: a bright white inner ring + glow-washed fill + white icon (the
+   animated marker rides over). The ring reads even before the marker is noticed. */
 .wx-hex.current::after{background:
-  radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--glct-weather-glow) 40%,transparent),transparent 64%),
-  linear-gradient(180deg,color-mix(in srgb,var(--glct-weather-tint) 66%,#10141d),color-mix(in srgb,var(--glct-weather-tint) 22%,#080b11))}
+  radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--glct-weather-glow) 48%,transparent),transparent 64%),
+  linear-gradient(180deg,color-mix(in srgb,var(--glct-weather-tint) 66%,#10141d),color-mix(in srgb,var(--glct-weather-tint) 22%,#080b11));
+  box-shadow:inset 0 0 0 1.6px rgba(255,255,255,.92)}
 .wx-hex.current > i{color:#fff;filter:drop-shadow(0 0 8px var(--glct-weather-glow))}
+
+/* ----- on-hex tags & blocked-face marks (shared by HUD flower + editor) ----- */
+/* small round badge pinned to a top corner: green flag = start, blue dot = now */
+.wx-hex .wx-tag{position:absolute;z-index:7;transform:translate(-50%,-50%);
+  width:14px;height:14px;display:grid;place-items:center;border-radius:50%;
+  font-size:7.5px;line-height:1;pointer-events:none;
+  box-shadow:0 1px 3px rgba(0,0,0,.65),0 0 0 1.4px rgba(0,0,0,.45)}
+.wx-tag-start{left:15%;top:3%;color:#08230b;
+  background:radial-gradient(closest-side,#cdf59c,#6bbf3a);
+  filter:drop-shadow(0 0 5px rgba(155,225,93,.8))}
+.wx-tag-now{left:85%;top:3%;color:#06223a;
+  background:radial-gradient(closest-side,#eaf4ff,color-mix(in srgb,var(--glct-weather-glow) 75%,#fff));
+  filter:drop-shadow(0 0 6px var(--glct-weather-glow))}
+
+/* a red ✕ sitting directly on each blocked face, so a disallowed direction is
+   obvious at a glance (replaces the single corner Ø). Positioned at the midpoint
+   of the corresponding hexagon edge. */
+.wx-hex .wx-dir-x{position:absolute;z-index:6;transform:translate(-50%,-50%);
+  width:13px;height:13px;display:grid;place-items:center;border-radius:50%;
+  font-size:8.5px;font-weight:900;line-height:1;color:#fff;pointer-events:none;
+  background:radial-gradient(closest-side,#ec6258,#a8332c);
+  box-shadow:0 0 0 1.5px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.6)}
+.wx-dir-x-up{left:50%;top:0}
+.wx-dir-x-down{left:50%;top:100%}
+.wx-dir-x-upperRight{left:87.5%;top:25%}
+.wx-dir-x-lowerRight{left:87.5%;top:75%}
+.wx-dir-x-upperLeft{left:12.5%;top:25%}
+.wx-dir-x-lowerLeft{left:12.5%;top:75%}
 /* ominous: red dread fill + rim */
 .wx-hex.ominous::before{background:linear-gradient(155deg,rgba(255,150,140,.5),rgba(255,255,255,.05) 40%,rgba(0,0,0,.46))}
 .wx-hex.ominous::after{background:
@@ -354,10 +387,9 @@
   display:grid;place-items:center;background:rgba(255,255,255,.06);color:#aab4c8;font-size:10px;transition:.15s}
 #glct-weather-hud .wx-rb-add:hover{background:rgba(155,225,93,.16);color:#bdf08a;border-color:rgba(155,225,93,.4)}
 
-/* the small Ø badge on a hex that blocks one or more faces */
-.wx-block-badge{position:absolute;top:1px;right:2px;z-index:4;font-size:9px;font-weight:800;line-height:1;
-  color:#ff9b8f;text-shadow:0 1px 2px rgba(0,0,0,.8);pointer-events:none}
-.glct-wxeditor .wx-hex.blocked::after{box-shadow:inset 0 0 0 1px rgba(224,88,79,.4)}
+/* the editor's smaller tiles get slightly smaller face marks + corner tags */
+.glct-wxeditor .wx-hex .wx-dir-x{width:11px;height:11px;font-size:7px}
+.glct-wxeditor .wx-hex .wx-tag{width:12px;height:12px;font-size:6.5px}
 
 /* editor: region management bar */
 .glct-wxeditor .wxe-regionbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;

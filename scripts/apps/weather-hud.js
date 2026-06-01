@@ -9,7 +9,7 @@
  * history (the current weather is always visible).
  */
 
-import { MODULE_ID, SETTINGS } from "../const.js";
+import { MODULE_ID, SETTINGS, WEATHER_DIRECTIONS } from "../const.js";
 import { HEX_LAYOUT, HEX_BOUNDS } from "../weather/hex-geometry.js";
 import { WeatherStore } from "../weather/weather-store.js";
 import { WeatherEngine } from "../weather/engine.js";
@@ -58,6 +58,7 @@ export class WeatherHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _tiles = new Map();   // index -> tile element
   _marker = null;
+  _nowTag = null;       // "you are here" dot that hops to the current hex
   _sig = null;          // flower-shape signature (rebuild tiles when it changes)
   _regionSig = null;    // region-list signature (rebuild the switcher when it changes)
   _wx = null;           // hero Pixi diorama
@@ -168,6 +169,9 @@ export class WeatherHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // current-cell glow + marker walk
     for (const [i, tile] of this._tiles) tile.classList.toggle("current", i === cur.index);
+    // hop the "you are here" dot tag onto the current tile (appendChild moves it)
+    const curTile = this._tiles.get(cur.index);
+    if (this._nowTag && curTile) curTile.appendChild(this._nowTag);
     const c = this._centerPx(cur.index);
     if (this._marker) {
       this._marker.style.left = `${c.x}px`;
@@ -181,7 +185,9 @@ export class WeatherHud extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _flowerSig(season) {
-    return (season?.hexes ?? []).map(h => `${h.index}:${h.icon}:${h.effect?.tintParticle}:${h.effect?.ominous ? 1 : 0}`).join("|");
+    const start = WeatherStore.climate()?.startHexIndex ?? "";
+    return start + "#" + (season?.hexes ?? []).map(h =>
+      `${h.index}:${h.icon}:${h.effect?.tintParticle}:${h.effect?.ominous ? 1 : 0}:${(h.disallow ?? []).join(",")}`).join("|");
   }
 
   _centerPx(index) {
@@ -220,6 +226,21 @@ export class WeatherHud extends HandlebarsApplicationMixin(ApplicationV2) {
       const ic = document.createElement("i");
       ic.className = hex?.icon ?? "fa-solid fa-cloud";
       tile.appendChild(ic);
+      // green flag tag marks the start hex (where the walk begins)
+      if (h.index === startIdx) {
+        tile.appendChild(Object.assign(document.createElement("span"), {
+          className: "wx-tag wx-tag-start", innerHTML: '<i class="fa-solid fa-flag"></i>',
+          title: game.i18n.localize("GLCT.weather.editor.startHex")
+        }));
+      }
+      // a red ✕ on each blocked face so disallowed directions are obvious
+      for (const dir of hex?.disallow ?? []) {
+        if (!WEATHER_DIRECTIONS.includes(dir)) continue;
+        tile.appendChild(Object.assign(document.createElement("span"), {
+          className: `wx-dir-x wx-dir-x-${dir}`, textContent: "✕",
+          title: game.i18n.localize(`GLCT.weather.dir.${dir}`)
+        }));
+      }
       if (isGM) {
         tile.classList.add("clickable");
         tile.addEventListener("click", () => WeatherEngine.setCurrent(h.index));
@@ -235,6 +256,12 @@ export class WeatherHud extends HandlebarsApplicationMixin(ApplicationV2) {
     marker.style.height = `${TILE_H}px`;
     host.appendChild(marker);
     this._marker = marker;
+
+    // a "you are here" dot tag that hops to the current hex (see _paintFlower)
+    this._nowTag = Object.assign(document.createElement("span"), {
+      className: "wx-tag wx-tag-now", innerHTML: '<i class="fa-solid fa-location-dot"></i>',
+      title: game.i18n.localize("GLCT.weather.editor.currentHex")
+    });
   }
 
   _paintStrip(cur) {
