@@ -7,12 +7,17 @@ import { GlctHud } from "./apps/hud.js";
 import { TrackerHud } from "./apps/tracker-hud.js";
 import { registerCalendarMenu } from "./apps/calendar-editor.js";
 import { registerShiftNamesMenu } from "./apps/shift-names-editor.js";
+import { registerWeatherMenu } from "./apps/weather-editor.js";
+import { WeatherHud } from "./apps/weather-hud.js";
+import { WeatherEngine } from "./weather/engine.js";
+import { makeDefaultWeather } from "./weather/presets.js";
 
 export function registerSettings() {
   const choices = Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.name]));
 
   registerCalendarMenu();
   registerShiftNamesMenu();
+  registerWeatherMenu();
 
   game.settings.register(MODULE_ID, SETTINGS.calendarId, {
     name: "GLCT.settings.calendar.name",
@@ -91,6 +96,70 @@ export function registerSettings() {
   });
 
   game.settings.register(MODULE_ID, SETTINGS.trackerHudCompact, {
+    scope: "client", config: false, type: Boolean, default: false
+  });
+
+  /* ---------------------------- Weather ---------------------------- */
+
+  // Master opt-in (decision D1). Ships off so calendar-only worlds are untouched.
+  game.settings.register(MODULE_ID, SETTINGS.weatherEnabled, {
+    name: "GLCT.weather.settings.enabled.name",
+    hint: "GLCT.weather.settings.enabled.hint",
+    scope: "world", config: true, type: Boolean, default: false,
+    onChange: () => {
+      GlctHud.refreshWeather();
+      WeatherHud.refresh();
+      if (game.user?.isGM) WeatherEngine.evaluate();
+    }
+  });
+
+  // Full config + live walk state (§4.5). Config:false — edited via the menu.
+  game.settings.register(MODULE_ID, SETTINGS.weather, {
+    scope: "world", config: false, type: Object, default: makeDefaultWeather(),
+    onChange: () => { GlctHud.refreshWeather(); WeatherHud.refresh(); }
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.weatherCadenceMode, {
+    name: "GLCT.weather.settings.cadenceMode.name",
+    hint: "GLCT.weather.settings.cadenceMode.hint",
+    scope: "world", config: true, type: String, default: "auto",
+    choices: { auto: "GLCT.weather.settings.cadenceMode.auto", manual: "GLCT.weather.settings.cadenceMode.manual" }
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.weatherCadencePeriod, {
+    name: "GLCT.weather.settings.cadencePeriod.name",
+    hint: "GLCT.weather.settings.cadencePeriod.hint",
+    scope: "world", config: true, type: String, default: "day",
+    choices: {
+      day: "GLCT.weather.settings.cadencePeriod.day",
+      "days:2": "GLCT.weather.settings.cadencePeriod.days2",
+      "days:3": "GLCT.weather.settings.cadencePeriod.days3",
+      "days:7": "GLCT.weather.settings.cadencePeriod.days7",
+      shift: "GLCT.weather.settings.cadencePeriod.shift"
+    }
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.weatherPlayerFlowerVisible, {
+    name: "GLCT.weather.settings.playerFlower.name",
+    hint: "GLCT.weather.settings.playerFlower.hint",
+    scope: "world", config: true, type: Boolean, default: false,
+    onChange: () => WeatherHud.refresh()
+  });
+
+  // Roll real 3D dice (Dice So Nice) when the weather walk rolls its Navigation
+  // Hex — manual steps and single-period auto advances. Multi-day skips stay
+  // silent (no animation flood). Honoured only if Dice So Nice is installed.
+  game.settings.register(MODULE_ID, SETTINGS.weatherShowDice, {
+    name: "GLCT.weather.settings.showDice.name",
+    hint: "GLCT.weather.settings.showDice.hint",
+    scope: "world", config: true, type: Boolean, default: true
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.weatherHudPosition, {
+    scope: "client", config: false, type: Object, default: {}
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.weatherHudHidden, {
     scope: "client", config: false, type: Boolean, default: false
   });
 }

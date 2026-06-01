@@ -8,6 +8,10 @@
 
   <div class="bar {{#if collapsed}}collapsed{{/if}}" data-bar>
     <div class="sweep"></div>
+    {{!-- Full-bar weather diorama: a PixiJS layer that spans the whole bar behind
+          the content at low opacity (screen blend), so the active weather quietly
+          washes across the HUD instead of living in a small box. --}}
+    <div class="bar-wx off" data-wxbar></div>
     <div class="main">
 
       <div class="cell grip" title="{{localize 'GLCT.hud.dragHint'}}">
@@ -24,13 +28,27 @@
       </div>
 
       <div class="cell date">
-        <span class="wd" data-wd></span>
-        <span class="dline">
-          <span class="m"><span data-dy></span><sup data-ord></sup> <span data-moshort></span></span>
-          <span class="moon"><span class="shadow" data-moon></span></span>
-          <span class="season" data-season></span>
+        <span class="datestack">
+          <span class="wd" data-wd></span>
+          <span class="dline">
+            <span class="m"><span data-dy></span><sup data-ord></sup> <span data-moshort></span></span>
+            <span class="moon"><span class="shadow" data-moon></span></span>
+            <span class="season" data-season></span>
+          </span>
+          <span class="mo" data-mo></span>
         </span>
-        <span class="mo" data-mo></span>
+        {{!-- Weather readout: compact icon · condition · intensity, nested in the
+              date cluster so it reads as part of the left section. The animated
+              diorama is the full-bar layer behind everything; this is just the
+              label + click target. Hidden until weather is enabled + configured. --}}
+        <span class="wxmini hidden" data-weather data-action="openWeather" title="{{localize 'GLCT.weather.chipHint'}}">
+          <span class="wxmini-ico"><i data-wxicon class="fa-solid fa-cloud"></i></span>
+          <span class="wxmini-text">
+            <span class="wxmini-label" data-wxlabel></span>
+            <span class="wxmini-temp" data-wxtemp></span>
+          </span>
+          <span class="wxmini-haz" data-wxhaz title="{{localize 'GLCT.weather.hazard'}}"><i class="fa-solid fa-skull"></i></span>
+        </span>
       </div>
 
       <div class="cell shift-hero" data-shifthero>

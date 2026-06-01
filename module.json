@@ -18,7 +18,8 @@
     "scripts/module.js"
   ],
   "styles": [
-    "styles/hud.css"
+    "styles/hud.css",
+    "styles/weather.css"
   ],
   "languages": [
     {

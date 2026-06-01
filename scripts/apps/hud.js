@@ -13,6 +13,9 @@ import { TimeEngine } from "../engine.js";
 import {
   STRETCHES_PER_SHIFT, STRETCHES_PER_HOUR, HOURS_PER_SHIFT, SHIFTS_PER_DAY
 } from "../time-math.js";
+import { WeatherStore } from "../weather/weather-store.js";
+import { WeatherEngine } from "../weather/engine.js";
+import { WeatherEffect } from "../weather/effects.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const NS = "http://www.w3.org/2000/svg";
@@ -38,6 +41,9 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Toggle shift/watch mode live (no re-render) so the swap can animate. */
   static applyShiftMode() { this.instance?._applyShiftMode(); }
 
+  /** Repaint just the weather chip (after a weatherChanged / enable toggle). */
+  static refreshWeather() { this.instance?._paintWeather(); }
+
   static DEFAULT_OPTIONS = {
     id: "glct-hud",
     classes: ["glct"],
@@ -49,7 +55,8 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       setTime: GlctHud.prototype._onSetTime,
       toggleShiftMode: GlctHud.prototype._onToggleShiftMode,
       openMission: GlctHud.prototype._onOpenMission,
-      openCalendar: GlctHud.prototype._onOpenCalendar
+      openCalendar: GlctHud.prototype._onOpenCalendar,
+      openWeather: GlctHud.prototype._onOpenWeather
     }
   };
 
@@ -68,6 +75,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _dialPtr = null;
   _dialRot = 0;
   _barT = null;         // pending bar-width-tween cleanup timeout
+  _wx = null;           // WeatherEffect (chip Pixi diorama), lazily created
 
   get collapsed() {
     try { return game.settings.get(MODULE_ID, SETTINGS.hudCollapsed); } catch { return false; }
@@ -89,10 +97,81 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _onRender(context, options) {
     await super._onRender(context, options);
+    this._wx?.destroy(); this._wx = null;   // the chip host is recreated on re-render
     this._buildDynamic();
     this._applyPosition();
     this._activateInteractions();
     this.update();
+    this._paintWeather();
+  }
+
+  async _onClose(options) {
+    this._wx?.destroy();
+    this._wx = null;
+    return super._onClose(options);
+  }
+
+  /* ------------------------------ weather chip ------------------------------ */
+
+  /**
+   * Repaint the weather readout + the full-bar diorama from the current
+   * condition. The readout (icon · label · temperature) lives as a cell in the
+   * bar; the animated effect is a Pixi layer spanning the whole bar behind the
+   * content at low opacity. The Pixi app is created lazily and only re-specced
+   * when the effect changes; its ticker is paused while the bar is collapsed or
+   * the tab is backgrounded (decision D4). The condition tint is scoped to the
+   * weather cell only, so the rest of the HUD keeps the shift colour (#6).
+   */
+  _paintWeather() {
+    if (!this.rendered) return;
+    const cell = this.element.querySelector("[data-weather]");
+    const host = this.element.querySelector("[data-wxbar]");
+
+    const enabled = WeatherStore.enabled && WeatherStore.configured;
+    if (!enabled) {
+      cell?.classList.add("hidden");
+      host?.classList.add("off");
+      this._wx?.destroy(); this._wx = null;
+      return;
+    }
+
+    const cur = WeatherEngine.getCurrent();
+    const hex = cur?.hex;
+    if (!hex) { cell?.classList.add("hidden"); host?.classList.add("off"); this._wx?.pause(); return; }
+    const e = hex.effect ?? {};
+
+    cell?.classList.remove("hidden");
+    this._setText("[data-wxlabel]", hex.label ?? "");
+    const tempEl = cell?.querySelector("[data-wxtemp]");
+    if (tempEl) { tempEl.textContent = hex.temperature ?? ""; tempEl.style.display = hex.temperature ? "" : "none"; }
+    const ico = cell?.querySelector("[data-wxicon]");
+    if (ico) ico.className = hex.icon ?? "fa-solid fa-cloud";
+
+    // tint scoped to the weather cell only — never the shift-driven HUD vars
+    if (cell) {
+      cell.style.setProperty("--glct-weather-tint", e.tintParticle ?? "#cfe8ff");
+      cell.style.setProperty("--glct-weather-glow", e.tintGlow ?? "#7fb4e6");
+      cell.classList.toggle("ominous", !!e.ominous);
+    }
+
+    // full-bar diorama
+    if (host) {
+      if (this.collapsed || document.hidden) {
+        host.classList.add("off");
+        this._wx?.pause();          // don't spin a canvas behind a collapsed bar
+      } else {
+        host.classList.remove("off");
+        if (!this._wx) this._wx = WeatherEffect.create(host, e);
+        else this._wx.setSpec(e);
+        this._wx?.resize();
+        this._wx?.resume();
+      }
+    }
+  }
+
+  async _onOpenWeather() {
+    const { WeatherHud } = await import("./weather-hud.js");
+    await WeatherHud.open();
   }
 
   /* --------------------------- DOM construction --------------------------- */
@@ -575,6 +654,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     try { await game.settings.set(MODULE_ID, SETTINGS.hudCollapsed, next); } catch { /* ignore */ }
     this.element.querySelector("[data-bar]")?.classList.toggle("collapsed", next);
     this.element.querySelector(".hud-root")?.classList.toggle("is-collapsed", next);
+    this._paintWeather();   // hide + pause the chip's Pixi ticker while collapsed
   }
   async _onSetTime() {
     if (!game.user.isGM) return;
@@ -626,6 +706,8 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     root.classList.remove("mode-swap"); void root.offsetWidth; root.classList.add("mode-swap");
     setTimeout(() => root.classList.remove("mode-swap"), 650);
     this.update();
+    // the bar's width changed — re-fit the full-bar diorama once it settles
+    setTimeout(() => this._wx?.resize(), 460);
   }
   async _onOpenCalendar() {
     const { CalendarView } = await import("./calendar-view.js");

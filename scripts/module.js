@@ -7,20 +7,39 @@ import { TimeEngine } from "./engine.js";
 import { GlctHud } from "./apps/hud.js";
 import { TrackerHud } from "./apps/tracker-hud.js";
 import { TrackerStore } from "./trackers/trackers.js";
+import { WeatherHud } from "./apps/weather-hud.js";
+import { WeatherEngine } from "./weather/engine.js";
+import { WeatherStore } from "./weather/weather-store.js";
 
 function setting(key, fallback) {
   try { return game.settings.get(MODULE_ID, key); } catch { return fallback; }
 }
 
+/**
+ * Guarantee the weather stylesheet is linked. Foundry only reads `module.json`
+ * (and so injects `styles[]` links) at server startup, so a world that booted
+ * before weather.css was added to the manifest never links it — leaving the
+ * weather editor/HUD completely unstyled until a full restart. Injecting it here
+ * makes a plain page reload enough; it's a no-op once the manifest link exists.
+ */
+function ensureWeatherStyles() {
+  if (document.querySelector('link[href*="styles/weather.css"]')) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `modules/${MODULE_ID}/styles/weather.css`;
+  document.head.appendChild(link);
+}
+
 Hooks.once("init", () => {
   registerSettings();
+  ensureWeatherStyles();
   // Install the active calendar before GameTime is constructed.
   applyCalendar();
   registerKeybindings();
 
   // Public API for macros / other modules.
   const mod = game.modules.get(MODULE_ID);
-  if (mod) mod.api = { TimeEngine, GlctHud, TrackerHud, TrackerStore, HOOKS };
+  if (mod) mod.api = { TimeEngine, GlctHud, TrackerHud, TrackerStore, WeatherEngine, WeatherStore, WeatherHud, HOOKS };
 });
 
 Hooks.once("ready", async () => {
@@ -28,18 +47,30 @@ Hooks.once("ready", async () => {
   TrackerStore.registerSocket();
   if (!setting(SETTINGS.trackerHudHidden, false)) await TrackerHud.open();
   applySceneTint(TimeEngine.getState());
+
+  // Seed/sync the weather walk once on load (GM only; no-op when disabled).
+  if (game.user.isGM) await WeatherEngine.evaluate();
+  // Open the Hex Flower window if weather is enabled + configured and not hidden here.
+  if (WeatherStore.enabled && WeatherStore.configured && !setting(SETTINGS.weatherHudHidden, false)) {
+    await WeatherHud.open();
+  }
 });
 
 Hooks.on("updateWorldTime", () => {
   GlctHud.refreshState();
   applySceneTint(TimeEngine.getState());
+  // Walk the weather flower as in-game time passes (primary GM only, guarded inside).
+  WeatherEngine.evaluate();
 });
 
 // Tag our resource-pool roll messages so the chat card can take over the whole
 // entry (the duplicate header is hidden; timestamp + delete control remain).
 function tagPoolMessage(message, html) {
   const el = html instanceof HTMLElement ? html : html?.[0];
-  if (el && message?.flags?.[MODULE_ID]?.poolRoll) el.classList.add("glct-pool-msg");
+  if (!el) return;
+  const flags = message?.flags?.[MODULE_ID];
+  if (flags?.poolRoll) el.classList.add("glct-pool-msg");
+  if (flags?.weatherCard) el.classList.add("glct-weather-msg");
 }
 Hooks.on("renderChatMessageHTML", tagPoolMessage);   // Foundry v13+
 Hooks.on("renderChatMessage", tagPoolMessage);       // legacy fallback
@@ -68,6 +99,15 @@ Hooks.on("getSceneControlButtons", controls => {
     button: true,
     onChange: () => toggleTrackerHud()
   };
+  if (WeatherStore.enabled) {
+    group.tools["glct-weather-toggle"] = {
+      name: "glct-weather-toggle",
+      title: "GLCT.keybindings.toggleWeather",
+      icon: "fa-solid fa-cloud-bolt",
+      button: true,
+      onChange: () => WeatherHud.toggle()
+    };
+  }
 });
 
 function registerKeybindings() {
@@ -96,6 +136,13 @@ function registerKeybindings() {
     name: "GLCT.keybindings.toggleTracker",
     editable: [{ key: "KeyR", modifiers: ["Alt"] }],
     onDown: () => { toggleTrackerHud(); return true; },
+    restricted: false
+  });
+
+  game.keybindings.register(MODULE_ID, "toggleWeather", {
+    name: "GLCT.keybindings.toggleWeather",
+    editable: [{ key: "KeyW", modifiers: ["Alt"] }],
+    onDown: () => { if (WeatherStore.enabled) WeatherHud.toggle(); return true; },
     restricted: false
   });
 }
