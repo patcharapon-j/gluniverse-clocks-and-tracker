@@ -254,14 +254,22 @@ export class SupportEditor extends HandlebarsApplicationMixin(ApplicationV2) {
   async _onImportPreset() {
     const { makeSupportPresets } = await import("../support/presets.js");
     const presets = makeSupportPresets();
-    let order = this._working.length;
+    // Split each preset's bundled passiveEffect into the shared import shape so
+    // Razor & Tourniquet go through the exact create-effect-and-link path as a
+    // pasted JSON bundle (no separate macro needed).
+    const supports = [], effects = [];
     for (const p of presets) {
-      const s = SupportStore.makeNew({ ...p, id: foundry.utils.randomID(), order: order++ });
-      this._working.push(s);
-      this._selId = s.id;
+      const sup = foundry.utils.deepClone(p);
+      const fx = sup.passiveEffect;
+      delete sup.passiveEffect;
+      if (fx && typeof fx === "object") {
+        effects.push(fx);
+        if (!sup.passiveEffectUuid && !sup.passiveEffectRef) sup.passiveEffectRef = fx.name;
+      }
+      supports.push(sup);
     }
-    ui.notifications?.info(game.i18n.localize("GLCT.support.editor.presetImported"));
-    this.render();
+    const r = await this._ingestBundle({ supports, effects });
+    ui.notifications?.info(game.i18n.format("GLCT.support.editor.presetImported", { linked: r.linked }));
   }
 
   /* ------------------------------ JSON import ------------------------------ */
@@ -369,23 +377,32 @@ export class SupportEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     return { supports, effects };
   }
 
-  /** Materialise a parsed bundle: create/link its passive Effect items, then add
-   *  the supports (fresh ids, reset live-state) into the working roster. */
+  /** Materialise a parsed bundle from pasted/loaded JSON, then notify. */
   async _applyImport(text) {
     let parsed;
     try { parsed = this._parseSupportBundle(text); }
     catch (e) { ui.notifications?.error(e.message); return; }
+    const r = await this._ingestBundle(parsed);
+    ui.notifications?.info(game.i18n.format("GLCT.support.editor.importDone", { n: r.added, fx: r.fxCount, linked: r.linked }));
+  }
 
+  /**
+   * Shared materialiser for both the JSON import and the bundled-preset import:
+   * create/update the bundle's passive Effect items, then add each support (fresh
+   * id, reset live-state, passive resolved + linked) into the working roster.
+   * Returns `{ added, linked, fxCount }`; the caller notifies.
+   */
+  async _ingestBundle({ supports = [], effects = [] }) {
     // Create / update the bundled passive Effect items (PF2e). Map name|slug → uuid.
     let uuidByKey = new Map();
-    try { uuidByKey = await SupportStore.importEffectItems(parsed.effects); }
+    try { uuidByKey = await SupportStore.importEffectItems(effects); }
     catch (e) { console.error(`${MODULE_ID} | effect import`, e); }
     const fxCount = new Set(uuidByKey.values()).size;
 
     let order = this._working.reduce((m, s) => Math.max(m, s.order ?? 0), 0) + 1;
     let added = 0, linked = 0, lastId = null;
 
-    for (const raw of parsed.supports) {
+    for (const raw of supports) {
       const ov = foundry.utils.deepClone(raw);
 
       // Resolve the passive link: explicit uuid wins, else a ref / the passive
@@ -417,7 +434,7 @@ export class SupportEditor extends HandlebarsApplicationMixin(ApplicationV2) {
 
     if (lastId) this._selId = lastId;
     this.render();
-    ui.notifications?.info(game.i18n.format("GLCT.support.editor.importDone", { n: added, fx: fxCount, linked }));
+    return { added, linked, fxCount };
   }
 
   _onExport() {

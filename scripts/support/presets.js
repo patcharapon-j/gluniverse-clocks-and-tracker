@@ -2,7 +2,9 @@
  * Shipped support presets — the two NPCs from the "Mission Support System" design
  * doc (Aegis Fallen). Authored with the SupportCard token syntax so their numbers
  * compute from level + benchmark tiers (no actor needed). Imported via the editor;
- * each becomes an editable roster entry (GM links the passive Effect + portraits).
+ * each becomes an editable roster entry. Each carries a bundled `passiveEffect`
+ * (a PF2e Effect item) that Import Preset creates & links automatically — the GM
+ * only needs to set portraits.
  */
 
 /** @returns {Array<object>} partial supports (SupportStore.makeNew fills defaults/ids). */
@@ -46,6 +48,31 @@ export function makeSupportPresets() {
           cardText: "Razor blitz-scouts ahead for the fast, safe line. Choose one: bypass 1 hazard / locked route / traversal obstacle with no roll; shake pursuit once (chase pressure drops 1 step); or buy time (restore filter time / reduce mission-clock pressure 1 step).",
           effectUuids: []
         }
+      },
+      // Bundled PF2e Effect for the passive — created & linked on Import Preset
+      // (icon is swapped to the support's portrait when it auto-applies). Bonuses
+      // are flat, so the Proficiency-Without-Level variant doesn't affect them.
+      passiveEffect: {
+        name: "Last Safe Road",
+        type: "effect",
+        img: "icons/svg/wing.svg",
+        system: {
+          description: { value: "<p>While they can hear Razor on the radio, each ally gains a <strong>+1 status bonus to Reflex saves</strong> and a <strong>+1 status bonus</strong> to checks to Escape, Balance, or Tumble Through.</p><p><em>Stand: Razor's call also steadies allies getting up — narrative +1; Stand has no check to modify.</em></p>", gm: "" },
+          rules: [
+            { key: "FlatModifier", selector: "reflex", type: "status", value: 1, label: "Last Safe Road" },
+            { key: "FlatModifier", selector: "skill-check", type: "status", value: 1, label: "Last Safe Road",
+              predicate: [{ or: ["action:escape", "action:balance", "action:tumble-through"] }] }
+          ],
+          traits: { value: ["aura"], rarity: "common" },
+          level: { value: 6 },
+          duration: { value: -1, unit: "unlimited", sustained: false, expiry: null },
+          tokenIcon: { show: true },
+          unidentified: false,
+          start: { value: 0, initiative: null },
+          badge: null,
+          slug: "last-safe-road"
+        },
+        flags: {}
       }
     },
     {
@@ -86,6 +113,28 @@ export function makeSupportPresets() {
           cardText: "Field surgery / quarantine. Choose one: save a dying survivor the party would otherwise lose; purge 1 infection / contamination / poison / early Verdant Death from an ally or survivor; or turn 1 medical or Supply crisis into a clean outcome (reduce severity 1 step).",
           effectUuids: []
         }
+      },
+      passiveEffect: {
+        name: "Triage Doctrine",
+        type: "effect",
+        img: "icons/svg/regen.svg",
+        system: {
+          description: { value: "<p>Tourniquet declares the order of treatment before the blood starts. Each ally gains a <strong>+1 status bonus to saves vs disease and poison</strong>, and a <strong>+2 circumstance bonus to recovery checks</strong> while dying.</p>", gm: "" },
+          rules: [
+            { key: "FlatModifier", selector: "saving-throw", type: "status", value: 1, label: "Triage Doctrine",
+              predicate: [{ or: ["disease", "poison"] }] },
+            { key: "FlatModifier", selector: "recovery-check", type: "circumstance", value: 2, label: "Triage Doctrine" }
+          ],
+          traits: { value: ["aura"], rarity: "common" },
+          level: { value: 5 },
+          duration: { value: -1, unit: "unlimited", sustained: false, expiry: null },
+          tokenIcon: { show: true },
+          unidentified: false,
+          start: { value: 0, initiative: null },
+          badge: null,
+          slug: "triage-doctrine"
+        },
+        flags: {}
       }
     }
   ];

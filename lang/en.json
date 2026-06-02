@@ -390,7 +390,7 @@
   "GLCT.support.editor.duplicate": "Duplicate",
   "GLCT.support.editor.delete": "Delete",
   "GLCT.support.editor.deleteConfirm": "Delete the support “{name}”? This can't be undone.",
-  "GLCT.support.editor.presetImported": "Imported Razor & Tourniquet — review, link their passive effects, then Save.",
+  "GLCT.support.editor.presetImported": "Imported Razor & Tourniquet ({linked} passives created & linked) — set portraits if you like, then Save.",
   "GLCT.support.editor.saved": "Support roster saved.",
   "GLCT.support.editor.importTitle": "Import Support",
   "GLCT.support.editor.importIntro": "Paste a support bundle — a single NPC { support, passiveEffect } or a roster { roster, effects } — or load a .json file. The passive PF2e Effect item is created and linked automatically.",
