@@ -302,16 +302,16 @@
 #glct-hud .hud-root.shift-mode .meter,
 #glct-hud .hud-root.shift-mode .watch{display:none}
 #glct-hud .shift-hero .sdial svg{display:block;overflow:visible;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
-#glct-hud .shift-hero .sinfo{display:flex;flex-direction:column;gap:2px}
+#glct-hud .shift-hero .sinfo{display:flex;flex-direction:column;gap:1px}
 #glct-hud .shift-hero .name{font-family:"Oxanium","Segoe UI",system-ui,sans-serif;
   font-size:15.5px;font-weight:780;letter-spacing:.03em;white-space:nowrap;line-height:1.1;
   text-shadow:0 0 16px var(--glowsoft);background:linear-gradient(180deg,#fff,#d6deec);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
-#glct-hud .shift-hero .row{display:flex;align-items:center;gap:8px;margin-top:1px}
+#glct-hud .shift-hero .row{display:flex;align-items:center;gap:8px;margin-top:0}
 #glct-hud .shift-hero .of{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#69748c;font-weight:700}
 /* GM-only compact time readout: exact clock + a slim stretch-progress bar.
    Players never get this element (it's gated by isGM in the template). */
-#glct-hud .shift-hero .minitime{display:flex;align-items:center;gap:6px;margin-top:3px}
+#glct-hud .shift-hero .minitime{display:flex;align-items:center;gap:6px;margin-top:2px}
 #glct-hud .shift-hero .mt-clock{font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:11px;font-weight:700;
   color:#cfd7e6;letter-spacing:.02em;text-shadow:0 0 8px var(--glowsoft)}
 #glct-hud .shift-hero .mt-bar{position:relative;width:46px;height:3px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}
