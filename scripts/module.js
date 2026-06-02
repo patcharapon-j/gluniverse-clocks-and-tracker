@@ -10,6 +10,8 @@ import { TrackerStore } from "./trackers/trackers.js";
 import { WeatherHud } from "./apps/weather-hud.js";
 import { WeatherEngine } from "./weather/engine.js";
 import { WeatherStore } from "./weather/weather-store.js";
+import { SupportHud } from "./apps/support-hud.js";
+import { SupportStore } from "./support/support-store.js";
 
 function setting(key, fallback) {
   try { return game.settings.get(MODULE_ID, key); } catch { return fallback; }
@@ -30,16 +32,26 @@ function ensureWeatherStyles() {
   document.head.appendChild(link);
 }
 
+/** Same guard for the support stylesheet (added to the manifest after weather). */
+function ensureSupportStyles() {
+  if (document.querySelector('link[href*="styles/support.css"]')) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `modules/${MODULE_ID}/styles/support.css`;
+  document.head.appendChild(link);
+}
+
 Hooks.once("init", () => {
   registerSettings();
   ensureWeatherStyles();
+  ensureSupportStyles();
   // Install the active calendar before GameTime is constructed.
   applyCalendar();
   registerKeybindings();
 
   // Public API for macros / other modules.
   const mod = game.modules.get(MODULE_ID);
-  if (mod) mod.api = { TimeEngine, GlctHud, TrackerHud, TrackerStore, WeatherEngine, WeatherStore, WeatherHud, HOOKS };
+  if (mod) mod.api = { TimeEngine, GlctHud, TrackerHud, TrackerStore, WeatherEngine, WeatherStore, WeatherHud, SupportHud, SupportStore, HOOKS };
 });
 
 Hooks.once("ready", async () => {
@@ -56,6 +68,12 @@ Hooks.once("ready", async () => {
   if (game.user.isGM) await WeatherEngine.evaluate();
   // Note: the Hex Flower window is NOT auto-opened on launch — open it manually
   // from the scene controls / macro when you want it.
+
+  // Mission Support: wire GM-side action persistence, then open the Comms-Coin
+  // when the feature is on and not hidden on this client (the HUD self-hides for
+  // players who shouldn't see it / when no support is active).
+  SupportStore.registerHandlers();
+  if (SupportStore.enabled && !setting(SETTINGS.supportHudHidden, false)) await SupportHud.open();
 });
 
 Hooks.on("updateWorldTime", () => {
@@ -73,6 +91,7 @@ function tagPoolMessage(message, html) {
   const flags = message?.flags?.[MODULE_ID];
   if (flags?.poolRoll) el.classList.add("glct-pool-msg");
   if (flags?.weatherCard) el.classList.add("glct-weather-msg");
+  if (flags?.supportCard) el.classList.add("glct-support-msg");
 }
 Hooks.on("renderChatMessageHTML", tagPoolMessage);   // Foundry v13+
 Hooks.on("renderChatMessage", tagPoolMessage);       // legacy fallback
@@ -81,6 +100,18 @@ Hooks.on("renderChatMessage", tagPoolMessage);       // legacy fallback
 // round is far shorter than a stretch, so time only moves when the GM advances).
 for (const hook of ["combatStart", "deleteCombat", "combatTurn", "combatRound"]) {
   Hooks.on(hook, () => GlctHud.refreshState());
+}
+
+// Support actions share a 1/round lock that only applies IN combat. Clear the
+// "used" flag when the round advances or combat starts/ends — NOT on every turn,
+// or it would degrade to 1/turn (GM-authoritative; no-op otherwise).
+for (const hook of ["combatRound", "combatStart", "deleteCombat"]) {
+  Hooks.on(hook, () => { if (game.user.isGM && SupportStore.enabled) SupportStore.resetRadio(); });
+}
+// Repaint the HUD on every client for any combat state change so the used badges
+// and the GM clear button appear/disappear exactly as combat begins/ends.
+for (const hook of ["combatStart", "deleteCombat", "combatRound", "combatTurn"]) {
+  Hooks.on(hook, () => { if (SupportStore.enabled) SupportHud.refresh(); });
 }
 
 // v13+ scene controls: controls/tools are keyed objects; handlers use onChange.
@@ -108,6 +139,15 @@ Hooks.on("getSceneControlButtons", controls => {
       icon: "fa-solid fa-cloud-bolt",
       button: true,
       onChange: () => WeatherHud.toggle()
+    };
+  }
+  if (SupportStore.enabled) {
+    group.tools["glct-support-toggle"] = {
+      name: "glct-support-toggle",
+      title: "GLCT.keybindings.toggleSupport",
+      icon: "fa-solid fa-user-shield",
+      button: true,
+      onChange: () => toggleSupportHud()
     };
   }
 });
@@ -147,6 +187,13 @@ function registerKeybindings() {
     onDown: () => { if (WeatherStore.enabled) WeatherHud.toggle(); return true; },
     restricted: false
   });
+
+  game.keybindings.register(MODULE_ID, "toggleSupport", {
+    name: "GLCT.keybindings.toggleSupport",
+    editable: [{ key: "KeyM", modifiers: ["Alt"] }],
+    onDown: () => { if (SupportStore.enabled) toggleSupportHud(); return true; },
+    restricted: false
+  });
 }
 
 async function toggleHud() {
@@ -159,6 +206,11 @@ async function toggleTrackerHud() {
   if (!open) { await TrackerHud.open(); }
   else { await TrackerHud.instance.close(); }
   try { await game.settings.set(MODULE_ID, SETTINGS.trackerHudHidden, !!open); } catch { /* ignore */ }
+}
+
+async function toggleSupportHud() {
+  if (SupportHud.instance?.rendered) return SupportHud.instance._close();
+  return SupportHud.open();
 }
 
 /** Subtle full-board tint matching the current watch (opt-in). */

@@ -13,7 +13,9 @@ export const HOOKS = {
   /** Fired when trackers are created/edited/reordered/deleted: (trackers) => void */
   trackersChanged: `${MODULE_ID}.trackersChanged`,
   /** Fired (callAll) after the weather walk advances/rewinds/resets: (payload) => void */
-  weatherChanged: `${MODULE_ID}.weatherChanged`
+  weatherChanged: `${MODULE_ID}.weatherChanged`,
+  /** Fired (callAll) after the support roster / active / pool state changes: (payload) => void */
+  supportsChanged: `${MODULE_ID}.supportsChanged`
 };
 
 /** World-setting keys. */
@@ -42,7 +44,15 @@ export const SETTINGS = {
   weatherShowDice: "weatherShowDice",                 // Boolean (world): animate Dice So Nice 3D dice on weather rolls
   weatherCardVisibility: "weatherCardVisibility",     // String (world): "public" | "gm" — who sees the weather-change chat card
   weatherHudPosition: "weatherHudPosition",           // Object (client): Hex Flower window position
-  weatherHudHidden: "weatherHudHidden"                // Boolean (client): window hidden on this screen
+  weatherHudHidden: "weatherHudHidden",               // Boolean (client): window hidden on this screen
+
+  // ---- Mission Support (Support NPC roster + Comms-Coin HUD) ----
+  supportEnabled: "supportEnabled",                   // Boolean (world): master opt-in (default false)
+  supports: "supports",                               // Object (world): { roster:[], activeId, schemaVersion }
+  supportHudVisibleToPlayers: "supportHudVisibleToPlayers", // Boolean (world): GM show/hide the coin for players (off-mission)
+  supportHudPosition: "supportHudPosition",           // Object (client): Comms-Coin window position
+  supportHudHidden: "supportHudHidden",               // Boolean (client): coin hidden on this screen
+  supportPassiveTokenIcon: "supportPassiveTokenIcon"  // Boolean (world): show the passive effect icon on PC tokens
 };
 
 /** The tracker types the dock can render. */
@@ -105,3 +115,46 @@ export const WEATHER_HISTORY_CAP = 60;
 
 /** Maximum auto-steps executed for one big time skip (decision #3). */
 export const WEATHER_STEP_CAP = 60;
+
+/* ============================================================
+   Mission Support System — Support NPC roster + Comms-Coin HUD.
+   A support is a party asset (not bound to one PC). One is "active"
+   per mission. Abilities are PF2e-aware cards whose numbers are
+   computed from the GM-entered level via creature-building benchmarks.
+   ============================================================ */
+
+/** The four ability slots every support shares (see the design doc's template). */
+export const SUPPORT_ABILITY_KINDS = ["passive", "radio", "fieldCombat", "fieldExplore"];
+
+/** Which ability kinds spend the availability pool when invoked (Field Calls). */
+export const SUPPORT_BURN_KINDS = ["fieldCombat", "fieldExplore"];
+
+/** Kinds sharing ONE 1/round action lock (the support's combat action economy):
+ *  firing either the Free radio or the 1-action field call consumes the round for
+ *  both. Only enforced while in combat; Exploration + Passive are exempt. */
+export const SUPPORT_ROUND_LIMITED_KINDS = ["radio", "fieldCombat"];
+
+/** Faction track (0–5) → availability-pool dice modifier (design doc table). */
+export const SUPPORT_FACTION_MOD = { 0: -1, 1: -1, 2: 0, 3: 0, 4: 1, 5: 2 };
+
+/** PF2e creature-building proficiency tiers, strongest → weakest. */
+export const SUPPORT_TIERS = ["extreme", "high", "moderate", "low", "terrible"];
+
+/**
+ * The stat kinds an ability's numbers can be derived from, mapped to which
+ * benchmark table column resolves them (see support/benchmarks.js).
+ */
+export const SUPPORT_STAT_TYPES = {
+  attack: "strikeAttack",   // strike attack bonus
+  damage: "strikeDamage",   // strike damage expression (dice)
+  spellAttack: "spellAttack",
+  dc: "spellDC",            // spell / class / effect DC
+  ac: "ac",
+  save: "save",             // Fort/Ref/Will
+  skill: "skill",
+  perception: "perception"
+};
+
+/** Caps for the roster (defensive — a table is never going to need more). */
+export const SUPPORT_LEVEL_RANGE = { min: -1, max: 25 };
+export const SUPPORT_POOL_RANGE = { min: 1, max: 20 };

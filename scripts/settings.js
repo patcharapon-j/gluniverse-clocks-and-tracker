@@ -11,6 +11,9 @@ import { registerWeatherMenu } from "./apps/weather-editor.js";
 import { WeatherHud } from "./apps/weather-hud.js";
 import { WeatherEngine } from "./weather/engine.js";
 import { makeDefaultWeather } from "./weather/presets.js";
+import { registerSupportMenu } from "./apps/support-editor.js";
+import { SupportHud } from "./apps/support-hud.js";
+import { makeDefaultSupports, SupportStore } from "./support/support-store.js";
 
 export function registerSettings() {
   const choices = Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.name]));
@@ -18,6 +21,7 @@ export function registerSettings() {
   registerCalendarMenu();
   registerShiftNamesMenu();
   registerWeatherMenu();
+  registerSupportMenu();
 
   game.settings.register(MODULE_ID, SETTINGS.calendarId, {
     name: "GLCT.settings.calendar.name",
@@ -173,5 +177,48 @@ export function registerSettings() {
 
   game.settings.register(MODULE_ID, SETTINGS.weatherHudHidden, {
     scope: "client", config: false, type: Boolean, default: false
+  });
+
+  /* ---------------------------- Mission Support ---------------------------- */
+
+  // Master opt-in. Ships off so worlds that don't use support NPCs are untouched.
+  game.settings.register(MODULE_ID, SETTINGS.supportEnabled, {
+    name: "GLCT.support.settings.enabled.name",
+    hint: "GLCT.support.settings.enabled.hint",
+    scope: "world", config: true, type: Boolean, default: false,
+    onChange: (on) => {
+      if (on) SupportHud.open();
+      else SupportHud.instance?.close?.({ animate: false });
+    }
+  });
+
+  // Roster + active id + per-support live state. Config:false — edited via the menu.
+  game.settings.register(MODULE_ID, SETTINGS.supports, {
+    scope: "world", config: false, type: Object, default: makeDefaultSupports(),
+    onChange: () => SupportHud.refresh()
+  });
+
+  // GM show/hide the coin for players (e.g. off-mission). World-scope so it
+  // reveals/hides on every client at once.
+  game.settings.register(MODULE_ID, SETTINGS.supportHudVisibleToPlayers, {
+    scope: "world", config: false, type: Boolean, default: false,
+    onChange: () => SupportHud.refresh()
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.supportHudPosition, {
+    scope: "client", config: false, type: Object, default: {}
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.supportHudHidden, {
+    scope: "client", config: false, type: Boolean, default: false
+  });
+
+  // Show the active support's passive Effect icon on party tokens. World-scope so
+  // the choice is consistent for everyone; re-seats the aura live when toggled.
+  game.settings.register(MODULE_ID, SETTINGS.supportPassiveTokenIcon, {
+    name: "GLCT.support.settings.passiveTokenIcon.name",
+    hint: "GLCT.support.settings.passiveTokenIcon.hint",
+    scope: "world", config: true, type: Boolean, default: true,
+    onChange: () => SupportStore.applyPassive()
   });
 }

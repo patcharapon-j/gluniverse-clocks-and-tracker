@@ -18,7 +18,8 @@
   ],
   "styles": [
     "styles/hud.css",
-    "styles/weather.css"
+    "styles/weather.css",
+    "styles/support.css"
   ],
   "languages": [
     {
