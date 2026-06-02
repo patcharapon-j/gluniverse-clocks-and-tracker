@@ -8,9 +8,9 @@
  * remaps by coordinate across calendar seasons (§5.3). See docs/weather-system-spec.md.
  */
 
-import { MODULE_ID, HOOKS, WEATHER_HISTORY_CAP, WEATHER_STEP_CAP } from "../const.js";
+import { MODULE_ID, HOOKS, WEATHER_HISTORY_CAP, WEATHER_STEP_CAP, WEATHER_DIRECTIONS } from "../const.js";
 import { SECONDS_PER_DAY, SECONDS_PER_SHIFT } from "../time-math.js";
-import { resolveMove, rotateDirection } from "./hex-geometry.js";
+import { resolveMove, rotateDirection, moveFlowerSvg } from "./hex-geometry.js";
 import { WeatherStore } from "./weather-store.js";
 
 export class WeatherEngine {
@@ -236,7 +236,7 @@ export class WeatherEngine {
     state.lastDayIndex = this.currentPeriodIndex();
 
     await WeatherStore.save(data, { payload: { reason: "step", rec, manual } });
-    if (rec.to !== rec.from) await this.postConditionCard(climate, seasonKey, rec.to, { roll: rec.roll, dir: rec.dir });
+    if (rec.to !== rec.from) await this.postConditionCard(climate, seasonKey, rec.to, { roll: rec.roll, dir: rec.dir, from: rec.from });
     return rec;
   }
 
@@ -281,7 +281,7 @@ export class WeatherEngine {
     state.lastSeasonKey = seasonKey;
     state.lastDayIndex = this.currentPeriodIndex();
     await WeatherStore.save(data, { payload: { reason: "set", from, to } });
-    await this.postConditionCard(climate, seasonKey, to, { dir: "set" });
+    await this.postConditionCard(climate, seasonKey, to, { dir: "set", from });
     return to;
   }
 
@@ -379,7 +379,7 @@ export class WeatherEngine {
 
     const changed = records.filter(r => r.to !== r.from);
     if (steps === 1 && changed.length === 1) {
-      return { dirty: true, card: { kind: "condition", climate, seasonKey, index: state.currentIndex, roll: records[0].roll, dir: records[0].dir } };
+      return { dirty: true, card: { kind: "condition", climate, seasonKey, index: state.currentIndex, from: records[0].from, roll: records[0].roll, dir: records[0].dir } };
     }
     if (changed.length > 0 || startIndex !== state.currentIndex) {
       return { dirty: true, card: { kind: "digest", climate, seasonKey, fromIndex: startIndex, toIndex: state.currentIndex, records, elapsed } };
@@ -389,7 +389,7 @@ export class WeatherEngine {
 
   /** Post the announcement chosen by _evaluateRegion (active region only). */
   static async _postEvalCard(c) {
-    if (c.kind === "condition") return this.postConditionCard(c.climate, c.seasonKey, c.index, { roll: c.roll, dir: c.dir });
+    if (c.kind === "condition") return this.postConditionCard(c.climate, c.seasonKey, c.index, { roll: c.roll, dir: c.dir, from: c.from });
     if (c.kind === "season") return this.postConditionCard(c.climate, c.seasonKey, c.index, { dir: "season" });
     if (c.kind === "digest") return this.postDigestCard(c.climate, c.seasonKey, c.fromIndex, c.toIndex, c.records, c.elapsed);
   }
@@ -406,7 +406,7 @@ export class WeatherEngine {
     const season = this.resolveSeason(climate, seasonKey);
     const hex = season?.hexes?.[index];
     if (!hex) return;
-    const content = this._cardHtml({ hex, seasonName: season?.name ?? "", meta });
+    const content = this._cardHtml({ hex, index, seasonName: season?.name ?? "", meta });
     return this._post(content);
   }
 
@@ -425,6 +425,7 @@ export class WeatherEngine {
       return `<span class="wc-step"><i class="${foundry.utils.escapeHTML(h?.icon ?? "fa-solid fa-cloud")}"></i></span>`;
     }).join('<span class="wc-arrow">›</span>');
 
+    const flower = moveFlowerSvg(fromIndex, toIndex);
     const content =
       `<div class="glct-chatcard glct-weathercard digest${omin}" style="--wtint:${e.tintParticle || "#cfe8ff"};--wglow:${e.tintGlow || "#7fb4e6"}">
         <div class="glct-cc-head">
@@ -432,22 +433,26 @@ export class WeatherEngine {
           <span class="glct-cc-title"><span class="n">${foundry.utils.escapeHTML(toHex.label ?? "")}</span>` +
           `<span class="s">${game.i18n.format("GLCT.weather.digestSub", { n: elapsed ?? steps })}</span></span>
         </div>
-        <div class="glct-cc-body">
-          <div class="wc-from">${game.i18n.format("GLCT.weather.digestFrom", { from: foundry.utils.escapeHTML(fromHex?.label ?? "?") })}</div>
-          <div class="wc-trail">${trail}</div>
-          ${toHex.temperature ? `<div class="wc-temp"><i class="fa-solid fa-temperature-half"></i> ${foundry.utils.escapeHTML(toHex.temperature)}</div>` : ""}
+        <div class="glct-cc-body${flower ? " wc-body-move" : ""}">
+          ${flower}
+          <div class="wc-move-info">
+            <div class="wc-from">${game.i18n.format("GLCT.weather.digestFrom", { from: foundry.utils.escapeHTML(fromHex?.label ?? "?") })}</div>
+            <div class="wc-trail">${trail}</div>
+            ${toHex.temperature ? `<div class="wc-temp"><i class="fa-solid fa-temperature-half"></i> ${foundry.utils.escapeHTML(toHex.temperature)}</div>` : ""}
+          </div>
         </div>
       </div>`;
     return this._post(content);
   }
 
-  static _cardHtml({ hex, seasonName, meta }) {
+  static _cardHtml({ hex, index, seasonName, meta }) {
     const e = hex.effect ?? {};
     const omin = e.ominous ? " ominous" : "";
     const sub = [seasonName, hex.temperature].filter(Boolean).join(" · ");
     const note = hex.effectNote
       ? `<div class="wc-note"><i class="fa-solid fa-triangle-exclamation"></i> ${foundry.utils.escapeHTML(hex.effectNote)}</div>` : "";
     const desc = hex.description ? `<div class="wc-desc">${foundry.utils.escapeHTML(hex.description)}</div>` : "";
+    const move = this._moveHtml(meta?.from, index, meta);
     return `<div class="glct-chatcard glct-weathercard${omin}" style="--wtint:${e.tintParticle || "#cfe8ff"};--wglow:${e.tintGlow || "#7fb4e6"}">
         <div class="glct-cc-head">
           <span class="glct-cc-ico"><i class="${foundry.utils.escapeHTML(hex.icon ?? "fa-solid fa-cloud")}"></i></span>
@@ -455,8 +460,30 @@ export class WeatherEngine {
           `<span class="s">${foundry.utils.escapeHTML(sub)}</span></span>
           ${e.ominous ? '<span class="wc-haz"><i class="fa-solid fa-skull"></i></span>' : ""}
         </div>
-        <div class="glct-cc-body">${desc}${note}</div>
+        <div class="glct-cc-body">${move}${desc}${note}</div>
       </div>`;
+  }
+
+  /** Per-direction clockwise rotation (deg) for the caption's arrow glyph. */
+  static _DIR_DEG = { up: 0, upperRight: 60, lowerRight: 120, down: 180, lowerLeft: 240, upperLeft: 300 };
+
+  /**
+   * The "how the weather moved this turn" element: a mini hex flower with an arrow
+   * from the previous cell to the new one, plus a caption (compass direction + the
+   * Navigation roll). Returns "" when there was no real move to depict.
+   */
+  static _moveHtml(fromIndex, toIndex, meta = {}) {
+    if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex) || fromIndex === toIndex) return "";
+    const svg = moveFlowerSvg(fromIndex, toIndex);
+    if (!svg) return "";
+    const dir = meta.dir;
+    const dirLine = WEATHER_DIRECTIONS.includes(dir)
+      ? `<span class="wc-move-dir"><i class="fa-solid fa-arrow-up" style="transform:rotate(${this._DIR_DEG[dir] ?? 0}deg)"></i>${game.i18n.localize("GLCT.weather.dir." + dir)}</span>`
+      : "";
+    const rollLine = (meta.roll != null && Number.isFinite(Number(meta.roll)))
+      ? `<span class="wc-move-roll">${game.i18n.format("GLCT.weather.cardRoll", { roll: meta.roll })}</span>` : "";
+    const cap = (dirLine || rollLine) ? `<div class="wc-move-cap">${dirLine}${rollLine}</div>` : "";
+    return `<div class="wc-move">${svg}${cap}</div>`;
   }
 
   static _post(content) {

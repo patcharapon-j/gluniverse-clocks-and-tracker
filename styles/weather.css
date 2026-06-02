@@ -469,6 +469,37 @@
   box-shadow:0 0 8px color-mix(in srgb,var(--wglow) 40%,transparent)}
 .glct-weathercard .wc-arrow{color:#5b6478;font-size:10px}
 .glct-weathercard .wc-temp{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--wtint) 55%,#fff);font-weight:700}
+
+/* "how the weather moved this turn": a mini hex flower + an arrow from the previous
+   cell to the new one, with a compass caption. The condition card lays it out as a
+   row (flower left, caption right); the digest reuses .wc-body-move for the same. */
+.glct-weathercard .wc-move{display:flex;align-items:center;gap:11px}
+.glct-weathercard.digest .glct-cc-body.wc-body-move{flex-direction:row;align-items:center;gap:11px}
+.glct-weathercard .wc-move-info{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.glct-weathercard .wc-flower{flex:none;width:62px;height:auto;overflow:visible;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.glct-weathercard .wc-flower .hx{fill:rgba(255,255,255,.045);stroke:rgba(255,255,255,.13);stroke-width:.55}
+.glct-weathercard .wc-flower .hx.from{fill:rgba(255,255,255,.11);
+  stroke:color-mix(in srgb,var(--wglow) 45%,rgba(255,255,255,.22));stroke-width:.8}
+.glct-weathercard .wc-flower .hx.to{fill:color-mix(in srgb,var(--wglow) 42%,transparent);
+  stroke:color-mix(in srgb,var(--wglow) 88%,#fff);stroke-width:1;
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--wglow) 75%,transparent))}
+.glct-weathercard .wc-flower .arr-line{stroke:#fff;stroke-width:1.5;stroke-linecap:round;opacity:.95;
+  filter:drop-shadow(0 0 2px color-mix(in srgb,var(--wglow) 85%,transparent))}
+.glct-weathercard .wc-flower .arr-head{fill:#fff;
+  filter:drop-shadow(0 0 2px color-mix(in srgb,var(--wglow) 85%,transparent))}
+.glct-weathercard .wc-move-cap{display:flex;flex-direction:column;gap:3px}
+.glct-weathercard .wc-move-dir{display:inline-flex;align-items:center;font-size:11.5px;font-weight:750;
+  color:#dbe3f0;letter-spacing:.03em}
+.glct-weathercard .wc-move-dir i{margin-right:6px;font-size:10px;
+  color:color-mix(in srgb,var(--wglow) 72%,#cdd6e6);transition:none}
+.glct-weathercard .wc-move-roll{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8b95a8;font-weight:700}
+/* ominous move: red destination + arrow glow */
+.glct-weathercard.ominous .wc-flower .hx.to{fill:rgba(224,88,79,.42);stroke:#ff9a90;
+  filter:drop-shadow(0 0 3px rgba(224,88,79,.7))}
+.glct-weathercard.ominous .wc-flower .arr-line,
+.glct-weathercard.ominous .wc-flower .arr-head{filter:drop-shadow(0 0 2px rgba(224,88,79,.85))}
+.glct-weathercard.ominous .wc-move-dir i{color:#ff9a90}
 /* ominous announcement: red dread accents */
 .glct-weathercard.ominous{background:linear-gradient(180deg,rgba(224,88,79,.16),transparent 60%),linear-gradient(160deg,#1c1014,#0a0e15)}
 .glct-weathercard.ominous .glct-cc-ico{box-shadow:inset 0 0 0 1px rgba(224,88,79,.3),0 0 14px rgba(224,88,79,.55)}

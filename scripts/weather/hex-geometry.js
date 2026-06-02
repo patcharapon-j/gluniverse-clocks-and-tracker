@@ -148,3 +148,56 @@ export function rotateDirection(dir, steps = 0) {
   const n = WEATHER_DIRECTIONS.length;
   return WEATHER_DIRECTIONS[(((i + steps) % n) + n) % n];
 }
+
+/**
+ * A compact inline SVG of the whole 19-hex flower showing one move: every cell is
+ * a faint hexagon, the origin (`from`) and destination (`to`) are highlighted, and
+ * an arrow is drawn from one to the other so the chat card can show, at a glance,
+ * how the weather walked this turn. Returns "" when there is nothing to draw.
+ *
+ * Styling is left to CSS — the polygons/arrow carry classes (`hx`, `hx from`,
+ * `hx to`, `arr-line`, `arr-head`) and the card's --wglow/--wtint cascade in.
+ */
+export function moveFlowerSvg(fromIndex, toIndex) {
+  const from = Number.isInteger(fromIndex) ? fromIndex : null;
+  const to = Number.isInteger(toIndex) ? toIndex : null;
+  if (to === null || to < 0 || to >= HEX_COUNT) return "";
+
+  const R = 7, PAD = 5, H = R * SQRT3_2;            // hex radius / viewBox pad / flat-side half-height
+  const px = i => ({ x: HEX_LAYOUT[i].center.x * R, y: HEX_LAYOUT[i].center.y * R });
+  const n = v => v.toFixed(2);
+  const hexPoints = (cx, cy) =>
+    `${n(cx - R)},${n(cy)} ${n(cx - R / 2)},${n(cy - H)} ${n(cx + R / 2)},${n(cy - H)} ` +
+    `${n(cx + R)},${n(cy)} ${n(cx + R / 2)},${n(cy + H)} ${n(cx - R / 2)},${n(cy + H)}`;
+
+  const vbX = HEX_BOUNDS.minX * R - R - PAD;
+  const vbY = HEX_BOUNDS.minY * R - H - PAD;
+  const vbW = (HEX_BOUNDS.maxX - HEX_BOUNDS.minX) * R + 2 * R + 2 * PAD;
+  const vbH = (HEX_BOUNDS.maxY - HEX_BOUNDS.minY) * R + 2 * H + 2 * PAD;
+
+  const cells = HEX_LAYOUT.map((_, i) => {
+    const { x, y } = px(i);
+    const cls = i === to ? "hx to" : i === from ? "hx from" : "hx";
+    return `<polygon class="${cls}" points="${hexPoints(x, y)}"/>`;
+  }).join("");
+
+  let arrow = "";
+  if (from !== null && from !== to && from >= 0 && from < HEX_COUNT) {
+    const a = px(from), b = px(to);
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len, uy = dy / len;                // unit move vector
+    const tail = { x: a.x + ux * R * 0.5, y: a.y + uy * R * 0.5 };  // start just outside the origin
+    const tip = { x: b.x - ux * R * 0.45, y: b.y - uy * R * 0.45 }; // stop just inside the destination
+    const ah = 3.6, aw = 2.7;                          // arrowhead length / half-width
+    const base = { x: tip.x - ux * ah, y: tip.y - uy * ah };
+    const pxp = -uy, pyp = ux;                         // perpendicular
+    arrow =
+      `<line class="arr-line" x1="${n(tail.x)}" y1="${n(tail.y)}" x2="${n(base.x)}" y2="${n(base.y)}"/>` +
+      `<polygon class="arr-head" points="${n(tip.x)},${n(tip.y)} ` +
+        `${n(base.x + pxp * aw)},${n(base.y + pyp * aw)} ${n(base.x - pxp * aw)},${n(base.y - pyp * aw)}"/>`;
+  }
+
+  return `<svg class="wc-flower" viewBox="${n(vbX)} ${n(vbY)} ${n(vbW)} ${n(vbH)}" ` +
+    `width="${Math.round(vbW)}" height="${Math.round(vbH)}" aria-hidden="true">${cells}${arrow}</svg>`;
+}
