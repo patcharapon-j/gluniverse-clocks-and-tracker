@@ -182,6 +182,7 @@
 
   "GLCT.weather.digestSub": "over {n} days",
   "GLCT.weather.digestFrom": "From {from}",
+  "GLCT.weather.cardRoll": "Navigation {roll}",
 
   "GLCT.weather.dir.up": "Up",
   "GLCT.weather.dir.upperRight": "Upper-right",
