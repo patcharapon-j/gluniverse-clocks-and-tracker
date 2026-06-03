@@ -125,8 +125,9 @@
    click target that opens the Hex Flower window. Tint is scoped here
    (--glct-weather-*) so it never bleeds onto the shift-coloured HUD. */
 #glct-hud .date .wxmini{--glct-weather-tint:#cfe8ff;--glct-weather-glow:#7fb4e6;
+  appearance:none;border:none;background:none;color:inherit;font:inherit;text-align:left;
   position:relative;display:flex;align-items:center;gap:7px;cursor:pointer;
-  align-self:stretch;margin:7px 0;padding-left:11px}
+  align-self:stretch;margin:7px 0;padding:0 0 0 11px}
 #glct-hud .date .wxmini.hidden{display:none}
 #glct-hud .date .wxmini::before{content:"";position:absolute;left:0;top:2px;bottom:2px;width:1px;
   background:linear-gradient(180deg,transparent,var(--hair) 22%,var(--hair) 78%,transparent)}

@@ -2,7 +2,8 @@
 
   {{!-- Upcoming-event badge: tucked above the bar's left edge (by the date),
         so it never widens the main row. --}}
-  <div class="event-badge" data-action="openCalendar" title="{{localize 'GLCT.calendarView.title'}}">
+  <div class="event-badge" data-action="openCalendar" role="button" tabindex="0"
+       aria-label="{{localize 'GLCT.calendarView.title'}}" title="{{localize 'GLCT.calendarView.title'}}">
     <span class="events" data-events></span>
   </div>
 
@@ -43,14 +44,15 @@
               date cluster so it reads as part of the left section. The animated
               diorama is the full-bar layer behind everything; this is just the
               label + click target. Hidden until weather is enabled + configured. --}}
-        <span class="wxmini hidden" data-weather data-action="openWeather" title="{{localize 'GLCT.weather.chipHint'}}">
+        <button type="button" class="wxmini hidden" data-weather data-action="openWeather"
+                aria-label="{{localize 'GLCT.weather.chipHint'}}" title="{{localize 'GLCT.weather.chipHint'}}">
           <span class="wxmini-ico"><i data-wxicon class="fa-solid fa-cloud"></i></span>
           <span class="wxmini-text">
             <span class="wxmini-label" data-wxlabel></span>
             <span class="wxmini-temp" data-wxtemp></span>
           </span>
           <span class="wxmini-haz" data-wxhaz title="{{localize 'GLCT.weather.hazard'}}"><i class="fa-solid fa-skull"></i></span>
-        </span>
+        </button>
       </div>
 
       <div class="cell shift-hero" data-shifthero>
@@ -92,14 +94,14 @@
   {{#if isGM}}
   <div class="gmwrap" data-gmwrap>
     <div class="gmdock">
-      <span class="c" data-step="stretch" data-action="advance">{{localize 'GLCT.controls.advanceStretch'}}</span>
-      <span class="c" data-step="hour"    data-action="advance">{{localize 'GLCT.controls.advanceHour'}}</span>
-      <span class="c" data-step="shift"   data-action="advance">{{localize 'GLCT.controls.advanceShift'}}</span>
-      <span class="c" data-step="day"     data-action="advance">{{localize 'GLCT.controls.advanceDay'}}</span>
-      <span class="c sep" data-action="nextShift"><i class="fa-solid fa-forward-step"></i> {{localize 'GLCT.shifts.0'}}</span>
-      <span class="c sep ico" data-action="setTime" title="{{localize 'GLCT.controls.setTime'}}"><i class="fa-solid fa-stopwatch"></i></span>
-      <span class="c sep mission" data-action="openMission" data-missionbtn title="{{localize 'GLCT.controls.missionToggle'}}"><i class="fa-solid fa-bullseye goal-ic"></i><i class="fa-solid fa-hourglass-half dl-ic"></i> {{localize 'GLCT.controls.mission'}}<b class="cnt" data-missioncount></b></span>
-      <span class="c sep mode" data-action="toggleShiftMode" data-modebtn title="{{localize 'GLCT.controls.shiftModeToggle'}}"><i class="fa-solid fa-circle-half-stroke"></i> <span data-modetext></span></span>
+      <button type="button" class="c" data-step="stretch" data-action="advance">{{localize 'GLCT.controls.advanceStretch'}}</button>
+      <button type="button" class="c" data-step="hour"    data-action="advance">{{localize 'GLCT.controls.advanceHour'}}</button>
+      <button type="button" class="c" data-step="shift"   data-action="advance">{{localize 'GLCT.controls.advanceShift'}}</button>
+      <button type="button" class="c" data-step="day"     data-action="advance">{{localize 'GLCT.controls.advanceDay'}}</button>
+      <button type="button" class="c sep" data-action="nextShift"><i class="fa-solid fa-forward-step"></i> {{localize 'GLCT.shifts.0'}}</button>
+      <button type="button" class="c sep ico" data-action="setTime" aria-label="{{localize 'GLCT.controls.setTime'}}" title="{{localize 'GLCT.controls.setTime'}}"><i class="fa-solid fa-stopwatch"></i></button>
+      <button type="button" class="c sep mission" data-action="openMission" data-missionbtn title="{{localize 'GLCT.controls.missionToggle'}}"><i class="fa-solid fa-bullseye goal-ic"></i><i class="fa-solid fa-hourglass-half dl-ic"></i> {{localize 'GLCT.controls.mission'}}<b class="cnt" data-missioncount></b></button>
+      <button type="button" class="c sep mode" data-action="toggleShiftMode" data-modebtn title="{{localize 'GLCT.controls.shiftModeToggle'}}"><i class="fa-solid fa-circle-half-stroke"></i> <span data-modetext></span></button>
     </div>
   </div>
   {{/if}}
