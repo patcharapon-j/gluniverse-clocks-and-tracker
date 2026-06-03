@@ -36,6 +36,25 @@
 #glct-hud .hud-root{display:flex;flex-direction:column;align-items:center;pointer-events:none}
 #glct-hud .hud-root > *{pointer-events:auto}
 
+/* ---- keyboard focus: a single glass-glow ring for every interactive control
+   (the GM dock buttons, the weather chip, the event badge). Only shown for
+   keyboard users via :focus-visible; pointer focus stays clean. The colour
+   tracks the active shift tint so it sits in the theme rather than fighting it. */
+#glct-hud :is(button,[role="button"]):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--tint) 72%,#fff);outline-offset:2px;
+  box-shadow:0 0 0 4px var(--glowsoft)}
+#glct-hud :is(button,[role="button"]):focus:not(:focus-visible){outline:none}
+
+/* ---- reduced motion: drop the decorative/looping animation and snap the
+   tactile transitions. Functional state still updates (the clock/pips/dial
+   reach their target value), just without the travel. Mirrors how the weather
+   diorama already renders a single static frame under this preference. */
+@media (prefers-reduced-motion: reduce){
+  #glct-hud *,#glct-hud *::before,#glct-hud *::after{
+    animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important}
+}
+
 /* ========== BAR: stacked rows for player/GM consistency ========== */
 #glct-hud .bar{position:relative;border-radius:15px;overflow:hidden;isolation:isolate;
   background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 34%),
@@ -244,6 +263,7 @@
   backdrop-filter:blur(10px);transition:opacity .3s ease}
 #glct-hud .gmwrap{display:flex;justify-content:center}
 #glct-hud .c{font-size:10.5px;font-weight:650;padding:5px 9px;border-radius:7px;cursor:pointer;white-space:nowrap;user-select:none;
+  appearance:none;font-family:inherit;margin:0;
   color:var(--ink);background:transparent;border:1px solid transparent;transition:background .12s,transform .1s,box-shadow .12s}
 #glct-hud .c:hover{background:rgba(255,255,255,.08);box-shadow:0 0 10px var(--glowsoft)}
 #glct-hud .c:active{transform:translateY(1px)}

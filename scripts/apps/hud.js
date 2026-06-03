@@ -803,6 +803,14 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
         c.classList.add("rw"); setTimeout(() => c.classList.remove("rw"), 420);
       });
     });
+    // Keyboard activation for non-<button> controls marked role="button" (the
+    // event badge). Real <button>s fire click on Enter/Space natively and need
+    // nothing here; this re-dispatches a click so their data-action handler runs.
+    root.querySelectorAll('[role="button"]').forEach(el =>
+      el.addEventListener("keydown", ev => {
+        if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); el.click(); }
+      })
+    );
     // drag to reposition via the grip
     const grip = root.querySelector(".grip");
     if (grip) grip.addEventListener("pointerdown", this._onDragStart.bind(this));
