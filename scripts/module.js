@@ -13,8 +13,7 @@ import { WeatherStore } from "./weather/weather-store.js";
 import { SupportHud } from "./apps/support-hud.js";
 import { SupportStore } from "./support/support-store.js";
 import { DelvingStore } from "./delving/delving-store.js";
-import { DiceTumble } from "./delving/dice-tumble.js";
-import { Dice3D } from "./delving/dice3d.js";
+import { DiceSlot } from "./delving/dice-slot.js";
 
 function setting(key, fallback) {
   try { return game.settings.get(MODULE_ID, key); } catch { return fallback; }
@@ -109,28 +108,38 @@ function tagPoolMessage(message, html) {
 }
 
 /**
- * Play the in-card 3D dice tumble on the featured resource's roll — but only for
- * the freshly-posted, newest delving card (never on scrollback re-renders). The
- * card already holds the baked static result, so the tumble fades to reveal it.
+ * Play the in-card slot-machine reveal for the featured resource's roll, then —
+ * once it finalises — release the HUD's held pool readout so the bar only catches
+ * up to the new state AFTER the player has watched the dice resolve.
+ *
+ * Only the card carrying the featured resource drives this (it's marked with
+ * `data-glct-featured`), and only on the fresh post — scrollback re-renders just
+ * show the baked static result and never re-settle the HUD.
  */
 function mountDelveTumble(message, el) {
-  const host = el.querySelector(".glct-cc-dice[data-tumble]");
-  if (!host || host.dataset.tumbled) return;
-  // Only the fresh post animates — scrollback / history re-renders are skipped.
-  // (The dataset guard prevents a double-play; a public + GM-whisper pair each
-  // carry the tumble on their own featured row, so we don't gate on "newest".)
+  const card = el.querySelector(".glct-delvecard[data-glct-featured]");
+  if (!card) return;                                   // not the featured card
   const fresh = (Date.now() - (message.timestamp ?? 0)) < 8000;
-  if (!fresh) return;
-  const faces = String(host.dataset.faces ?? "").split(",").map(Number).filter(Number.isFinite);
-  const opts = {
-    faces,
-    size: Number(host.dataset.size) || 6,
-    discard: Number(host.dataset.discard) || 0,
-    tint: host.dataset.tint || "#ff9a3c"
-  };
-  // Prefer real 3D dice (three.js). If three.js can't load (offline / CSP) or the
-  // renderer bails, fall back to the contained Pixi tumble, then the static spans.
-  Dice3D.mount(host, opts).then(inst => { if (!inst) DiceTumble.mount(host, opts); });
+  if (!fresh) return;                                  // scrollback never animates
+  const seq = DelvingStore.data.lastRoll?.seq ?? null;
+  const settle = () => GlctHud.settleDelveRoll(seq);
+
+  const host = card.querySelector(".glct-cc-dice[data-tumble]");
+  if (host && !host.dataset.tumbled) {
+    const faces = String(host.dataset.faces ?? "").split(",").map(Number).filter(Number.isFinite);
+    if (faces.length) {
+      const opts = {
+        faces,
+        size: Number(host.dataset.size) || 6,
+        discard: Number(host.dataset.discard) || 0,
+        tint: host.dataset.tint || "#ff9a3c"
+      };
+      const inst = DiceSlot.mount(host, opts, settle);
+      if (inst) return;                                // settle fires when it ends
+    }
+  }
+  // featured card but nothing to animate (e.g. the pool was empty) — sync now
+  settle();
 }
 Hooks.on("renderChatMessageHTML", tagPoolMessage);   // Foundry v13+
 Hooks.on("renderChatMessage", tagPoolMessage);       // legacy fallback

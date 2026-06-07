@@ -14,7 +14,8 @@
  *
  * Delving is GM-authoritative (Pass Turn is a GM control), so unlike the tracker
  * pool there is no player round-trip: the GM rolls, persists, and posts the card.
- * The in-card 3D dice tumble animates client-side from the card's flags.
+ * The in-card slot-machine roll animates client-side from the card's flags, and
+ * the HUD's pool readout is held until that animation finalises (see save()).
  */
 
 import {
@@ -99,6 +100,13 @@ export class DelvingStore {
   static async save(data, { payload = null } = {}) {
     if (!game.user.isGM) return;
     this._sanitize(data);
+    // Stamp a roll sequence on actual pool rolls so every client can tell a roll
+    // change from an edit: the HUD holds its pool readout until the matching card's
+    // slot animation finalises (then catches up via GlctHud.settleDelveRoll).
+    const reason = payload?.reason;
+    if (reason === "turn" || reason === "rollOne") {
+      data.lastRoll = { seq: (Number(data.lastRoll?.seq) || 0) + 1, at: Date.now() };
+    }
     await game.settings.set(MODULE_ID, SETTINGS.delving, data);
     Hooks.callAll(HOOKS.delvingChanged, payload ?? { reason: "save", data });
   }
@@ -311,7 +319,7 @@ export class DelvingStore {
   /**
    * Manually roll a single resource's pool OUTSIDE the turn cadence (GM, delving
    * active). Applies the same drop / stage-shift / clamp logic and posts a card
-   * with the 3D dice, but does NOT advance the turn counter, game.time, or the
+   * with the slot-machine dice, but does NOT advance the turn counter, game.time, or the
    * weather — for ad-hoc checks ("make a torch roll") the GM calls between turns.
    */
   static async rollResource(id = null) {
@@ -433,7 +441,10 @@ export class DelvingStore {
            <span class="glct-cc-title"><span class="n">${titleHtml}</span>` +
            `<span class="s">${esc(subHtml)}</span></span>
          </div>` : "";
-    return `<div class="glct-chatcard glct-delvecard">${head}<div class="glct-cc-body">${rowsHtml}</div></div>`;
+    // Mark the card that carries the featured resource so the client knows which
+    // one drives the slot animation + the HUD settle (even if its roll was empty).
+    const featTag = featuredId ? ` data-glct-featured="1"` : "";
+    return `<div class="glct-chatcard glct-delvecard"${featTag}>${head}<div class="glct-cc-body">${rowsHtml}</div></div>`;
   }
 
   static _rowHtml(r, isFeatured) {

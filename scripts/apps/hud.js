@@ -55,6 +55,20 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Repaint the delving readout + diorama (after a delvingChanged / enable toggle). */
   static refreshDelving() { this.instance?._paintDelving(); this.instance?._paintWeather(); }
 
+  /**
+   * Release the held pool readout after a roll's in-card slot animation finishes,
+   * so the HUD only catches up to the new pool/stage/atmosphere once the player has
+   * watched the dice resolve. `seq` is the roll sequence the card animated.
+   */
+  static settleDelveRoll(seq) {
+    const i = this.instance;
+    if (!i) return;
+    if (seq != null) i._seenRollSeq = seq;
+    clearTimeout(i._rollSafety); i._rollSafety = null; i._rollSafetySeq = null;
+    i._paintDelving();
+    i._paintWeather();
+  }
+
   static DEFAULT_OPTIONS = {
     id: "glct-hud",
     classes: ["glct"],
@@ -94,6 +108,9 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _wx = null;           // WeatherEffect (chip Pixi diorama), lazily created
   _dx = null;           // delving featured-stage diorama (Pixi), lazily created
   _prevTurn = null;     // last painted turns-elapsed (for the tick animation)
+  _seenRollSeq = null;  // last roll sequence whose card animation has finalised
+  _rollSafety = null;   // safety timer that releases a held roll if no card settles
+  _rollSafetySeq = null;// the roll sequence the safety timer is armed for
   _delveCtx = null;     // open delving context menu element, if any
   _delveCtxOff = null;  // teardown for the delving menu's window listeners
   _sig = null;          // signature of the last painted display values
@@ -130,6 +147,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._wx?.destroy(); this._wx = null;   // the chip host is recreated on re-render
     this._dx?.destroy(); this._dx = null;   // delving diorama host is recreated too
     this._prevTurn = null;
+    clearTimeout(this._rollSafety); this._rollSafety = null; this._rollSafetySeq = null;
     this._buildDynamic();
     this._applyPosition();
     this._wireViewportClamp();
@@ -142,6 +160,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _onClose(options) {
     clearTimeout(this._peekEndT); clearTimeout(this._barT); clearTimeout(this._peekTransT); clearTimeout(this._clampT);
+    clearTimeout(this._rollSafety); this._rollSafety = null;
     this._peeking = false;
     this._closeDelveMenu();
     this._wx?.destroy();
@@ -297,6 +316,27 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     const data = DelvingStore.data;
+
+    // Hold the readout while a fresh roll's card animation is still playing: the
+    // turn counter, pool count, stage, chips and atmosphere all keep their current
+    // values until the matching card's slot machine finalises (which calls
+    // settleDelveRoll), so the bar reveals the outcome only after the dice resolve.
+    // A safety timer releases the hold if no card ends up animating on this client.
+    // The freshness window and the safety timer both sit above the longest the
+    // slot animation can run, so a real card settle always releases the hold first;
+    // the safety only fires when no card animates on this client at all.
+    const lr = data.lastRoll;
+    const freshRoll = lr && (Date.now() - (lr.at || 0) < 9000);
+    if (freshRoll && this._seenRollSeq !== lr.seq) {
+      if (this._rollSafetySeq !== lr.seq) {
+        clearTimeout(this._rollSafety);
+        this._rollSafetySeq = lr.seq;
+        this._rollSafety = setTimeout(() => GlctHud.settleDelveRoll(lr.seq), 6500);
+      }
+      return;
+    }
+    if (lr) this._seenRollSeq = lr.seq;   // acknowledge the current roll state
+
     const tn = root.querySelector("[data-dxturn]");
     if (tn) {
       tn.textContent = String(data.turnsElapsed);

@@ -16,10 +16,10 @@
   border-radius:inherit; overflow:hidden; opacity:1; mix-blend-mode:normal;
   background:linear-gradient(260deg,
     color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 38%,transparent) 0%,
-    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 18%,transparent) 26%,
-    transparent 52%);
-  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 18%,transparent 46%,transparent 100%);
-  mask-image:linear-gradient(270deg,#000 0,#000 18%,transparent 46%,transparent 100%);
+    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 18%,transparent) 13%,
+    transparent 26%);
+  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 9%,transparent 23%,transparent 100%);
+  mask-image:linear-gradient(270deg,#000 0,#000 9%,transparent 23%,transparent 100%);
   transition:opacity .6s ease;
 }
 #glct-hud .bar-dx.off{ opacity:0; }
@@ -33,13 +33,13 @@
   border-radius:inherit; overflow:hidden; opacity:1; transition:opacity .6s ease;
   background:
     linear-gradient(270deg, color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 26%,transparent) 0, transparent 4px),
-    linear-gradient(260deg, rgba(8,11,17,.6) 0%, rgba(8,11,17,.36) 17%, rgba(8,11,17,0) 40%);
+    linear-gradient(260deg, rgba(8,11,17,.6) 0%, rgba(8,11,17,.36) 8%, rgba(8,11,17,0) 20%);
 }
 #glct-hud .bar-dx-scrim.off{ opacity:0; }
 #glct-hud .bar.dx-ominous .bar-dx-scrim{
   background:
     linear-gradient(270deg, rgba(224,88,79,.34) 0, transparent 4px),
-    linear-gradient(260deg, rgba(14,8,9,.64) 0%, rgba(14,8,9,.4) 17%, rgba(14,8,9,0) 40%);
+    linear-gradient(260deg, rgba(14,8,9,.64) 0%, rgba(14,8,9,.4) 8%, rgba(14,8,9,0) 20%);
 }
 
 /* Liquid-glass edge refraction on the RIGHT rim, mirroring the weather edge. The
@@ -51,9 +51,9 @@
     inset 0 0 0 1px color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 55%,transparent),
     inset 0 1px 0 color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 62%,#fff),
     inset 0 0 14px -2px color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 42%,transparent),
-    inset -14px 0 26px -16px color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 75%,transparent);
-  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 20%,transparent 38%,transparent 100%);
-  mask-image:linear-gradient(270deg,#000 0,#000 20%,transparent 38%,transparent 100%);
+    inset -7px 0 16px -10px color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 75%,transparent);
+  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 10%,transparent 19%,transparent 100%);
+  mask-image:linear-gradient(270deg,#000 0,#000 10%,transparent 19%,transparent 100%);
 }
 
 /* ---- mode swap: hide the clock/meter/shift cells, reveal the delving cell. The
@@ -170,7 +170,7 @@
 .glct-delve-ctx .ctx-sep{ height:1px; margin:4px 6px; background:rgba(255,255,255,.1); }
 
 /* ============================================================
-   In-card 3D dice tumble + the Turn chat card
+   In-card slot-machine roll + the Turn chat card
    ============================================================ */
 /* Let the custom card own the whole chat entry (mirrors the pool / weather /
    support cards): Foundry's default header collapses to just the timestamp +
@@ -189,11 +189,48 @@
 .chat-message.glct-delve-msg .glct-cc-head{ padding-right:64px; }
 
 .glct-delvecard .glct-cc-dice{ position:relative; min-height:26px; display:flex; flex-wrap:wrap; gap:3px; align-items:center; transition:min-height .25s ease; }
-/* While the 3D roll plays, give the dice a real arena to tumble in (the row
-   grows, then settles back to the static-result height as the canvas fades) and
-   hide the baked static spans beneath the canvas. */
-.glct-delvecard .glct-cc-dice.dx-tumbling{ min-height:104px; }
+/* While the slot machine spins, give the reels room (the row grows, then settles
+   back to the static-result height as the overlay fades) and hide the baked static
+   spans beneath the reels. */
+.glct-delvecard .glct-cc-dice.dx-tumbling{ min-height:56px; }
 .glct-delvecard .glct-cc-dice.dx-tumbling > .glct-cc-d{ opacity:0; }
+
+/* ---- slot-machine reveal -------------------------------------------------
+   Each die is a reel (a fixed window onto a vertical strip of numbers) that
+   spins up and decelerates onto its rolled value. Discards are NOT shown until
+   every reel has landed — only then do the dropped reels dim + strike. */
+.glct-slot{ position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center; opacity:1; transition:opacity .36s ease; }
+.glct-slot.fade{ opacity:0; }
+.glct-slot .reel{
+  position:relative; overflow:hidden; border-radius:8px; flex:none;
+  background:linear-gradient(180deg, rgba(22,22,30,.97), rgba(11,11,17,.97));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb,var(--slot-tint,#ff9a3c) 42%,transparent),
+    inset 0 0 10px -3px color-mix(in srgb,var(--slot-tint,#ff9a3c) 60%,transparent),
+    0 2px 8px rgba(0,0,0,.5);
+  transition:opacity .32s ease, filter .32s ease, transform .32s ease;
+}
+/* the slot "window": soft top/bottom shade so the spin reads as a machine reel */
+.glct-slot .reel::before{
+  content:""; position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:inherit;
+  background:linear-gradient(180deg, rgba(0,0,0,.55) 0%, transparent 32%, transparent 68%, rgba(0,0,0,.55) 100%);
+}
+.glct-slot .reel.spinning .strip{ filter:blur(.5px); }
+.glct-slot .strip{ display:flex; flex-direction:column; will-change:transform; }
+.glct-slot .cell{
+  display:flex; align-items:center; justify-content:center; flex:none;
+  font-weight:800; color:#fff; line-height:1; font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 2px rgba(0,0,0,.6);
+}
+/* discard reveal — applied only once all reels have settled */
+.glct-slot .reel.drop{ opacity:.5; filter:grayscale(.65) brightness(.72); transform:translateY(2px) scale(.9); }
+.glct-slot .reel::after{
+  content:""; position:absolute; left:14%; right:14%; top:50%; height:2px; z-index:3;
+  background:#e0584f; box-shadow:0 0 6px #e0584f; border-radius:2px;
+  transform:translateY(-1px) scaleX(0); transform-origin:left center;
+  transition:transform .3s ease .04s;
+}
+.glct-slot .reel.drop::after{ transform:translateY(-1px) scaleX(1); }
 
 .glct-delvecard .dx-row{ --dxtint:#ff9a3c; padding:6px 4px; border-top:1px solid rgba(255,255,255,.07); }
 .glct-delvecard .dx-row:first-child{ border-top:0; }
