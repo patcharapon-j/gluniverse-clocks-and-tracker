@@ -20,7 +20,32 @@
  * CSS-only tinted look.
  */
 
-const ADDITIVE = new Set(["motes", "embers"]);
+const ADDITIVE = new Set(["motes", "embers", "spores", "runes", "void"]);
+
+/**
+ * Motion map: every archetype resolves to ONE of the nine implemented motion
+ * behaviours. The original nine map to themselves; the expanded batch reuses a
+ * base motion and distinguishes itself by texture / blend / tint / tuning. This
+ * is what makes the library "virtually unlimited looks" without bespoke physics
+ * per effect — a new archetype is just an entry here plus a TUNING row.
+ */
+const MOTION = {
+  clear: "clear", streaks: "streaks", flakes: "flakes", volume: "volume",
+  flashes: "flashes", motes: "motes", embers: "embers", gusts: "gusts", shards: "shards",
+  // ---- expanded batch ----
+  shadow: "volume",    // dark soft masses creeping / pulsing at the edges
+  creep: "embers",     // spreading rot rising from below
+  spores: "motes",     // glowing spores hanging in the air
+  miasma: "volume",    // heavy sickly low haze
+  static: "motes",     // signal loss — fast flickering speckle
+  swarm: "motes",      // erratic drifting swarm
+  drips: "streaks",    // slow oozing drips
+  bubbles: "embers",   // rising depth bubbles
+  runes: "motes",      // glowing glyph-motes pulsing in place
+  void: "motes",       // distant twinkling void / stars
+  dust: "flakes",      // fine grains drifting sideways
+  ripples: "gusts"     // rising water lines
+};
 
 /** Per-archetype tuning: base count @intensity 1 & unit area, hard cap, texture. */
 const TUNING = {
@@ -32,8 +57,24 @@ const TUNING = {
   motes:   { max: 50, cap: 280, tex: "glow"   },
   embers:  { max: 46, cap: 260, tex: "glow"   },
   gusts:   { max: 60, cap: 300, tex: "streak" },
-  shards:  { max: 50, cap: 300, tex: "shard"  }
+  shards:  { max: 50, cap: 300, tex: "shard"  },
+  // ---- expanded batch ----
+  shadow:  { max: 7,  cap: 40,  tex: "blob"   },
+  creep:   { max: 40, cap: 220, tex: "glow"   },
+  spores:  { max: 46, cap: 260, tex: "glow"   },
+  miasma:  { max: 8,  cap: 46,  tex: "blob"   },
+  static:  { max: 70, cap: 380, tex: "dot"    },
+  swarm:   { max: 60, cap: 320, tex: "dot"    },
+  drips:   { max: 50, cap: 260, tex: "streak" },
+  bubbles: { max: 44, cap: 240, tex: "glow"   },
+  runes:   { max: 40, cap: 220, tex: "glow"   },
+  void:    { max: 60, cap: 320, tex: "glow"   },
+  dust:    { max: 60, cap: 340, tex: "flake"  },
+  ripples: { max: 46, cap: 240, tex: "streak" }
 };
+
+/** Archetypes whose particles mix in the secondary glow tint on a fraction of sprites. */
+const GLOW_MIX = new Set(["embers", "motes", "spores", "runes", "void", "creep"]);
 
 const REF_AREA = 1700;          // ~ the original 54×30 chip; counts scale off this
 
@@ -239,14 +280,15 @@ export class WeatherEffect {
     this.layer.removeChildren().forEach(c => c.destroy());
     this.particles = [];
     const arch = this.spec.archetype;
+    const motion = MOTION[arch] ?? "clear";
     const tune = TUNING[arch] ?? TUNING.clear;
     const blend = ADDITIVE.has(arch) ? PIXI.BLEND_MODES.ADD : PIXI.BLEND_MODES.NORMAL;
     const I = this.spec.intensity ?? 0.5;
     const count = clamp(Math.round(tune.max * (0.3 + 0.7 * I) * this.areaScale), 3, tune.cap);
-    this.flash.visible = arch === "flashes";
+    this.flash.visible = motion === "flashes";
     if (this.bolt) {
-      this.bolt.visible = arch === "flashes";
-      if (arch !== "flashes") { this.bolt.clear(); this.bolt.alpha = 0; }
+      this.bolt.visible = motion === "flashes";
+      if (motion !== "flashes") { this.bolt.clear(); this.bolt.alpha = 0; }
     }
 
     for (let i = 0; i < count; i++) {
@@ -265,10 +307,11 @@ export class WeatherEffect {
 
   _retint() {
     const arch = this.spec.archetype;
+    const mix = GLOW_MIX.has(arch);
     for (let i = 0; i < this.particles.length; i++) {
       const p = this.particles[i];
-      // embers/motes mix in the secondary glow colour on a fraction of particles
-      const useGlow = (arch === "embers" || arch === "motes") && (i % 3 === 0);
+      // glow-mix archetypes blend in the secondary tint on a fraction of particles
+      const useGlow = mix && (i % 3 === 0);
       p.sp.tint = useGlow ? this.gColor : this.pColor;
     }
     if (this.flash) this.flash.tint = this.gColor;
@@ -279,7 +322,7 @@ export class WeatherEffect {
 
   /** Initial / recycled spawn for a particle, per archetype. */
   _spawn(p, initial = false) {
-    const w = this._w, h = this._h, arch = this.spec.archetype, drift = this.spec.drift, I = this.spec.intensity ?? 0.5;
+    const w = this._w, h = this._h, arch = MOTION[this.spec.archetype] ?? "clear", drift = this.spec.drift, I = this.spec.intensity ?? 0.5;
     const sp = p.sp;
     const z = (p.z ??= Math.random());           // depth: near=1, far=0
     const near = 0.35 + 0.65 * z;                // parallax multiplier
@@ -380,7 +423,7 @@ export class WeatherEffect {
   }
 
   _advance(dt) {
-    const w = this._w, h = this._h, arch = this.spec.archetype, t = (this._flashT += dt);
+    const w = this._w, h = this._h, arch = MOTION[this.spec.archetype] ?? "clear", t = (this._flashT += dt);
 
     for (const p of this.particles) {
       const sp = p.sp;
@@ -543,3 +586,11 @@ export class WeatherEffect {
     this.app = null; this.particles = [];
   }
 }
+
+/**
+ * Shared alias. The class is no longer weather-specific — it renders any effect
+ * archetype × tints for the delving HUD too — so new code should import it under
+ * this neutral name. (Kept as an alias rather than a rename to avoid churning the
+ * many existing `WeatherEffect` imports.)
+ */
+export { WeatherEffect as EffectField };

@@ -32,6 +32,14 @@ A premium, tactile in-game **calendar and time HUD** for Foundry VTT, built on F
   - **Composable effects** — every condition is a *motion archetype × two tints*, so fantasy weather (acid rain, crimson lightning, ashfall, arcane mist, ember storms…) is just an archetype plus a colour — no new code. Effects pause when the HUD is collapsed or the tab is backgrounded, and respect `prefers-reduced-motion`.
   - **Visual editor** — click a hex to edit its label/icon/description/temperature/effect with a live preview; edit each season's Navigation Hex with a live trend/probability preview and per-face edge rules; pick the **Temperate** (4-season) or **Homage** (single-flower) preset, or import/export JSON.
   - Ships **disabled by default**, so calendar-only worlds are unaffected.
+- **Delving Mode** — a turn-driven mode of play for dungeon crawls, hauntings, descents — anywhere the *passage* of time matters but the wall-clock reading doesn't. Toggle it on from the HUD dock at any time; `game.time` keeps advancing under the hood (so effects still expire and the weather still walks), but the clock readout steps aside for a **turn counter** and the featured resource's atmosphere.
+  - **Configurable turn** — the GM defines what one turn represents: a count × a unit (stretch / hour / shift / day / week / month) plus a label. Pressing **Pass Turn** advances time by that span; **right-click** rewinds a whole turn (state, time, and any weather roll). The granular step buttons stay available in a compact GM affordance.
+  - **Turn-driven weather** — set how many turns pass before the weather rolls again; while delving, the normal time-based weather cadence is suspended and handed back (re-seeded to *now*) when you exit.
+  - **Delving resources** — staged dice pools (torches, corruption, signal, air…). Each turn rolls every resource's current-stage pool (drop dice ≤ the discard range, exactly like the Tracker's Resource Pool) and posts one **consolidated Turn card**; the featured resource's roll plays as a **slot-machine reveal *inside the chat card*** — each die is a reel that spins up and decelerates onto its rolled value, the reels landing left-to-right in a cascade (pure CSS/DOM, no dependencies). **Discards are only revealed after the result is shown**: every reel lands looking live, then the dropped dice (≤ the discard range) dim and strike through. The overlay then fades to the baked static result for scrollback, and **the HUD's pool readout only updates once the animation finalises** — so the bar catches up to the new count after the table has watched the dice resolve. The card also **won't spoil the outcome** — the "N left" / stage-shift badge stays hidden until the reels land. When a pool empties, the resource **shifts to its next, worse stage** and refills; emptying on the **final (worst) stage ends it** — the pool is depleted and shown with its **own configurable end name** (e.g. *Pitch Black*; falls back to the final stage's name) beside a skull + crossed-out marker, glowing red on the HUD, and takes on its **own intensified terminal atmosphere** (a maxed-out diorama with a much more prominent, pulsing liquid-glass edge-glow), and is then skipped by future turn rolls (and can't be manually rolled) so it never re-announces its demise.
+  - **Manual rolls** — between turns the GM can **Roll** the featured pool on demand (a dock button) for an ad-hoc check, or right-click any resource → *Roll this pool now* — same dice, stage-shift and card, without advancing the turn or the clock.
+  - **Degrading atmosphere** — the featured resource's current stage drives the time HUD's tint, colour, animation, and a **WebGL diorama** that washes the bar's **right edge** (with the same liquid-glass refraction as the weather wash on the left, so weather and delving show side by side), with a dread pulse that intensifies as the stages worsen. The diorama uses the same engine as weather, now with a much larger shared archetype library — shadow, creeping rot, spores, miasma, signal static, swarms, drips, depth bubbles, runes, void, dust, rising water… Other resources show as compact stage chips.
+  - **Inline GM controls** — left/right-click the featured dice to add/remove a die, a ‹ › stepper to jump stages, click a chip to feature it, and a right-click menu (feature / roll / refill / stage / hide / edit). Players see the stage + atmosphere; dice counts and cards are gated by each resource's player-visibility flag. While delving is live the dock collapses its clock controls to a short, focused row (Pass · Roll · New Delve · exit · edit).
+  - **Visual editor** — configure the turn, the weather cadence, and full CRUD on resources & their stages (pool + look) with a live preview; ships **Torches** and **Corruption** presets and import/export JSON. **Disabled by default.**
 
 ---
 
@@ -61,7 +69,7 @@ This always installs the latest release. Then enable **GLUniverse — Clocks & T
 | Advance one stretch (GM) | `Alt+]` |
 | Set an exact date/time (GM) | Set-time button on the dock |
 | Start / clear a mission countdown (GM) | The **🎯 Mission** button on the dock |
-| Open the calendar | `Alt+C`, or click the event chip |
+| Open the calendar | `Alt+C`, **click the date** on the HUD, or click the event chip |
 | Manage events (GM) | From the calendar view → Manage Events |
 | Toggle the tracker dock | `Alt+R`, or the checklist button in the scene controls |
 | Add a tracker (GM) | The **+** on the dock header |
@@ -71,6 +79,11 @@ This always installs the latest release. Then enable **GLUniverse — Clocks & T
 | Toggle the weather flower | `Alt+W`, or the cloud-bolt button in the scene controls (once weather is enabled) |
 | Roll the weather (GM) | **Roll Weather** in the flower window — **right-click** it to rewind a step |
 | Force a condition (GM) | Click any hex in the flower window |
+| Toggle Delving Mode (GM) | `Alt+G`, the **Delving** dock button, or the dungeon button in the scene controls (once delving is enabled) |
+| Pass a turn (GM) | `Alt+.`, or the **Pass Turn** dock button — **right-click** it to rewind a turn |
+| Roll a pool now (GM) | The **Roll** dock button (featured pool), or right-click a resource → *Roll this pool now* — no turn passes |
+| Adjust a resource (GM) | Left/right-click the featured dice (±1 die); the ‹ › stepper jumps stages; right-click a resource for more |
+| Edit delving (GM) | The sliders button on the dock, or **Game Settings → Edit Delving** |
 
 ### Weather (GM)
 

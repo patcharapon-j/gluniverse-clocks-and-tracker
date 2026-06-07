@@ -287,7 +287,7 @@
 .glct-supeditor .sup-ed-row .nm{flex:1;min-width:0;font:700 13px/1.2 "Oxanium","Segoe UI",sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .glct-supeditor .sup-ed-row i{color:#e0b15a}
 .glct-supeditor .sup-ed-empty,.glct-supeditor .sup-ed-hint{color:var(--color-text-dark-secondary,#777);font-size:12px;text-align:center;padding:18px 8px}
-.glct-supeditor .sup-ed-form{display:flex;flex-direction:column;gap:10px;min-width:0}
+.glct-supeditor .sup-ed-form{display:flex;flex-direction:column;gap:10px;min-width:0;max-height:62vh;overflow-y:auto;padding-right:4px}
 .glct-supeditor .sup-ed-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .glct-supeditor .sup-ed-grid label,.glct-supeditor .sup-ed-imgs label,.glct-supeditor .sup-ed-abil label{display:flex;flex-direction:column;gap:3px;font:600 10px/1.2 "Oxanium","Segoe UI",sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--color-text-dark-secondary,#888)}
 .glct-supeditor .sup-ed-grid label.chk{flex-direction:row;align-items:center;gap:6px;text-transform:none;letter-spacing:0;align-self:end}
