@@ -353,17 +353,21 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const cell = root.querySelector("[data-delvingcell]");
 
     if (feat && stage) {
+      const ended = DelvingStore.isEnded(feat);
       this._setText("[data-dxstage]", stage.name ?? "");
       const ico = root.querySelector("[data-dxicon]");
       if (ico) ico.className = feat.icon || "fa-solid fa-hourglass-half";
-      this._setText("[data-dxcur]", String(feat.current));
-      this._setText("[data-dxsize]", "d" + (stage.size ?? 6));
+      // At the end of the line (worst stage, empty) show a crossed-out terminal
+      // marker instead of a live "0d6"; otherwise the count + die size.
+      if (ended) { this._setText("[data-dxcur]", "✕"); this._setText("[data-dxsize]", ""); }
+      else { this._setText("[data-dxcur]", String(feat.current)); this._setText("[data-dxsize]", "d" + (stage.size ?? 6)); }
+      root.querySelector("[data-dxfeatured] .dx-stagebadge")?.classList.toggle("ended", ended);
       // Stage name + atmosphere are always public, but the dice count is gated by
       // the resource's player-visibility flag (a hidden "corruption" featured by
       // the GM still sets the mood without leaking the number to players).
       const hideCount = !(game.user?.isGM ?? false) && feat.visibleToPlayers === false;
       const dice = root.querySelector("[data-dxdice]");
-      if (dice) { dice.style.display = hideCount ? "none" : ""; dice.classList.toggle("empty", feat.current <= 0); }
+      if (dice) { dice.style.display = hideCount ? "none" : ""; dice.classList.toggle("empty", feat.current <= 0 && !ended); dice.classList.toggle("ended", ended); }
       if (cell && fx) {
         cell.style.setProperty("--dxtint", fx.tintParticle ?? "#ff9a3c");
         cell.style.setProperty("--dxglow", fx.tintGlow ?? "#ffd27a");

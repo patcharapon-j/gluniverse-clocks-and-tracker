@@ -89,6 +89,18 @@ export class DelvingStore {
     return this.resources(data).filter(r => isGM || r.visibleToPlayers);
   }
 
+  /**
+   * True when a resource has reached the end of the line: it's on its final
+   * (worst) stage AND the pool is empty, so there are no more dice to roll. An
+   * ended resource still sets the mood (its worst-stage atmosphere persists) but
+   * is skipped by the turn roll and can't be manually rolled.
+   */
+  static isEnded(r) {
+    if (!r) return false;
+    const last = (r.stages?.length ?? 1) - 1;
+    return int(r.stageIndex) >= last && int(r.current) <= 0;
+  }
+
   /** The live effect spec of a resource's current stage (feeds the EffectField). */
   static stageEffect(resource) {
     const st = resource?.stages?.[resource.stageIndex] ?? resource?.stages?.[0] ?? null;
@@ -285,9 +297,14 @@ export class DelvingStore {
       resources: (data.resources ?? []).map(r => ({ id: r.id, stageIndex: r.stageIndex, current: r.current }))
     };
 
-    // 2) roll every resource (mutates each in place)
+    // 2) roll every still-live resource (mutates each in place). Resources that
+    //    have already ended (final stage, empty) are skipped — no more dice to
+    //    roll, so they don't clutter the card or re-announce their demise.
     const rolls = [];
-    for (const r of data.resources ?? []) rolls.push(await this._rollResource(r));
+    for (const r of data.resources ?? []) {
+      if (this.isEnded(r)) continue;
+      rolls.push(await this._rollResource(r));
+    }
 
     // 3) weather coupling — turn-driven; suspends the time-period cadence
     let weatherStepped = false;
@@ -327,6 +344,7 @@ export class DelvingStore {
     const data = this.data;
     const r = this.get(id ?? data.featuredId, data) ?? this.featured(data);
     if (!r) return;
+    if (this.isEnded(r)) { ui.notifications?.info(game.i18n.localize("GLCT.delving.card.endedNotice")); return; }
     const roll = await this._rollResource(r);
     await this.save(data, { payload: { reason: "rollOne", rolls: [roll] } });
     await this._postRollCard(roll);

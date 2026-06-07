@@ -448,6 +448,7 @@
   "GLCT.delving.card.wipe": "Pool spent — stage shifts",
   "GLCT.delving.card.terminal": "Snuffed out",
   "GLCT.delving.card.noResources": "No resources rolled.",
+  "GLCT.delving.card.endedNotice": "This pool is depleted — its delve has already ended.",
 
   "GLCT.delving.ctx.feature": "Feature on HUD",
   "GLCT.delving.ctx.roll": "Roll this pool now",

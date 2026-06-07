@@ -54,6 +54,10 @@ export class DiceSlot {
     this._settled = false;
     this._timers = [];
     host.classList.add("dx-tumbling");          // grows the host + hides static spans
+    // Hide this row's outcome (the "N left" / stage-shift badge) until the reels
+    // resolve, so the card never spoils the result before the animation lands.
+    this.row = host.closest(".dx-row");
+    this.row?.classList.add("dx-rolling");
 
     const w = Math.max(40, host.clientWidth || 200);
     const h = Math.max(40, host.clientHeight || 56);
@@ -124,6 +128,8 @@ export class DiceSlot {
   _revealDiscards() {
     if (this._settled) return;
     for (const r of this.reels) if (r.dropped) r.reel.classList.add("drop");
+    // the dice have landed — now it's safe to reveal the row's outcome text
+    this.row?.classList.remove("dx-rolling");
     this._after(DISCARD_HOLD, () => this._fade());
   }
 
@@ -140,6 +146,7 @@ export class DiceSlot {
     this._settled = true;
     for (const t of this._timers) clearTimeout(t);
     this._timers = [];
+    this.row?.classList.remove("dx-rolling");   // ensure the outcome is shown
     this.wrap?.remove();
     this.wrap = null;
     this.host?.classList.remove("dx-tumbling");

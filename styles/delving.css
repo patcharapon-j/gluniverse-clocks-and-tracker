@@ -15,11 +15,12 @@
   position:absolute; inset:0; z-index:1; pointer-events:none;
   border-radius:inherit; overflow:hidden; opacity:1; mix-blend-mode:normal;
   background:linear-gradient(260deg,
-    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 38%,transparent) 0%,
-    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 18%,transparent) 13%,
-    transparent 26%);
-  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 9%,transparent 23%,transparent 100%);
-  mask-image:linear-gradient(270deg,#000 0,#000 9%,transparent 23%,transparent 100%);
+    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 30%,transparent) 0%,
+    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 18%,transparent) 12%,
+    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 7%,transparent) 24%,
+    transparent 40%);
+  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 4%,transparent 34%,transparent 100%);
+  mask-image:linear-gradient(270deg,#000 0,#000 4%,transparent 34%,transparent 100%);
   transition:opacity .6s ease;
 }
 #glct-hud .bar-dx.off{ opacity:0; }
@@ -32,14 +33,14 @@
   position:absolute; inset:0; z-index:1; pointer-events:none;
   border-radius:inherit; overflow:hidden; opacity:1; transition:opacity .6s ease;
   background:
-    linear-gradient(270deg, color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 26%,transparent) 0, transparent 4px),
-    linear-gradient(260deg, rgba(8,11,17,.6) 0%, rgba(8,11,17,.36) 8%, rgba(8,11,17,0) 20%);
+    linear-gradient(270deg, color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 22%,transparent) 0, transparent 7px),
+    linear-gradient(260deg, rgba(8,11,17,.5) 0%, rgba(8,11,17,.26) 12%, rgba(8,11,17,0) 30%);
 }
 #glct-hud .bar-dx-scrim.off{ opacity:0; }
 #glct-hud .bar.dx-ominous .bar-dx-scrim{
   background:
-    linear-gradient(270deg, rgba(224,88,79,.34) 0, transparent 4px),
-    linear-gradient(260deg, rgba(14,8,9,.64) 0%, rgba(14,8,9,.4) 8%, rgba(14,8,9,0) 20%);
+    linear-gradient(270deg, rgba(224,88,79,.3) 0, transparent 7px),
+    linear-gradient(260deg, rgba(14,8,9,.54) 0%, rgba(14,8,9,.3) 12%, rgba(14,8,9,0) 30%);
 }
 
 /* Liquid-glass edge refraction on the RIGHT rim, mirroring the weather edge. The
@@ -52,8 +53,8 @@
     inset 0 1px 0 color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 62%,#fff),
     inset 0 0 14px -2px color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 42%,transparent),
     inset -7px 0 16px -10px color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 75%,transparent);
-  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 10%,transparent 19%,transparent 100%);
-  mask-image:linear-gradient(270deg,#000 0,#000 10%,transparent 19%,transparent 100%);
+  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 4%,transparent 26%,transparent 100%);
+  mask-image:linear-gradient(270deg,#000 0,#000 4%,transparent 26%,transparent 100%);
 }
 
 /* ---- mode swap: hide the clock/meter/shift cells, reveal the delving cell. The
@@ -112,6 +113,11 @@
 #glct-hud .dx-dice b{ font-size:19px; font-weight:800; color:#fff; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,.7); }
 #glct-hud .dx-dice i{ font-style:normal; font-size:10.5px; opacity:.65; }
 #glct-hud .dx-dice.empty b{ color:#ff6b6b; text-shadow:0 0 8px rgba(255,80,80,.5); }
+/* depleted at the worst stage — the delve pool has ended (no more dice). A muted,
+   crossed-out terminal marker instead of a live count. */
+#glct-hud .dx-dice.ended{ cursor:default; }
+#glct-hud .dx-dice.ended b{ font-size:15px; color:#9aa0ad; text-shadow:none; }
+#glct-hud .dx-stagebadge.ended .dx-stagename{ opacity:.7; text-decoration:line-through; text-decoration-color:rgba(255,90,90,.6); }
 
 /* players don't get the GM steppers / dice editing */
 #glct-hud .hud-root:not(.is-gm) .dx-stagestep{ display:none; }
@@ -241,6 +247,14 @@
 .glct-delvecard .dx-stage{ margin-left:auto; font-size:11px; opacity:.7; }
 .glct-delvecard .dx-shift{ margin-left:auto; font-size:11px; font-weight:700; color:var(--dxtint); }
 .glct-delvecard .dx-row-foot{ margin-top:3px; font-size:12px; }
+/* Don't spoil the outcome before the reels land: the "N left" / stage-shift badge
+   stays invisible while the row's slot machine is spinning, then fades in once the
+   dice resolve (DiceSlot removes .dx-rolling at the discard reveal). Visibility is
+   kept (opacity, not display) so the card never reflows. */
+.glct-delvecard .dx-row .dx-sum,
+.glct-delvecard .dx-row .dx-shift{ transition:opacity .3s ease; }
+.glct-delvecard .dx-row.dx-rolling .dx-sum,
+.glct-delvecard .dx-row.dx-rolling .dx-shift{ opacity:0; }
 .glct-delvecard .dx-sum b{ font-weight:800; }
 .glct-delvecard .dx-sum.wipe{ color:var(--dxtint); font-weight:700; }
 .glct-delvecard .dx-sum.terminal{ color:#ff6b6b; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
