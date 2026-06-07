@@ -16,8 +16,10 @@
     <div class="bar-wx off" data-wxbar></div>
     <div class="bar-wx-scrim off" data-wxscrim></div>
     {{!-- Delving diorama: the featured delving-resource's current stage washes the
-          bar (taking over from weather while delving is live). Same Pixi tech. --}}
+          bar's RIGHT edge (behind the turn/resource cell), coexisting with the
+          weather wash on the left. Same Pixi tech; the scrim keeps the text legible. --}}
     <div class="bar-dx off" data-dxbar></div>
+    <div class="bar-dx-scrim off" data-dxscrim></div>
     <div class="main">
 
       <div class="cell grip" title="{{localize 'GLCT.hud.dragHint'}}">

@@ -257,7 +257,7 @@
 #glct-hud .event.pinned .dot{box-shadow:0 0 9px #ffd36b,0 0 4px #fff}
 
 /* small concise GM control dock — detached, floats just beneath the bar */
-#glct-hud .gmdock{display:inline-flex;gap:3px;margin:7px auto 0;padding:3px;border-radius:10px;
+#glct-hud .gmdock{display:inline-flex;flex-wrap:wrap;justify-content:center;gap:3px;margin:7px auto 0;padding:3px;border-radius:10px;max-width:min(96vw,720px);
   background:linear-gradient(180deg,rgba(22,27,37,.92),rgba(14,18,26,.92));
   border:1px solid var(--hair);box-shadow:0 8px 22px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08);
   backdrop-filter:blur(10px);transition:opacity .3s ease}

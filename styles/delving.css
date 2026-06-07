@@ -6,26 +6,72 @@
    scales the dread as the resource worsens. Matches the "Arcane Glass" look.
    ============================================================ */
 
-/* ---- full-bar delving diorama (takes over from weather while delving) ---- */
+/* ---- delving diorama: washes the bar's RIGHT edge (behind the turn/resource
+   cell), coexisting with the weather wash on the LEFT. Mirrors the weather
+   diorama exactly, just anchored to the opposite rim via delve-scoped vars so the
+   two never fight over a shared colour. A tint wash sits behind the particles so
+   the gaps read as a solid pane; the right→transparent mask confines it. ---- */
 #glct-hud .bar-dx{
   position:absolute; inset:0; z-index:1; pointer-events:none;
-  border-radius:inherit; overflow:hidden; opacity:1; transition:opacity .45s ease;
-  -webkit-mask-image:linear-gradient(to right,#000 0%,#000 40%,transparent 74%);
-  mask-image:linear-gradient(to right,#000 0%,#000 40%,transparent 74%);
+  border-radius:inherit; overflow:hidden; opacity:1; mix-blend-mode:normal;
+  background:linear-gradient(260deg,
+    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 38%,transparent) 0%,
+    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 18%,transparent) 26%,
+    transparent 52%);
+  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 18%,transparent 46%,transparent 100%);
+  mask-image:linear-gradient(270deg,#000 0,#000 18%,transparent 46%,transparent 100%);
+  transition:opacity .6s ease;
 }
 #glct-hud .bar-dx.off{ opacity:0; }
 #glct-hud .bar-dx .glct-wx-canvas{ position:absolute; inset:0; }
 
-/* ---- mode swap: hide the clock/meter/shift cells, reveal the delving cell ---- */
+/* Legibility scrim anchored to the RIGHT edge — a soft dark wash that darkens the
+   bright effect so the turn counter / resource text stays readable, plus a thin
+   tinted rim. Sits above the diorama, below .main. Toggled with the diorama. */
+#glct-hud .bar-dx-scrim{
+  position:absolute; inset:0; z-index:1; pointer-events:none;
+  border-radius:inherit; overflow:hidden; opacity:1; transition:opacity .6s ease;
+  background:
+    linear-gradient(270deg, color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 26%,transparent) 0, transparent 4px),
+    linear-gradient(260deg, rgba(8,11,17,.6) 0%, rgba(8,11,17,.36) 17%, rgba(8,11,17,0) 40%);
+}
+#glct-hud .bar-dx-scrim.off{ opacity:0; }
+#glct-hud .bar.dx-ominous .bar-dx-scrim{
+  background:
+    linear-gradient(270deg, rgba(224,88,79,.34) 0, transparent 4px),
+    linear-gradient(260deg, rgba(14,8,9,.64) 0%, rgba(14,8,9,.4) 17%, rgba(14,8,9,0) 40%);
+}
+
+/* Liquid-glass edge refraction on the RIGHT rim, mirroring the weather edge. The
+   bar's ::after is already claimed by weather (left), so the delving rim rides on
+   the scrim element instead: an inset ring + top highlight + a bloom feathering in
+   from the right, masked to the right third. */
+#glct-hud .bar.has-dx .bar-dx-scrim{
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 55%,transparent),
+    inset 0 1px 0 color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 62%,#fff),
+    inset 0 0 14px -2px color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 42%,transparent),
+    inset -14px 0 26px -16px color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 75%,transparent);
+  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 20%,transparent 38%,transparent 100%);
+  mask-image:linear-gradient(270deg,#000 0,#000 20%,transparent 38%,transparent 100%);
+}
+
+/* ---- mode swap: hide the clock/meter/shift cells, reveal the delving cell. The
+   date cell (with the weather chip + left-edge weather wash) stays put, so weather
+   and delving show side by side. ---- */
 #glct-hud .delving-cell{ display:none; }
 #glct-hud .hud-root.delving .clock-cell,
 #glct-hud .hud-root.delving .meter,
 #glct-hud .hud-root.delving .shift-hero{ display:none !important; }
 #glct-hud .hud-root.delving:not(.is-collapsed) .delving-cell{ display:flex; }
 
-/* ---- the delving cell ---- */
+/* ---- the delving cell ----
+   NOTE: the base .cell rule is flex-direction:column; we MUST switch to a row here
+   or the turn / featured / chips blocks stack and blow past the fixed 54px bar
+   height. Everything inside is sized to sit comfortably within that height. */
 #glct-hud .delving-cell{
-  position:relative; align-items:center; gap:14px; padding:0 6px;
+  position:relative; flex-direction:row; align-items:center; gap:12px;
+  padding:0 10px; max-height:54px; overflow:hidden;
   --dxtint:#ff9a3c; --dxglow:#ffd27a; --dxstage:0;
 }
 /* a dread wash that strengthens as the resource degrades (ominous stages only) */
@@ -38,20 +84,20 @@
 @keyframes dx-dread{ 0%,100%{ filter:brightness(.85);} 50%{ filter:brightness(1.25);} }
 
 /* turn counter */
-#glct-hud .dx-turn{ display:flex; flex-direction:column; align-items:center; line-height:1; min-width:42px; }
+#glct-hud .dx-turn{ display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1; min-width:40px; }
 #glct-hud .dx-turn-num{
-  font-size:26px; font-weight:800; color:#fff; letter-spacing:.5px;
-  text-shadow:0 0 10px color-mix(in srgb, var(--dxglow) 60%, transparent);
+  font-size:23px; font-weight:800; color:#fff; letter-spacing:.5px; line-height:1;
+  text-shadow:0 0 10px color-mix(in srgb, var(--dxglow) 60%, transparent), 0 1px 2px rgba(0,0,0,.7);
 }
 #glct-hud .dx-turn-num.tick{ animation:dx-tick .42s cubic-bezier(.34,1.56,.64,1); }
 @keyframes dx-tick{ 0%{ transform:translateY(.32em) scale(.7); opacity:.2; } 100%{ transform:none; opacity:1; } }
-#glct-hud .dx-turn-lbl{ font-size:9px; text-transform:uppercase; letter-spacing:.12em; opacity:.7; margin-top:2px; }
+#glct-hud .dx-turn-lbl{ font-size:8.5px; text-transform:uppercase; letter-spacing:.12em; opacity:.8; margin-top:2px; text-shadow:0 1px 2px rgba(0,0,0,.7); }
 
 /* featured resource block */
-#glct-hud .dx-featured{ display:flex; flex-direction:column; gap:3px; min-width:128px; }
-#glct-hud .dx-stagebadge{ display:flex; align-items:center; gap:6px; font-weight:700; color:#fff; }
+#glct-hud .dx-featured{ display:flex; flex-direction:column; justify-content:center; gap:2px; min-width:120px; }
+#glct-hud .dx-stagebadge{ display:flex; align-items:center; gap:6px; font-weight:700; color:#fff; line-height:1.1; text-shadow:0 1px 2px rgba(0,0,0,.7); }
 #glct-hud .dx-stagebadge i{ color:var(--dxglow); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--dxglow) 70%,transparent)); }
-#glct-hud .dx-stagename{ font-size:13px; letter-spacing:.02em; }
+#glct-hud .dx-stagename{ font-size:12.5px; letter-spacing:.02em; white-space:nowrap; }
 
 #glct-hud .dx-poolval{ display:flex; align-items:center; gap:4px; }
 #glct-hud .dx-stagestep{
@@ -63,8 +109,8 @@
 #glct-hud .dx-stagestep:disabled{ opacity:.25; cursor:default; }
 #glct-hud .dx-dice{ display:inline-flex; align-items:baseline; gap:2px; cursor:pointer; padding:0 4px; border-radius:6px; transition:background .15s; }
 #glct-hud .dx-dice:hover{ background:rgba(255,255,255,.08); }
-#glct-hud .dx-dice b{ font-size:22px; font-weight:800; color:#fff; }
-#glct-hud .dx-dice i{ font-style:normal; font-size:11px; opacity:.6; }
+#glct-hud .dx-dice b{ font-size:19px; font-weight:800; color:#fff; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,.7); }
+#glct-hud .dx-dice i{ font-style:normal; font-size:10.5px; opacity:.65; }
 #glct-hud .dx-dice.empty b{ color:#ff6b6b; text-shadow:0 0 8px rgba(255,80,80,.5); }
 
 /* players don't get the GM steppers / dice editing */
@@ -72,8 +118,9 @@
 #glct-hud .hud-root:not(.is-gm) .dx-dice{ cursor:default; }
 #glct-hud .hud-root:not(.is-gm) .dx-dice:hover{ background:none; }
 
-/* secondary resource chips */
-#glct-hud .dx-chips{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; max-width:170px; }
+/* secondary resource chips — single row (the cell clips overflow); they must never
+   wrap, or the extra rows would push past the fixed bar height. */
+#glct-hud .dx-chips{ display:flex; align-items:center; gap:5px; flex-wrap:nowrap; max-width:180px; overflow:hidden; }
 #glct-hud .dx-chip{
   --dxtint:#9aa3b0; --dxglow:#9aa3b0;
   display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:20px; cursor:pointer;

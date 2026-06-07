@@ -170,9 +170,10 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const scrim = this.element.querySelector("[data-wxscrim]");
     const bar = this.element.querySelector("[data-bar]");
 
-    // While delving is live the featured-resource diorama owns the bar, so the
-    // weather chip + full-bar effect step aside (the delving paint repaints them).
-    const enabled = WeatherStore.enabled && WeatherStore.configured && !DelvingStore.active;
+    // Weather and delving coexist: weather washes the LEFT edge (behind the date
+    // stack), delving the RIGHT (behind the turn/resource cell). They carry
+    // separate bar tint vars so neither overwrites the other.
+    const enabled = WeatherStore.enabled && WeatherStore.configured;
     if (!enabled) {
       cell?.classList.add("hidden");
       host?.classList.add("off");
@@ -276,6 +277,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const hud = root.querySelector(".hud-root");
     const bar = root.querySelector("[data-bar]");
     const host = root.querySelector("[data-dxbar]");
+    const scrim = root.querySelector("[data-dxscrim]");
     const enabled = DelvingStore.enabled;
     const active = enabled && DelvingStore.active;
 
@@ -286,6 +288,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
     if (!active) {
       host?.classList.add("off");
+      scrim?.classList.add("off");
       bar?.classList.remove("has-dx");
       this._dx?.pause();
       this._prevTurn = null;
@@ -335,16 +338,19 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._buildDelveChips(data, feat);
 
     if (host) {
-      if (document.hidden || !fx) { host.classList.add("off"); bar?.classList.remove("has-dx"); this._dx?.pause(); }
+      if (document.hidden || !fx) { host.classList.add("off"); scrim?.classList.add("off"); bar?.classList.remove("has-dx"); this._dx?.pause(); }
       else {
         host.classList.remove("off");
+        scrim?.classList.remove("off");
         bar?.classList.add("has-dx");
         if (!this._dx) this._dx = WeatherEffect.create(host, fx); else this._dx.setSpec(fx);
         this._dx?.resize(); this._dx?.resume();
         if (bar) {
-          bar.style.setProperty("--glct-weather-tint", fx.tintParticle ?? "#ff9a3c");
-          bar.style.setProperty("--glct-weather-glow", fx.tintGlow ?? "#ffd27a");
-          bar.classList.toggle("wx-ominous", !!fx.ominous);
+          // delve-scoped vars so the right-edge wash never clobbers weather's
+          // left-edge tint (both can be live at once).
+          bar.style.setProperty("--glct-delve-tint", fx.tintParticle ?? "#ff9a3c");
+          bar.style.setProperty("--glct-delve-glow", fx.tintGlow ?? "#ffd27a");
+          bar.classList.toggle("dx-ominous", !!fx.ominous);
         }
       }
     }
