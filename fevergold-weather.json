@@ -1,0 +1,227 @@
+{
+  "id": "custom",
+  "name": "Fevergold",
+  "seasonal": false,
+  "startHexIndex": 11,
+  "defaultNav": {
+    "dice": "2d6",
+    "directionMap": {
+      "2": "up",
+      "3": "upperLeft",
+      "4": "upperRight",
+      "5": "lowerLeft",
+      "6": "lowerRight",
+      "7": "down",
+      "8": "lowerLeft",
+      "9": "lowerRight",
+      "10": "upperLeft",
+      "11": "upperRight",
+      "12": "up"
+    },
+    "edgeRules": {
+      "up": { "divert": 9 },
+      "upperRight": "wrap",
+      "lowerRight": "wrap",
+      "down": "wrap",
+      "lowerLeft": "stay",
+      "upperLeft": "stay"
+    }
+  },
+  "seasons": {
+    "0": {
+      "name": "All Year",
+      "hexes": [
+        {
+          "index": 7,
+          "label": "Fevergold Tempest",
+          "icon": "fa-solid fa-cloud-bolt",
+          "description": "Golden lightning forks through a sky thick with glittering spores. The wind howls and the air itself seems to burn with fever.",
+          "temperature": "Sweltering",
+          "effectNote": "Disadvantage on ranged attacks and Perception; anyone unmasked risks the gold-sickness (DC scales with exposure).",
+          "disallow": ["up", "upperRight", "upperLeft"],
+          "effect": { "archetype": "flashes", "kind": "crimson-lightning", "intensity": 0.9, "tintParticle": "#ffe08a", "tintGlow": "#b8860b", "drift": "fall", "ominous": true }
+        },
+        {
+          "index": 0,
+          "label": "Searing Haze",
+          "icon": "fa-solid fa-temperature-high",
+          "description": "The horizon melts into a shimmering wall of heat, the world gilded and wavering.",
+          "temperature": "Scorching",
+          "effectNote": "Exertion risks heat exhaustion; metal and stone grow too hot to touch.",
+          "disallow": [],
+          "effect": { "archetype": "dust", "kind": "sand", "intensity": 0.65, "tintParticle": "#f0c24a", "tintGlow": "#7a5a12", "drift": "right", "ominous": true }
+        },
+        {
+          "index": 3,
+          "label": "Gilded Squall",
+          "icon": "fa-solid fa-cloud-showers-heavy",
+          "description": "Warm, amber-tinted rain drives in sheets, slicking everything in a thin gold film.",
+          "temperature": "Warm",
+          "effectNote": "Tracks wash out quickly; footing on gilded stone is treacherous.",
+          "disallow": [],
+          "effect": { "archetype": "gusts", "kind": "heavy-rain", "intensity": 0.72, "tintParticle": "#e8c45a", "tintGlow": "#6b4e12", "drift": "right", "ominous": true }
+        },
+        {
+          "index": 8,
+          "label": "Sporestorm",
+          "icon": "fa-solid fa-disease",
+          "description": "Clouds of luminous fevergold spores boil up from the marsh, blotting out the sun.",
+          "temperature": "Hot",
+          "effectNote": "Breathing unfiltered air carries the gold-sickness; visibility drops to a few yards.",
+          "disallow": [],
+          "effect": { "archetype": "spores", "kind": "spore-bloom", "intensity": 0.8, "tintParticle": "#ffd24a", "tintGlow": "#8a5a00", "drift": "rise", "ominous": true }
+        },
+        {
+          "index": 12,
+          "label": "Goldwind",
+          "icon": "fa-solid fa-wind",
+          "description": "A hot, gritty gale carries a stinging haze of golden dust off the dunes.",
+          "temperature": "Hot",
+          "effectNote": "Cover the eyes and mouth; ranged attacks suffer in the driving grit.",
+          "disallow": [],
+          "effect": { "archetype": "gusts", "kind": "sand", "intensity": 0.7, "tintParticle": "#e2b85a", "tintGlow": "#6b4a10", "drift": "right", "ominous": true }
+        },
+        {
+          "index": 16,
+          "label": "Cinder Rush",
+          "icon": "fa-solid fa-fire-flame-curved",
+          "description": "Glowing embers ride the hot wind, kindling the dry gold grass wherever they settle.",
+          "temperature": "Scorching",
+          "effectNote": "Dry terrain may ignite; open flame and oil are hazardous.",
+          "disallow": [],
+          "effect": { "archetype": "embers", "kind": "ember-storm", "intensity": 0.7, "tintParticle": "#ff9a3c", "tintGlow": "#ffd27a", "drift": "rise", "ominous": true }
+        },
+        {
+          "index": 1,
+          "label": "Fever Haze",
+          "icon": "fa-solid fa-head-side-cough",
+          "description": "A sickly low haze the colour of old gold clings to the ground, sweet and cloying.",
+          "temperature": "Warm",
+          "effectNote": "Lingering long without a mask risks a mild fever.",
+          "disallow": [],
+          "effect": { "archetype": "miasma", "kind": "miasma", "intensity": 0.55, "tintParticle": "#d9b84a", "tintGlow": "#5a4410", "drift": "left", "ominous": false }
+        },
+        {
+          "index": 4,
+          "label": "Golden Rain",
+          "icon": "fa-solid fa-cloud-rain",
+          "description": "Warm amber rain falls steadily, beading like honey on leaf and cloak.",
+          "temperature": "Warm",
+          "effectNote": "",
+          "disallow": [],
+          "effect": { "archetype": "streaks", "kind": "rain", "intensity": 0.55, "tintParticle": "#e8c45a", "tintGlow": "#6b4e12", "drift": "fall", "ominous": false }
+        },
+        {
+          "index": 13,
+          "label": "Pollen Drift",
+          "icon": "fa-solid fa-seedling",
+          "description": "Gold pollen drifts lazily on the warm air, catching the light like flecks of leaf-metal.",
+          "temperature": "Warm",
+          "effectNote": "",
+          "disallow": [],
+          "effect": { "archetype": "motes", "kind": "spore-bloom", "intensity": 0.5, "tintParticle": "#ffe08a", "tintGlow": "#a87a1a", "drift": "rise", "ominous": false }
+        },
+        {
+          "index": 17,
+          "label": "Gilt Fog",
+          "icon": "fa-solid fa-smog",
+          "description": "A thick, glimmering fog rolls in, every droplet gilded by some unseen light.",
+          "temperature": "Mild",
+          "effectNote": "Visibility reduced; easy to lose the trail.",
+          "disallow": [],
+          "effect": { "archetype": "volume", "kind": "fog", "intensity": 0.6, "tintParticle": "#e6d49a", "tintGlow": "#8a7430", "drift": "left", "ominous": false }
+        },
+        {
+          "index": 2,
+          "label": "Warm Murk",
+          "icon": "fa-solid fa-cloud",
+          "description": "A soft golden overcast smothers the sky in warm, hazy light.",
+          "temperature": "Mild",
+          "effectNote": "",
+          "disallow": [],
+          "effect": { "archetype": "volume", "kind": "clouds", "intensity": 0.4, "tintParticle": "#ecdca8", "tintGlow": "#9a8240", "drift": "left", "ominous": false }
+        },
+        {
+          "index": 5,
+          "label": "Amber Drizzle",
+          "icon": "fa-solid fa-cloud-rain",
+          "description": "A fine amber drizzle settles over everything, more mist than rain.",
+          "temperature": "Mild",
+          "effectNote": "",
+          "disallow": [],
+          "effect": { "archetype": "streaks", "kind": "rain", "intensity": 0.35, "tintParticle": "#e6cf7a", "tintGlow": "#7a5e1e", "drift": "fall", "ominous": false }
+        },
+        {
+          "index": 10,
+          "label": "Goldlight",
+          "icon": "fa-solid fa-sun",
+          "description": "Hazy golden sun pours down, motes of gilded dust turning slowly in the beams.",
+          "temperature": "Warm",
+          "effectNote": "",
+          "disallow": [],
+          "effect": { "archetype": "motes", "kind": "spore-bloom", "intensity": 0.35, "tintParticle": "#ffe9a8", "tintGlow": "#c79a2a", "drift": "rise", "ominous": false }
+        },
+        {
+          "index": 14,
+          "label": "Dust of Gold",
+          "icon": "fa-solid fa-wind",
+          "description": "A light, dry breeze lifts fine gold dust that glitters as it drifts past.",
+          "temperature": "Warm",
+          "effectNote": "",
+          "disallow": [],
+          "effect": { "archetype": "dust", "kind": "sand", "intensity": 0.4, "tintParticle": "#e2c66a", "tintGlow": "#8a6a1e", "drift": "right", "ominous": false }
+        },
+        {
+          "index": 18,
+          "label": "Glimmer Mist",
+          "icon": "fa-solid fa-smog",
+          "description": "A faint, shimmering mist hangs in the air, catching glints of gold with every breath of wind.",
+          "temperature": "Mild",
+          "effectNote": "",
+          "disallow": [],
+          "effect": { "archetype": "volume", "kind": "fog", "intensity": 0.38, "tintParticle": "#ecdeb0", "tintGlow": "#9a8444", "drift": "right", "ominous": false }
+        },
+        {
+          "index": 6,
+          "label": "Soft Gold Sky",
+          "icon": "fa-solid fa-cloud-sun",
+          "description": "Gentle warm skies, gilded at the edges, with only the lightest haze.",
+          "temperature": "Pleasant",
+          "effectNote": "",
+          "disallow": [],
+          "effect": { "archetype": "clear", "kind": "clear", "intensity": 0.3, "tintParticle": "#ffe9a8", "tintGlow": "#d9b84a", "drift": "still", "ominous": false }
+        },
+        {
+          "index": 11,
+          "label": "Gilded Stillness",
+          "icon": "fa-solid fa-sun",
+          "description": "Warm, golden, and utterly calm — the baseline hush of Fevergold, beautiful and deceptive.",
+          "temperature": "Pleasant",
+          "effectNote": "",
+          "disallow": ["down"],
+          "effect": { "archetype": "clear", "kind": "clear", "intensity": 0.3, "tintParticle": "#ffe9a8", "tintGlow": "#d9a93a", "drift": "still", "ominous": false }
+        },
+        {
+          "index": 15,
+          "label": "Honeyed Air",
+          "icon": "fa-solid fa-feather",
+          "description": "The air goes sweet and still, faint gold motes hanging suspended as if the world is holding its breath.",
+          "temperature": "Pleasant",
+          "effectNote": "",
+          "disallow": [],
+          "effect": { "archetype": "clear", "kind": "clear", "intensity": 0.28, "tintParticle": "#ffeec0", "tintGlow": "#e0c24a", "drift": "still", "ominous": false }
+        },
+        {
+          "index": 9,
+          "label": "Aurelian Bloom",
+          "icon": "fa-solid fa-star",
+          "description": "A freak hush, and the air fills with drifting glyphs of golden light — beautiful, soundless, and wrong. The old folk call it an omen of the fever deepening.",
+          "temperature": "Uncanny",
+          "effectNote": "GM: an omen. Consider deepening any active fever/corruption track or foreshadowing a Fevergold event.",
+          "disallow": [],
+          "effect": { "archetype": "runes", "kind": "aurora", "intensity": 0.6, "tintParticle": "#ffd24a", "tintGlow": "#8a5a00", "drift": "rise", "ominous": true }
+        }
+      ]
+    }
+  }
+}

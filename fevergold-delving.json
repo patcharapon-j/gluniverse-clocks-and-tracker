@@ -1,0 +1,124 @@
+{
+  "turn": { "unit": "hour", "count": 1, "label": "Hour" },
+  "weatherEveryTurns": 4,
+  "featuredId": "fever",
+  "resources": [
+    {
+      "id": "fever",
+      "name": "The Gold-Sickness",
+      "icon": "fa-solid fa-head-side-cough",
+      "endName": "Turned to Gold",
+      "visibleToPlayers": true,
+      "stageIndex": 0,
+      "current": 6,
+      "stages": [
+        {
+          "name": "Clear-Headed",
+          "size": 8,
+          "count": 6,
+          "discard": 2,
+          "effect": { "archetype": "motes", "intensity": 0.32, "tintParticle": "#ffe9a8", "tintGlow": "#c79a2a", "drift": "rise", "ominous": false }
+        },
+        {
+          "name": "Flushed",
+          "size": 8,
+          "count": 5,
+          "discard": 2,
+          "effect": { "archetype": "spores", "intensity": 0.55, "tintParticle": "#ffd24a", "tintGlow": "#8a5a00", "drift": "rise", "ominous": false }
+        },
+        {
+          "name": "Burning",
+          "size": 8,
+          "count": 4,
+          "discard": 3,
+          "effect": { "archetype": "miasma", "intensity": 0.72, "tintParticle": "#d9b84a", "tintGlow": "#5a4410", "drift": "left", "ominous": true }
+        },
+        {
+          "name": "Goldblood",
+          "size": 8,
+          "count": 4,
+          "discard": 3,
+          "effect": { "archetype": "creep", "intensity": 0.9, "tintParticle": "#caa12a", "tintGlow": "#3a2a00", "drift": "rise", "ominous": true }
+        }
+      ]
+    },
+    {
+      "id": "lantern-oil",
+      "name": "Lantern Oil",
+      "icon": "fa-solid fa-fire",
+      "endName": "Lost in the Murk",
+      "visibleToPlayers": true,
+      "stageIndex": 0,
+      "current": 6,
+      "stages": [
+        {
+          "name": "Full Flame",
+          "size": 6,
+          "count": 6,
+          "discard": 2,
+          "effect": { "archetype": "embers", "intensity": 0.5, "tintParticle": "#ff9a3c", "tintGlow": "#ffd27a", "drift": "rise", "ominous": false }
+        },
+        {
+          "name": "Low Oil",
+          "size": 6,
+          "count": 5,
+          "discard": 2,
+          "effect": { "archetype": "embers", "intensity": 0.4, "tintParticle": "#d8632a", "tintGlow": "#ff9a3c", "drift": "rise", "ominous": false }
+        },
+        {
+          "name": "Sputtering",
+          "size": 6,
+          "count": 4,
+          "discard": 3,
+          "effect": { "archetype": "shadow", "intensity": 0.55, "tintParticle": "#2a2330", "tintGlow": "#0d0b12", "drift": "still", "ominous": true }
+        },
+        {
+          "name": "Guttered",
+          "size": 6,
+          "count": 4,
+          "discard": 3,
+          "effect": { "archetype": "void", "intensity": 0.8, "tintParticle": "#1a1626", "tintGlow": "#000000", "drift": "still", "ominous": true }
+        }
+      ]
+    },
+    {
+      "id": "waterskins",
+      "name": "Waterskins",
+      "icon": "fa-solid fa-droplet",
+      "endName": "Parched",
+      "visibleToPlayers": true,
+      "stageIndex": 0,
+      "current": 6,
+      "stages": [
+        {
+          "name": "Brimming",
+          "size": 6,
+          "count": 6,
+          "discard": 2,
+          "effect": { "archetype": "ripples", "intensity": 0.45, "tintParticle": "#7fc8e6", "tintGlow": "#2a6a8a", "drift": "rise", "ominous": false }
+        },
+        {
+          "name": "Sloshing",
+          "size": 6,
+          "count": 5,
+          "discard": 2,
+          "effect": { "archetype": "drips", "intensity": 0.5, "tintParticle": "#6fb0d8", "tintGlow": "#235874", "drift": "fall", "ominous": false }
+        },
+        {
+          "name": "Rationed",
+          "size": 6,
+          "count": 4,
+          "discard": 3,
+          "effect": { "archetype": "drips", "intensity": 0.4, "tintParticle": "#a89a6a", "tintGlow": "#4a3e1a", "drift": "fall", "ominous": true }
+        },
+        {
+          "name": "Dry",
+          "size": 6,
+          "count": 4,
+          "discard": 3,
+          "effect": { "archetype": "dust", "intensity": 0.75, "tintParticle": "#e2c66a", "tintGlow": "#6b4a10", "drift": "right", "ominous": true }
+        }
+      ]
+    }
+  ]
+}
