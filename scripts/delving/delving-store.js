@@ -59,8 +59,8 @@ export class DelvingStore {
    *  (weather is turn-driven instead). Read by WeatherEngine without importing us. */
   static get suspendsWeatherCadence() { return this.active; }
 
-  static get turn(data = this.data) {
-    const t = data.turn ?? {};
+  static get turn() {
+    const t = this.data.turn ?? {};
     return {
       unit: DELVING_UNITS.includes(t.unit) ? t.unit : "stretch",
       count: clamp(int(t.count, 1), DELVING_TURN_COUNT_RANGE.min, DELVING_TURN_COUNT_RANGE.max),
