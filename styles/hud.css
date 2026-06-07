@@ -86,7 +86,11 @@
 /* the date cell is a row: the date stack on the left, an optional compact weather
    readout nested beside it (.wxmini, styled in weather.css). With weather hidden,
    only the stack renders so the layout is identical to before. */
-#glct-hud .date{padding-left:10px;flex-direction:row;align-items:center;gap:11px}
+#glct-hud .date{padding-left:10px;flex-direction:row;align-items:center;gap:11px;cursor:pointer;border-radius:9px;transition:background .15s ease}
+/* click the date to open the calendar (the weather chip nested inside keeps its
+   own click target — it opens the weather panel, not the calendar) */
+#glct-hud .date:hover{background:rgba(255,255,255,.06)}
+#glct-hud .date:focus-visible{outline:2px solid var(--glow);outline-offset:-2px}
 #glct-hud .date .datestack{display:flex;flex-direction:column;justify-content:center;gap:2px}
 #glct-hud .date .wd{font-size:8px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
 #glct-hud .date .m{font-size:16px;font-weight:760;letter-spacing:.2px;line-height:1.05;white-space:nowrap;

@@ -189,10 +189,10 @@
 .chat-message.glct-delve-msg .glct-cc-head{ padding-right:64px; }
 
 .glct-delvecard .glct-cc-dice{ position:relative; min-height:26px; display:flex; flex-wrap:wrap; gap:3px; align-items:center; transition:min-height .25s ease; }
-/* While the 3D roll plays, give the dice room to tumble (the row grows, then
-   settles back to the static-result height as the canvas fades) and hide the
-   baked static spans beneath the canvas. */
-.glct-delvecard .glct-cc-dice.dx-tumbling{ min-height:58px; }
+/* While the 3D roll plays, give the dice a real arena to tumble in (the row
+   grows, then settles back to the static-result height as the canvas fades) and
+   hide the baked static spans beneath the canvas. */
+.glct-delvecard .glct-cc-dice.dx-tumbling{ min-height:104px; }
 .glct-delvecard .glct-cc-dice.dx-tumbling > .glct-cc-d{ opacity:0; }
 
 .glct-delvecard .dx-row{ --dxtint:#ff9a3c; padding:6px 4px; border-top:1px solid rgba(255,255,255,.07); }
