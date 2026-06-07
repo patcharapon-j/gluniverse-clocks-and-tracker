@@ -157,6 +157,17 @@ export class DelvingEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     head.append(featured, icon, name, vis, del);
     panel.appendChild(head);
 
+    // The resource's own "ended" name — shown when its final stage is depleted.
+    const endRow = this._el("div", "dx-ed-endrow");
+    endRow.appendChild(this._el("i", "fa-solid fa-skull"));
+    endRow.appendChild(this._el("span", "dx-ed-endlbl", game.i18n.localize("GLCT.delving.editor.endName")));
+    const endName = document.createElement("input");
+    endName.type = "text"; endName.className = "dx-ed-endname"; endName.value = r.endName ?? "";
+    endName.placeholder = game.i18n.localize("GLCT.delving.editor.endNamePlaceholder");
+    endName.addEventListener("input", () => { r.endName = endName.value; });
+    endRow.appendChild(endName);
+    panel.appendChild(endRow);
+
     // stages table
     const stages = r.stages ?? (r.stages = []);
     const table = this._el("div", "dx-ed-stages");

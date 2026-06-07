@@ -357,10 +357,10 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const cell = root.querySelector("[data-delvingcell]");
 
     if (feat && stage) {
-      // The depleted end keeps the resource's own (worst-stage) name, but presents
-      // it as a distinct terminal state: a skull, a crossed-out count, and the
-      // intensified diorama + edge-glow below.
-      this._setText("[data-dxstage]", stage.name ?? "");
+      // The depleted end shows the resource's own terminal name (configured
+      // endName, else the final-stage name), presented as a distinct terminal
+      // state: a skull, a crossed-out count, and the intensified diorama below.
+      this._setText("[data-dxstage]", ended ? DelvingStore.terminalName(feat) : (stage.name ?? ""));
       const ico = root.querySelector("[data-dxicon]");
       if (ico) ico.className = ended ? "fa-solid fa-skull" : (feat.icon || "fa-solid fa-hourglass-half");
       if (ended) { this._setText("[data-dxcur]", "✕"); this._setText("[data-dxsize]", ""); }

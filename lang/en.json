@@ -465,6 +465,8 @@
   "GLCT.delving.editor.turnUnit": "Turn unit",
   "GLCT.delving.editor.turnCount": "Turn =",
   "GLCT.delving.editor.turnLabel": "Turn label",
+  "GLCT.delving.editor.endName": "End name",
+  "GLCT.delving.editor.endNamePlaceholder": "When fully depleted (blank = final stage name)",
   "GLCT.delving.editor.weatherEvery": "Roll weather every (turns)",
   "GLCT.delving.editor.weatherEveryHint": "0 = never auto-roll weather on a turn. While delving is live the normal time-based weather cadence is suspended.",
   "GLCT.delving.editor.turnHint": "One “{label}” advances {count} {unit} and rolls every resource.",

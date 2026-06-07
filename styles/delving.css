@@ -275,6 +275,9 @@
 .glct-delvecard .dx-name{ font-weight:700; }
 .glct-delvecard .dx-stage{ margin-left:auto; font-size:11px; opacity:.7; }
 .glct-delvecard .dx-shift{ margin-left:auto; font-size:11px; font-weight:700; color:var(--dxtint); }
+/* terminal (ended) badge — the resource's own end name, in alarm red */
+.glct-delvecard .dx-shift.dx-term{ color:#ff6b6b; text-transform:uppercase; letter-spacing:.04em; }
+.glct-delvecard .dx-shift.dx-term i{ filter:drop-shadow(0 0 4px rgba(255,80,80,.6)); }
 .glct-delvecard .dx-row-foot{ margin-top:3px; font-size:12px; }
 /* Don't spoil the outcome before the reels land: the "N left" / stage-shift badge
    stays invisible while the row's slot machine is spinning, then fades in once the
@@ -309,6 +312,11 @@
 
 .glct-delveditor .dx-ed-res{ border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:8px; background:rgba(255,255,255,.03); }
 .glct-delveditor .dx-ed-reshead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+/* the "End name" row beneath the resource header */
+.glct-delveditor .dx-ed-endrow{ display:flex; align-items:center; gap:6px; margin:-2px 0 8px; padding-left:2px; }
+.glct-delveditor .dx-ed-endrow i{ color:#ff6b6b; font-size:11px; }
+.glct-delveditor .dx-ed-endlbl{ font-size:11px; opacity:.75; white-space:nowrap; }
+.glct-delveditor .dx-ed-endname{ flex:1; min-width:90px; }
 .glct-delveditor .dx-ed-featured{ display:flex; align-items:center; gap:4px; font-size:11px; white-space:nowrap; }
 .glct-delveditor .dx-ed-icon{ width:120px; }
 .glct-delveditor .dx-ed-name{ flex:1; min-width:90px; font-weight:700; }

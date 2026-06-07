@@ -113,6 +113,17 @@ export class DelvingStore {
     return { ...e, intensity: 1, ominous: true };
   }
 
+  /**
+   * The name shown for a resource's ended state: its configured `endName` if set,
+   * otherwise it falls back to the final stage's own name (and lastly a generic).
+   */
+  static terminalName(r) {
+    const explicit = String(r?.endName ?? "").trim();
+    if (explicit) return explicit;
+    const stages = r?.stages ?? [];
+    return stages[stages.length - 1]?.name || game.i18n.localize("GLCT.delving.card.terminal");
+  }
+
   /** The live effect spec of a resource's current stage (feeds the EffectField). */
   static stageEffect(resource) {
     const st = resource?.stages?.[resource.stageIndex] ?? resource?.stages?.[0] ?? null;
@@ -398,7 +409,7 @@ export class DelvingStore {
 
     if (n <= 0) {
       return { id: r.id, name: r.name, icon: r.icon, faces: [], kept: 0, dropped: 0, size, discard,
-        stageName: stage.name ?? "", stageShift: false, terminal: isFinal, empty: true,
+        stageName: stage.name ?? "", terminalName: this.terminalName(r), stageShift: false, terminal: isFinal, empty: true,
         ominous: !!stage.effect?.ominous, visibleToPlayers: !!r.visibleToPlayers, tint: stage.effect?.tintGlow };
     }
 
@@ -418,8 +429,8 @@ export class DelvingStore {
 
     return {
       id: r.id, name: r.name, icon: r.icon, faces, kept, dropped: faces.length - kept, size, discard,
-      remaining: r.current, prevStageName, stageName: newStage.name ?? "", stageShift, terminal,
-      empty: kept === 0, ominous: !!newStage.effect?.ominous, visibleToPlayers: !!r.visibleToPlayers,
+      remaining: r.current, prevStageName, stageName: newStage.name ?? "", terminalName: this.terminalName(r),
+      stageShift, terminal, empty: kept === 0, ominous: !!newStage.effect?.ominous, visibleToPlayers: !!r.visibleToPlayers,
       tint: newStage.effect?.tintGlow
     };
   }
@@ -487,9 +498,13 @@ export class DelvingStore {
     const tumble = isFeatured && r.faces.length
       ? ` data-tumble="1" data-faces="${r.faces.join(",")}" data-size="${r.size}" data-discard="${r.discard}" data-tint="${tint}"`
       : "";
-    const stageBadge = r.stageShift
-      ? `<span class="dx-shift"><i class="fa-solid fa-angles-down"></i> ${esc(r.stageName)}</span>`
-      : `<span class="dx-stage">${esc(r.stageName)}</span>`;
+    // Terminal rows show the resource's own end name (a spoiler, so it rides the
+    // .dx-shift slot that the slot machine keeps hidden until the reels land).
+    const stageBadge = r.terminal
+      ? `<span class="dx-shift dx-term"><i class="fa-solid fa-skull"></i> ${esc(r.terminalName || r.stageName)}</span>`
+      : r.stageShift
+        ? `<span class="dx-shift"><i class="fa-solid fa-angles-down"></i> ${esc(r.stageName)}</span>`
+        : `<span class="dx-stage">${esc(r.stageName)}</span>`;
     const sum = r.empty
       ? `<span class="dx-sum ${r.terminal ? "terminal" : "wipe"}">${esc(game.i18n.localize(r.terminal ? "GLCT.delving.card.terminal" : "GLCT.delving.card.wipe"))}</span>`
       : `<span class="dx-sum"><b>${r.remaining}</b> ${esc(game.i18n.localize("GLCT.delving.card.left"))}</span>`;
@@ -535,6 +550,7 @@ export class DelvingStore {
     if (typeof r.id !== "string" || !r.id) r.id = foundry.utils.randomID(12);
     r.name = String(r.name ?? "Resource").slice(0, 60);
     r.icon = String(r.icon ?? "fa-solid fa-hourglass-half");
+    r.endName = String(r.endName ?? "").slice(0, 40);
     r.visibleToPlayers = r.visibleToPlayers !== false;
     if (!Array.isArray(r.stages) || !r.stages.length) r.stages = [makeStage("Stage 1")];
     if (r.stages.length > DELVING_STAGE_RANGE.max) r.stages = r.stages.slice(0, DELVING_STAGE_RANGE.max);
