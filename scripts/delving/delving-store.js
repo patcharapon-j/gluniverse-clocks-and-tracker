@@ -308,6 +308,22 @@ export class DelvingStore {
     await this._postTurnCard({ turn: data.turnsElapsed, label: this.turn.label, rolls, featuredId: data.featuredId });
   }
 
+  /**
+   * Manually roll a single resource's pool OUTSIDE the turn cadence (GM, delving
+   * active). Applies the same drop / stage-shift / clamp logic and posts a card
+   * with the 3D dice, but does NOT advance the turn counter, game.time, or the
+   * weather — for ad-hoc checks ("make a torch roll") the GM calls between turns.
+   */
+  static async rollResource(id = null) {
+    if (!game.user.isGM || !this.active) return;
+    const data = this.data;
+    const r = this.get(id ?? data.featuredId, data) ?? this.featured(data);
+    if (!r) return;
+    const roll = await this._rollResource(r);
+    await this.save(data, { payload: { reason: "rollOne", rolls: [roll] } });
+    await this._postRollCard(roll);
+  }
+
   static async _rewindTurn(data) {
     const snap = (data.history ?? []).pop();
     if (snap) {
@@ -391,15 +407,31 @@ export class DelvingStore {
     }
   }
 
-  static _cardHtml({ turn, label, rolls, featuredId, header, gmTag = false }) {
+  /** Whisper one resource's manual roll to everyone (visible) or just the GMs (hidden). */
+  static async _postRollCard(roll) {
+    if (!game.user.isGM) return;
+    const esc = foundry.utils.escapeHTML;
+    const gmTag = !roll.visibleToPlayers;
+    const html = this._cardHtml({
+      rolls: [roll], featuredId: roll.id, header: true, gmTag,
+      icon: roll.icon || "fa-solid fa-dice-d6",
+      title: esc(roll.name || game.i18n.localize("GLCT.delving.card.alias")),
+      sub: game.i18n.localize(gmTag ? "GLCT.delving.card.rollGmSub" : "GLCT.delving.card.rollSub")
+    });
+    await this._post(html, { whisper: gmTag });
+  }
+
+  static _cardHtml({ turn, label, rolls, featuredId, header, gmTag = false, title = null, sub = null, icon = null }) {
     const esc = foundry.utils.escapeHTML;
     const rowsHtml = rolls.map(r => this._rowHtml(r, r.id === featuredId)).join("") ||
       `<div class="dx-row dx-empty">${esc(game.i18n.localize("GLCT.delving.card.noResources"))}</div>`;
+    const titleHtml = title ?? `${esc(label)} ${turn}`;
+    const subHtml = sub ?? game.i18n.localize(gmTag ? "GLCT.delving.card.gmSub" : "GLCT.delving.card.sub");
     const head = header
       ? `<div class="glct-cc-head">
-           <span class="glct-cc-ico"><i class="fa-solid fa-hourglass-half"></i></span>
-           <span class="glct-cc-title"><span class="n">${esc(label)} ${turn}</span>` +
-           `<span class="s">${esc(game.i18n.localize(gmTag ? "GLCT.delving.card.gmSub" : "GLCT.delving.card.sub"))}</span></span>
+           <span class="glct-cc-ico"><i class="${esc(icon || "fa-solid fa-hourglass-half")}"></i></span>
+           <span class="glct-cc-title"><span class="n">${titleHtml}</span>` +
+           `<span class="s">${esc(subHtml)}</span></span>
          </div>` : "";
     return `<div class="glct-chatcard glct-delvecard">${head}<div class="glct-cc-body">${rowsHtml}</div></div>`;
   }

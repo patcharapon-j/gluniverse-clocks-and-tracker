@@ -139,6 +139,18 @@
 #glct-hud .gmdock .c.delving.on,
 #glct-hud .gmdock .c[data-delvebtn].on{ background:var(--dxglow,#ffd27a); color:#13131a; }
 #glct-hud .gmdock .c.pass{ font-weight:700; }
+#glct-hud .gmdock .c.roll i{ color:var(--dxglow,#ffd27a); }
+
+/* While delving is LIVE the clock/meter/shifts are hidden, so the time-advance and
+   shift-mode dock buttons don't apply — collapse them so the dock stays short and
+   focused on the delving turn controls (this is the "dock too long" fix). The
+   mission tracker stays (objectives still matter underground). */
+#glct-hud .hud-root.delving .gmdock .c[data-step],
+#glct-hud .hud-root.delving .gmdock .c[data-action="nextShift"],
+#glct-hud .hud-root.delving .gmdock .c[data-action="setTime"],
+#glct-hud .hud-root.delving .gmdock .c.mode{ display:none !important; }
+/* the first delving button no longer needs its divider once it leads the dock */
+#glct-hud .hud-root.delving .gmdock .c.pass.sep{ border-left:0; }
 
 /* ---- delving context menu (mounted on <body>; mirrors the tracker menu) ---- */
 .glct-delve-ctx{
@@ -160,8 +172,27 @@
 /* ============================================================
    In-card 3D dice tumble + the Turn chat card
    ============================================================ */
-.glct-delvecard .glct-cc-dice{ position:relative; min-height:22px; display:flex; flex-wrap:wrap; gap:3px; align-items:center; }
-/* while the tumble plays, hide the baked static spans beneath the canvas */
+/* Let the custom card own the whole chat entry (mirrors the pool / weather /
+   support cards): Foundry's default header collapses to just the timestamp +
+   delete control, floated over the card's top-right, and the duplicate sender /
+   flavor + the nested message chrome are removed so the card isn't a card-in-a-card. */
+#chat-log .chat-message.glct-delve-msg,
+.chat-message.glct-delve-msg{ padding:0; overflow:hidden; position:relative; }
+.chat-message.glct-delve-msg .message-header{ position:absolute; top:0; right:0; left:auto; width:auto; margin:0; padding:7px 9px; border:none; z-index:4; flex:none; }
+.chat-message.glct-delve-msg .message-sender,
+.chat-message.glct-delve-msg .message-header .flavor-text{ display:none; }
+.chat-message.glct-delve-msg .message-metadata{ margin:0; gap:7px; color:#cbd3e2; font-size:10px; text-shadow:0 1px 3px rgba(0,0,0,.9); }
+.chat-message.glct-delve-msg .message-metadata .message-delete{ color:#cbd3e2; }
+.chat-message.glct-delve-msg .message-content{ margin:0; padding:0; }
+.chat-message.glct-delve-msg .glct-delvecard{ margin:0; border:none; border-radius:6px; }
+/* keep the floated timestamp clear of the card's own title block */
+.chat-message.glct-delve-msg .glct-cc-head{ padding-right:64px; }
+
+.glct-delvecard .glct-cc-dice{ position:relative; min-height:26px; display:flex; flex-wrap:wrap; gap:3px; align-items:center; transition:min-height .25s ease; }
+/* While the 3D roll plays, give the dice room to tumble (the row grows, then
+   settles back to the static-result height as the canvas fades) and hide the
+   baked static spans beneath the canvas. */
+.glct-delvecard .glct-cc-dice.dx-tumbling{ min-height:58px; }
 .glct-delvecard .glct-cc-dice.dx-tumbling > .glct-cc-d{ opacity:0; }
 
 .glct-delvecard .dx-row{ --dxtint:#ff9a3c; padding:6px 4px; border-top:1px solid rgba(255,255,255,.07); }

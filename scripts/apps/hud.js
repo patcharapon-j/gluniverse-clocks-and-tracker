@@ -69,6 +69,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       openCalendar: GlctHud.prototype._onOpenCalendar,
       openWeather: GlctHud.prototype._onOpenWeather,
       passTurn: GlctHud.prototype._onPassTurn,
+      rollPool: GlctHud.prototype._onRollPool,
       toggleDelving: GlctHud.prototype._onToggleDelving,
       resetDelve: GlctHud.prototype._onResetDelve,
       openDelving: GlctHud.prototype._onOpenDelving
@@ -391,6 +392,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const L = k => game.i18n.localize(k);
     const items = [];
     if (r.id !== DelvingStore.data.featuredId) items.push({ icon: "fa-star", label: L("GLCT.delving.ctx.feature"), run: () => DelvingStore.setFeatured(r.id) });
+    items.push({ icon: "fa-dice", label: L("GLCT.delving.ctx.roll"), run: () => DelvingStore.rollResource(r.id) });
     items.push({ icon: "fa-arrows-rotate", label: L("GLCT.delving.ctx.refill"), run: () => DelvingStore.refill(r.id) });
     items.push({ icon: "fa-angles-down", label: L("GLCT.delving.ctx.nextStage"), run: () => DelvingStore.stepStage(r.id, +1) });
     items.push({ icon: "fa-angles-up", label: L("GLCT.delving.ctx.prevStage"), run: () => DelvingStore.stepStage(r.id, -1) });
@@ -444,6 +446,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _onPassTurn() { if (!game.user.isGM) return; await DelvingStore.advanceTurn(); }
+  async _onRollPool() { if (!game.user.isGM) return; await DelvingStore.rollResource(); }
   async _onToggleDelving() { if (!game.user.isGM) return; await DelvingStore.setActive(!DelvingStore.active); }
   async _onResetDelve() {
     if (!game.user.isGM) return;

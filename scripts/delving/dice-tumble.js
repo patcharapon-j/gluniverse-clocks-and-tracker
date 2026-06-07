@@ -44,8 +44,9 @@ export class DiceTumble {
   constructor(host, { faces, size, discard, tint }) {
     const PIXI = globalThis.PIXI;
     this.host = host;
+    host.classList.add("dx-tumbling");     // grows the host + hides the static spans
     const w = Math.max(40, host.clientWidth || 120);
-    const h = Math.max(26, host.clientHeight || 26);
+    const h = Math.max(48, host.clientHeight || 56);
 
     this.app = new PIXI.Application({
       width: w, height: h, backgroundAlpha: 0, antialias: true,
@@ -53,7 +54,6 @@ export class DiceTumble {
     });
     const view = this.app.view ?? this.app.canvas;
     Object.assign(view.style, { position: "absolute", inset: "0", width: "100%", height: "100%", pointerEvents: "none", zIndex: "2" });
-    host.classList.add("dx-tumbling");     // CSS hides the static spans during the roll
     host.appendChild(view);
 
     const n = Math.min(faces.length, CAP);

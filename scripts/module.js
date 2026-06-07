@@ -14,6 +14,7 @@ import { SupportHud } from "./apps/support-hud.js";
 import { SupportStore } from "./support/support-store.js";
 import { DelvingStore } from "./delving/delving-store.js";
 import { DiceTumble } from "./delving/dice-tumble.js";
+import { Dice3D } from "./delving/dice3d.js";
 
 function setting(key, fallback) {
   try { return game.settings.get(MODULE_ID, key); } catch { return fallback; }
@@ -121,12 +122,15 @@ function mountDelveTumble(message, el) {
   const fresh = (Date.now() - (message.timestamp ?? 0)) < 8000;
   if (!fresh) return;
   const faces = String(host.dataset.faces ?? "").split(",").map(Number).filter(Number.isFinite);
-  DiceTumble.mount(host, {
+  const opts = {
     faces,
     size: Number(host.dataset.size) || 6,
     discard: Number(host.dataset.discard) || 0,
     tint: host.dataset.tint || "#ff9a3c"
-  });
+  };
+  // Prefer real 3D dice (three.js). If three.js can't load (offline / CSP) or the
+  // renderer bails, fall back to the contained Pixi tumble, then the static spans.
+  Dice3D.mount(host, opts).then(inst => { if (!inst) DiceTumble.mount(host, opts); });
 }
 Hooks.on("renderChatMessageHTML", tagPoolMessage);   // Foundry v13+
 Hooks.on("renderChatMessage", tagPoolMessage);       // legacy fallback
