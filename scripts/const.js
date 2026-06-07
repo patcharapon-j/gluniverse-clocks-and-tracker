@@ -15,7 +15,9 @@ export const HOOKS = {
   /** Fired (callAll) after the weather walk advances/rewinds/resets: (payload) => void */
   weatherChanged: `${MODULE_ID}.weatherChanged`,
   /** Fired (callAll) after the support roster / active / pool state changes: (payload) => void */
-  supportsChanged: `${MODULE_ID}.supportsChanged`
+  supportsChanged: `${MODULE_ID}.supportsChanged`,
+  /** Fired (callAll) after the delving config / live turn state changes: (payload) => void */
+  delvingChanged: `${MODULE_ID}.delvingChanged`
 };
 
 /** World-setting keys. */
@@ -52,7 +54,12 @@ export const SETTINGS = {
   supportHudVisibleToPlayers: "supportHudVisibleToPlayers", // Boolean (world): GM show/hide the coin for players (off-mission)
   supportHudPosition: "supportHudPosition",           // Object (client): Comms-Coin window position
   supportHudHidden: "supportHudHidden",               // Boolean (client): coin hidden on this screen
-  supportPassiveTokenIcon: "supportPassiveTokenIcon"  // Boolean (world): show the passive effect icon on PC tokens
+  supportPassiveTokenIcon: "supportPassiveTokenIcon", // Boolean (world): show the passive effect icon on PC tokens
+
+  // ---- Delving Mode (turn-driven dungeon delve: time still advances, the clock
+  //      readout steps aside for a turn counter + degrading delving-resource HUD) ----
+  delvingEnabled: "delvingEnabled",                   // Boolean (world): master opt-in (default false)
+  delving: "delving"                                  // Object (world): full config + live delve state (§ delving-store)
 };
 
 /** The tracker types the dock can render. */
@@ -96,13 +103,27 @@ export const WEATHER_DIRECTION_LABELS = {
   upperLeft: "GLCT.weather.dir.upperLeft"
 };
 
-/** Pixi motion archetypes the effects engine implements (decision #8, §4.6). */
+/**
+ * Pixi motion archetypes the effects engine implements. Originally weather-only
+ * (decision #8, §4.6); now a SHARED effect registry consumed by weather AND the
+ * delving-resource HUD (and any future feature), so the library spans far more
+ * than weather. The first nine are the original weather set; the rest are the
+ * curated "delving + atmosphere" batch (shadow closing in, creeping rot, spores,
+ * miasma, signal static, swarms, drips, depth bubbles, runes, void, dust, rising
+ * ripples). Each is still just "motion archetype × two tints × drift" — the new
+ * looks are texture/blend/motion remaps, no per-effect bespoke code.
+ */
 export const WEATHER_ARCHETYPES = [
-  "clear", "streaks", "flakes", "volume", "flashes", "motes", "embers", "gusts", "shards"
+  "clear", "streaks", "flakes", "volume", "flashes", "motes", "embers", "gusts", "shards",
+  // ---- expanded shared batch ----
+  "shadow", "creep", "spores", "miasma", "static", "swarm", "drips", "bubbles", "runes", "void", "dust", "ripples"
 ];
 
+/** Alias: the archetype list is no longer weather-specific. Prefer this name in new code. */
+export const EFFECT_ARCHETYPES = WEATHER_ARCHETYPES;
+
 /** Archetypes that read better with additive blending (glowing particles). */
-export const WEATHER_ADDITIVE_ARCHETYPES = ["flashes", "motes", "embers"];
+export const WEATHER_ADDITIVE_ARCHETYPES = ["flashes", "motes", "embers", "spores", "runes", "void"];
 
 /** Drift directions an archetype may honour. */
 export const WEATHER_DRIFTS = ["fall", "rise", "left", "right", "still"];
@@ -158,3 +179,24 @@ export const SUPPORT_STAT_TYPES = {
 /** Caps for the roster (defensive — a table is never going to need more). */
 export const SUPPORT_LEVEL_RANGE = { min: -1, max: 25 };
 export const SUPPORT_POOL_RANGE = { min: 1, max: 20 };
+
+/* ============================================================
+   Delving Mode — a turn-driven mode of play. Tracking exact time is still
+   needed (game.time keeps advancing, so effects expire and weather walks), but
+   the wall-clock reading is irrelevant: only the PASSAGE of time matters. The
+   GM presses a button to pass a "turn" (a configurable span of time); each turn
+   rolls every delving RESOURCE (a staged dice pool — torches, corruption…) and,
+   optionally, the weather. As a resource's pool empties it shifts to a worse
+   STAGE, and the featured resource's current stage drives the HUD's atmosphere.
+   ============================================================ */
+
+/** Base time units a "turn" can be built from (× a multiplier count). */
+export const DELVING_UNITS = ["stretch", "hour", "shift", "day", "week", "month"];
+
+/** Caps for the delving config (defensive — well beyond any real table need). */
+export const DELVING_TURN_COUNT_RANGE = { min: 1, max: 99 };
+export const DELVING_WEATHER_TURNS_RANGE = { min: 0, max: 99 };   // 0 = never auto-roll weather on a turn
+export const DELVING_STAGE_RANGE = { min: 1, max: 12 };           // stages per resource
+export const DELVING_DICE_SIZE_RANGE = { min: 2, max: 100 };
+export const DELVING_DICE_COUNT_RANGE = { min: 0, max: 50 };
+export const DELVING_HISTORY_CAP = 40;                            // turn snapshots kept for rewind

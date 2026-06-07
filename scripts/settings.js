@@ -14,6 +14,8 @@ import { makeDefaultWeather } from "./weather/presets.js";
 import { registerSupportMenu } from "./apps/support-editor.js";
 import { SupportHud } from "./apps/support-hud.js";
 import { makeDefaultSupports, SupportStore } from "./support/support-store.js";
+import { registerDelvingMenu } from "./apps/delving-editor.js";
+import { makeDefaultDelving } from "./delving/presets.js";
 
 export function registerSettings() {
   const choices = Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.name]));
@@ -22,6 +24,7 @@ export function registerSettings() {
   registerShiftNamesMenu();
   registerWeatherMenu();
   registerSupportMenu();
+  registerDelvingMenu();
 
   game.settings.register(MODULE_ID, SETTINGS.calendarId, {
     name: "GLCT.settings.calendar.name",
@@ -220,5 +223,22 @@ export function registerSettings() {
     hint: "GLCT.support.settings.passiveTokenIcon.hint",
     scope: "world", config: true, type: Boolean, default: true,
     onChange: () => SupportStore.applyPassive()
+  });
+
+  /* ---------------------------- Delving Mode ---------------------------- */
+
+  // Master opt-in. Ships off so worlds that don't delve are untouched. Toggling
+  // it re-renders the HUD structure so the GM's delving dock controls appear/vanish.
+  game.settings.register(MODULE_ID, SETTINGS.delvingEnabled, {
+    name: "GLCT.delving.settings.enabled.name",
+    hint: "GLCT.delving.settings.enabled.hint",
+    scope: "world", config: true, type: Boolean, default: false,
+    onChange: () => { GlctHud.refreshStructure(); GlctHud.refreshDelving(); }
+  });
+
+  // Full config + live delve state. Config:false — edited via the menu / HUD.
+  game.settings.register(MODULE_ID, SETTINGS.delving, {
+    scope: "world", config: false, type: Object, default: makeDefaultDelving(),
+    onChange: () => GlctHud.refreshDelving()
   });
 }

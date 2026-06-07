@@ -15,6 +15,9 @@
           keeps the date stack legible under a bright effect. --}}
     <div class="bar-wx off" data-wxbar></div>
     <div class="bar-wx-scrim off" data-wxscrim></div>
+    {{!-- Delving diorama: the featured delving-resource's current stage washes the
+          bar (taking over from weather while delving is live). Same Pixi tech. --}}
+    <div class="bar-dx off" data-dxbar></div>
     <div class="main">
 
       <div class="cell grip" title="{{localize 'GLCT.hud.dragHint'}}">
@@ -88,6 +91,25 @@
         </span>
       </div>
 
+      {{!-- Delving cell: shown only while delving is live (CSS hides the clock /
+            meter / shift hero then). Turn counter + the featured resource's stage,
+            with inline GM controls; secondary resources show as compact chips. --}}
+      <div class="cell delving-cell" data-delvingcell>
+        <div class="dx-turn">
+          <span class="dx-turn-num" data-dxturn>0</span>
+          <span class="dx-turn-lbl" data-dxturnlbl></span>
+        </div>
+        <div class="dx-featured" data-dxfeatured title="{{localize 'GLCT.delving.featuredHint'}}">
+          <div class="dx-stagebadge"><i data-dxicon class="fa-solid fa-fire"></i><span class="dx-stagename" data-dxstage></span></div>
+          <div class="dx-poolval">
+            <button type="button" class="dx-stagestep" data-dxstageless aria-label="{{localize 'GLCT.delving.stageDown'}}" title="{{localize 'GLCT.delving.stageDown'}}"><i class="fa-solid fa-angle-left"></i></button>
+            <span class="dx-dice" data-dxdice title="{{localize 'GLCT.delving.diceHint'}}"><b data-dxcur>0</b><i data-dxsize>d6</i></span>
+            <button type="button" class="dx-stagestep" data-dxstagemore aria-label="{{localize 'GLCT.delving.stageUp'}}" title="{{localize 'GLCT.delving.stageUp'}}"><i class="fa-solid fa-angle-right"></i></button>
+          </div>
+        </div>
+        <div class="dx-chips" data-dxchips></div>
+      </div>
+
     </div>
   </div>
 
@@ -102,6 +124,12 @@
       <button type="button" class="c sep ico" data-action="setTime" aria-label="{{localize 'GLCT.controls.setTime'}}" title="{{localize 'GLCT.controls.setTime'}}"><i class="fa-solid fa-stopwatch"></i></button>
       <button type="button" class="c sep mission" data-action="openMission" data-missionbtn title="{{localize 'GLCT.controls.missionToggle'}}"><i class="fa-solid fa-bullseye goal-ic"></i><i class="fa-solid fa-hourglass-half dl-ic"></i> {{localize 'GLCT.controls.mission'}}<b class="cnt" data-missioncount></b></button>
       <button type="button" class="c sep mode" data-action="toggleShiftMode" data-modebtn title="{{localize 'GLCT.controls.shiftModeToggle'}}"><i class="fa-solid fa-circle-half-stroke"></i> <span data-modetext></span></button>
+      {{!-- Delving controls — hidden unless the delving feature is enabled. The
+            Pass-Turn / New-Delve buttons only appear once delving is switched on. --}}
+      <button type="button" class="c sep delving-ctl pass" data-action="passTurn" data-passbtn title="{{localize 'GLCT.delving.controls.passHint'}}"><i class="fa-solid fa-forward"></i> <span data-passlbl></span></button>
+      <button type="button" class="c delving-ctl ico" data-action="resetDelve" title="{{localize 'GLCT.delving.controls.reset'}}"><i class="fa-solid fa-rotate-left"></i></button>
+      <button type="button" class="c sep delving-toggle" data-action="toggleDelving" data-delvebtn title="{{localize 'GLCT.delving.controls.toggleHint'}}"><i class="fa-solid fa-dungeon"></i> <span data-delvetext></span></button>
+      <button type="button" class="c delving-toggle ico" data-action="openDelving" title="{{localize 'GLCT.delving.controls.edit'}}"><i class="fa-solid fa-sliders"></i></button>
     </div>
   </div>
   {{/if}}

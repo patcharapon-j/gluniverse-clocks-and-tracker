@@ -32,6 +32,13 @@ A premium, tactile in-game **calendar and time HUD** for Foundry VTT, built on F
   - **Composable effects** — every condition is a *motion archetype × two tints*, so fantasy weather (acid rain, crimson lightning, ashfall, arcane mist, ember storms…) is just an archetype plus a colour — no new code. Effects pause when the HUD is collapsed or the tab is backgrounded, and respect `prefers-reduced-motion`.
   - **Visual editor** — click a hex to edit its label/icon/description/temperature/effect with a live preview; edit each season's Navigation Hex with a live trend/probability preview and per-face edge rules; pick the **Temperate** (4-season) or **Homage** (single-flower) preset, or import/export JSON.
   - Ships **disabled by default**, so calendar-only worlds are unaffected.
+- **Delving Mode** — a turn-driven mode of play for dungeon crawls, hauntings, descents — anywhere the *passage* of time matters but the wall-clock reading doesn't. Toggle it on from the HUD dock at any time; `game.time` keeps advancing under the hood (so effects still expire and the weather still walks), but the clock readout steps aside for a **turn counter** and the featured resource's atmosphere.
+  - **Configurable turn** — the GM defines what one turn represents: a count × a unit (stretch / hour / shift / day / week / month) plus a label. Pressing **Pass Turn** advances time by that span; **right-click** rewinds a whole turn (state, time, and any weather roll). The granular step buttons stay available in a compact GM affordance.
+  - **Turn-driven weather** — set how many turns pass before the weather rolls again; while delving, the normal time-based weather cadence is suspended and handed back (re-seeded to *now*) when you exit.
+  - **Delving resources** — staged dice pools (torches, corruption, signal, air…). Each turn rolls every resource's current-stage pool (drop dice ≤ the discard range, exactly like the Tracker's Resource Pool) and posts one **consolidated Turn card**; the featured resource's roll animates as a contained **3D dice tumble *inside the chat card*** (PixiJS — no full-screen Dice So Nice overlay), then bakes to a static result for scrollback. When a pool empties, the resource **shifts to its next, worse stage** and refills; the final stage clamps and persists.
+  - **Degrading atmosphere** — the featured resource's current stage drives the time HUD's tint, colour, animation, and a **WebGL diorama** (the same engine as weather, now with a much larger shared archetype library — shadow, creeping rot, spores, miasma, signal static, swarms, drips, depth bubbles, runes, void, dust, rising water…), with a dread pulse that intensifies as the stages worsen. Other resources show as compact stage chips.
+  - **Inline GM controls** — left/right-click the featured dice to add/remove a die, a ‹ › stepper to jump stages, click a chip to feature it, and a right-click menu (refill / stage / hide / edit). Players see the stage + atmosphere; dice counts and cards are gated by each resource's player-visibility flag.
+  - **Visual editor** — configure the turn, the weather cadence, and full CRUD on resources & their stages (pool + look) with a live preview; ships **Torches** and **Corruption** presets and import/export JSON. **Disabled by default.**
 
 ---
 
@@ -71,6 +78,10 @@ This always installs the latest release. Then enable **GLUniverse — Clocks & T
 | Toggle the weather flower | `Alt+W`, or the cloud-bolt button in the scene controls (once weather is enabled) |
 | Roll the weather (GM) | **Roll Weather** in the flower window — **right-click** it to rewind a step |
 | Force a condition (GM) | Click any hex in the flower window |
+| Toggle Delving Mode (GM) | `Alt+G`, the **Delving** dock button, or the dungeon button in the scene controls (once delving is enabled) |
+| Pass a turn (GM) | `Alt+.`, or the **Pass Turn** dock button — **right-click** it to rewind a turn |
+| Adjust a resource (GM) | Left/right-click the featured dice (±1 die); the ‹ › stepper jumps stages; right-click a resource for more |
+| Edit delving (GM) | The sliders button on the dock, or **Game Settings → Edit Delving** |
 
 ### Weather (GM)
 

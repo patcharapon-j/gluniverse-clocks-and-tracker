@@ -12,6 +12,8 @@ import { WeatherEngine } from "./weather/engine.js";
 import { WeatherStore } from "./weather/weather-store.js";
 import { SupportHud } from "./apps/support-hud.js";
 import { SupportStore } from "./support/support-store.js";
+import { DelvingStore } from "./delving/delving-store.js";
+import { DiceTumble } from "./delving/dice-tumble.js";
 
 function setting(key, fallback) {
   try { return game.settings.get(MODULE_ID, key); } catch { return fallback; }
@@ -41,17 +43,27 @@ function ensureSupportStyles() {
   document.head.appendChild(link);
 }
 
+/** Same guard for the delving stylesheet (added to the manifest after support). */
+function ensureDelvingStyles() {
+  if (document.querySelector('link[href*="styles/delving.css"]')) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `modules/${MODULE_ID}/styles/delving.css`;
+  document.head.appendChild(link);
+}
+
 Hooks.once("init", () => {
   registerSettings();
   ensureWeatherStyles();
   ensureSupportStyles();
+  ensureDelvingStyles();
   // Install the active calendar before GameTime is constructed.
   applyCalendar();
   registerKeybindings();
 
   // Public API for macros / other modules.
   const mod = game.modules.get(MODULE_ID);
-  if (mod) mod.api = { TimeEngine, GlctHud, TrackerHud, TrackerStore, WeatherEngine, WeatherStore, WeatherHud, SupportHud, SupportStore, HOOKS };
+  if (mod) mod.api = { TimeEngine, GlctHud, TrackerHud, TrackerStore, WeatherEngine, WeatherStore, WeatherHud, SupportHud, SupportStore, DelvingStore, HOOKS };
 });
 
 Hooks.once("ready", async () => {
@@ -92,6 +104,29 @@ function tagPoolMessage(message, html) {
   if (flags?.poolRoll) el.classList.add("glct-pool-msg");
   if (flags?.weatherCard) el.classList.add("glct-weather-msg");
   if (flags?.supportCard) el.classList.add("glct-support-msg");
+  if (flags?.delvingCard) { el.classList.add("glct-delve-msg"); mountDelveTumble(message, el); }
+}
+
+/**
+ * Play the in-card 3D dice tumble on the featured resource's roll — but only for
+ * the freshly-posted, newest delving card (never on scrollback re-renders). The
+ * card already holds the baked static result, so the tumble fades to reveal it.
+ */
+function mountDelveTumble(message, el) {
+  const host = el.querySelector(".glct-cc-dice[data-tumble]");
+  if (!host || host.dataset.tumbled) return;
+  // Only the fresh post animates — scrollback / history re-renders are skipped.
+  // (The dataset guard prevents a double-play; a public + GM-whisper pair each
+  // carry the tumble on their own featured row, so we don't gate on "newest".)
+  const fresh = (Date.now() - (message.timestamp ?? 0)) < 8000;
+  if (!fresh) return;
+  const faces = String(host.dataset.faces ?? "").split(",").map(Number).filter(Number.isFinite);
+  DiceTumble.mount(host, {
+    faces,
+    size: Number(host.dataset.size) || 6,
+    discard: Number(host.dataset.discard) || 0,
+    tint: host.dataset.tint || "#ff9a3c"
+  });
 }
 Hooks.on("renderChatMessageHTML", tagPoolMessage);   // Foundry v13+
 Hooks.on("renderChatMessage", tagPoolMessage);       // legacy fallback
@@ -150,6 +185,15 @@ Hooks.on("getSceneControlButtons", controls => {
       onChange: () => toggleSupportHud()
     };
   }
+  if (DelvingStore.enabled && game.user.isGM) {
+    group.tools["glct-delving-toggle"] = {
+      name: "glct-delving-toggle",
+      title: "GLCT.keybindings.toggleDelving",
+      icon: "fa-solid fa-dungeon",
+      button: true,
+      onChange: () => DelvingStore.setActive(!DelvingStore.active)
+    };
+  }
 });
 
 function registerKeybindings() {
@@ -193,6 +237,20 @@ function registerKeybindings() {
     editable: [{ key: "KeyM", modifiers: ["Alt"] }],
     onDown: () => { if (SupportStore.enabled) toggleSupportHud(); return true; },
     restricted: false
+  });
+
+  game.keybindings.register(MODULE_ID, "toggleDelving", {
+    name: "GLCT.keybindings.toggleDelving",
+    editable: [{ key: "KeyG", modifiers: ["Alt"] }],
+    onDown: () => { if (game.user.isGM && DelvingStore.enabled) DelvingStore.setActive(!DelvingStore.active); return true; },
+    restricted: true
+  });
+
+  game.keybindings.register(MODULE_ID, "passTurn", {
+    name: "GLCT.keybindings.passTurn",
+    editable: [{ key: "Period", modifiers: ["Alt"] }],
+    onDown: () => { if (game.user.isGM && DelvingStore.active) DelvingStore.advanceTurn(); return true; },
+    restricted: true
   });
 }
 

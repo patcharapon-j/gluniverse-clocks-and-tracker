@@ -8,7 +8,7 @@
  * remaps by coordinate across calendar seasons (§5.3). See docs/weather-system-spec.md.
  */
 
-import { MODULE_ID, HOOKS, WEATHER_HISTORY_CAP, WEATHER_STEP_CAP, WEATHER_DIRECTIONS } from "../const.js";
+import { MODULE_ID, SETTINGS, HOOKS, WEATHER_HISTORY_CAP, WEATHER_STEP_CAP, WEATHER_DIRECTIONS } from "../const.js";
 import { SECONDS_PER_DAY, SECONDS_PER_SHIFT } from "../time-math.js";
 import { resolveMove, rotateDirection, moveFlowerSvg } from "./hex-geometry.js";
 import { WeatherStore } from "./weather-store.js";
@@ -302,7 +302,37 @@ export class WeatherEngine {
     finally { this._busy = false; }
   }
 
+  /** While delving mode is live, weather is turn-driven — the time-period
+   *  auto-cadence steps aside (read via settings to avoid a circular import). */
+  static _delvingSuspendsCadence() {
+    try {
+      if (!game.settings.get(MODULE_ID, SETTINGS.delvingEnabled)) return false;
+      return !!game.settings.get(MODULE_ID, SETTINGS.delving)?.active;
+    } catch { return false; }
+  }
+
+  /**
+   * Re-seed every region's cadence counter to "now" without walking. Used when
+   * delving mode releases control back to the time-period engine, so resuming
+   * normal time doesn't make the weather retroactively walk for the elapsed delve.
+   */
+  static async reseedCadence() {
+    if (!game.user.isGM) return;
+    if (!WeatherStore.enabled || !WeatherStore.configured) return;
+    const data = WeatherStore.data;
+    const periodIdx = this.currentPeriodIndex();
+    let dirty = false;
+    for (const region of Object.values(data.regions ?? {})) {
+      if (!region?.state) continue;
+      region.state.lastDayIndex = periodIdx;
+      region.state.lastSeasonKey = this.seasonKeyForRegion(region);
+      dirty = true;
+    }
+    if (dirty) await WeatherStore.save(data, { payload: { reason: "reseed" } });
+  }
+
   static async _evaluate() {
+    if (this._delvingSuspendsCadence()) return;
     const data = WeatherStore.data;
     const activeKey = WeatherStore.activeRegionKey(data);
     const periodIdx = this.currentPeriodIndex();

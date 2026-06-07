@@ -1,0 +1,175 @@
+/* ============================================================
+   GLUniverse — Clocks & Tracker : DELVING styles
+   Delving Mode swaps the HUD's clock/meter view for a turn counter + the
+   featured delving-resource's degrading atmosphere. Resource colour is carried
+   per element by --dxtint (particles) and --dxglow (accent); --dxstage (0..1)
+   scales the dread as the resource worsens. Matches the "Arcane Glass" look.
+   ============================================================ */
+
+/* ---- full-bar delving diorama (takes over from weather while delving) ---- */
+#glct-hud .bar-dx{
+  position:absolute; inset:0; z-index:1; pointer-events:none;
+  border-radius:inherit; overflow:hidden; opacity:1; transition:opacity .45s ease;
+  -webkit-mask-image:linear-gradient(to right,#000 0%,#000 40%,transparent 74%);
+  mask-image:linear-gradient(to right,#000 0%,#000 40%,transparent 74%);
+}
+#glct-hud .bar-dx.off{ opacity:0; }
+#glct-hud .bar-dx .glct-wx-canvas{ position:absolute; inset:0; }
+
+/* ---- mode swap: hide the clock/meter/shift cells, reveal the delving cell ---- */
+#glct-hud .delving-cell{ display:none; }
+#glct-hud .hud-root.delving .clock-cell,
+#glct-hud .hud-root.delving .meter,
+#glct-hud .hud-root.delving .shift-hero{ display:none !important; }
+#glct-hud .hud-root.delving:not(.is-collapsed) .delving-cell{ display:flex; }
+
+/* ---- the delving cell ---- */
+#glct-hud .delving-cell{
+  position:relative; align-items:center; gap:14px; padding:0 6px;
+  --dxtint:#ff9a3c; --dxglow:#ffd27a; --dxstage:0;
+}
+/* a dread wash that strengthens as the resource degrades (ominous stages only) */
+#glct-hud .delving-cell.ominous::after{
+  content:""; position:absolute; inset:-2px; border-radius:10px; pointer-events:none;
+  background:radial-gradient(120% 140% at 12% 50%, color-mix(in srgb, var(--dxglow) 70%, transparent), transparent 70%);
+  opacity:calc(.18 + .42 * var(--dxstage));
+  animation:dx-dread 2.6s ease-in-out infinite;
+}
+@keyframes dx-dread{ 0%,100%{ filter:brightness(.85);} 50%{ filter:brightness(1.25);} }
+
+/* turn counter */
+#glct-hud .dx-turn{ display:flex; flex-direction:column; align-items:center; line-height:1; min-width:42px; }
+#glct-hud .dx-turn-num{
+  font-size:26px; font-weight:800; color:#fff; letter-spacing:.5px;
+  text-shadow:0 0 10px color-mix(in srgb, var(--dxglow) 60%, transparent);
+}
+#glct-hud .dx-turn-num.tick{ animation:dx-tick .42s cubic-bezier(.34,1.56,.64,1); }
+@keyframes dx-tick{ 0%{ transform:translateY(.32em) scale(.7); opacity:.2; } 100%{ transform:none; opacity:1; } }
+#glct-hud .dx-turn-lbl{ font-size:9px; text-transform:uppercase; letter-spacing:.12em; opacity:.7; margin-top:2px; }
+
+/* featured resource block */
+#glct-hud .dx-featured{ display:flex; flex-direction:column; gap:3px; min-width:128px; }
+#glct-hud .dx-stagebadge{ display:flex; align-items:center; gap:6px; font-weight:700; color:#fff; }
+#glct-hud .dx-stagebadge i{ color:var(--dxglow); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--dxglow) 70%,transparent)); }
+#glct-hud .dx-stagename{ font-size:13px; letter-spacing:.02em; }
+
+#glct-hud .dx-poolval{ display:flex; align-items:center; gap:4px; }
+#glct-hud .dx-stagestep{
+  appearance:none; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06);
+  color:#cfd6e0; width:18px; height:18px; border-radius:5px; cursor:pointer; padding:0;
+  display:inline-flex; align-items:center; justify-content:center; font-size:10px; transition:.15s;
+}
+#glct-hud .dx-stagestep:hover:not(:disabled){ background:var(--dxglow); color:#13131a; border-color:transparent; }
+#glct-hud .dx-stagestep:disabled{ opacity:.25; cursor:default; }
+#glct-hud .dx-dice{ display:inline-flex; align-items:baseline; gap:2px; cursor:pointer; padding:0 4px; border-radius:6px; transition:background .15s; }
+#glct-hud .dx-dice:hover{ background:rgba(255,255,255,.08); }
+#glct-hud .dx-dice b{ font-size:22px; font-weight:800; color:#fff; }
+#glct-hud .dx-dice i{ font-style:normal; font-size:11px; opacity:.6; }
+#glct-hud .dx-dice.empty b{ color:#ff6b6b; text-shadow:0 0 8px rgba(255,80,80,.5); }
+
+/* players don't get the GM steppers / dice editing */
+#glct-hud .hud-root:not(.is-gm) .dx-stagestep{ display:none; }
+#glct-hud .hud-root:not(.is-gm) .dx-dice{ cursor:default; }
+#glct-hud .hud-root:not(.is-gm) .dx-dice:hover{ background:none; }
+
+/* secondary resource chips */
+#glct-hud .dx-chips{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; max-width:170px; }
+#glct-hud .dx-chip{
+  --dxtint:#9aa3b0; --dxglow:#9aa3b0;
+  display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:20px; cursor:pointer;
+  background:color-mix(in srgb, var(--dxtint) 22%, rgba(20,22,30,.6));
+  border:1px solid color-mix(in srgb, var(--dxglow) 45%, transparent); color:#e7ecf3; transition:.15s;
+}
+#glct-hud .dx-chip:hover{ background:color-mix(in srgb, var(--dxtint) 40%, rgba(20,22,30,.6)); transform:translateY(-1px); }
+#glct-hud .dx-chip i{ color:var(--dxglow); font-size:11px; }
+#glct-hud .dx-chip b{ font-size:12px; font-weight:700; }
+#glct-hud .dx-chip.ominous{ animation:dx-dread 2.6s ease-in-out infinite; }
+
+/* ---- dock controls: hidden until the feature / mode is on ---- */
+#glct-hud .delving-toggle, #glct-hud .delving-ctl{ display:none !important; }
+#glct-hud .hud-root.delve-enabled .delving-toggle{ display:inline-flex !important; }
+#glct-hud .hud-root.delving .delving-ctl{ display:inline-flex !important; }
+#glct-hud .gmdock .c.delving.on,
+#glct-hud .gmdock .c[data-delvebtn].on{ background:var(--dxglow,#ffd27a); color:#13131a; }
+#glct-hud .gmdock .c.pass{ font-weight:700; }
+
+/* ---- delving context menu (mounted on <body>; mirrors the tracker menu) ---- */
+.glct-delve-ctx{
+  position:fixed; min-width:180px; padding:5px; border-radius:10px; opacity:0; transform:scale(.96);
+  background:linear-gradient(180deg, rgba(28,30,40,.98), rgba(18,20,28,.98));
+  border:1px solid rgba(255,255,255,.12); box-shadow:0 12px 36px rgba(0,0,0,.55);
+  transition:opacity .12s ease, transform .12s ease; backdrop-filter:blur(6px);
+}
+.glct-delve-ctx.show{ opacity:1; transform:none; }
+.glct-delve-ctx .ctx-item{
+  display:flex; align-items:center; gap:9px; width:100%; padding:7px 10px; border:0; border-radius:7px;
+  background:none; color:#e7ecf3; font-size:13px; cursor:pointer; text-align:left;
+}
+.glct-delve-ctx .ctx-item:hover{ background:rgba(255,255,255,.1); }
+.glct-delve-ctx .ctx-item i{ width:15px; text-align:center; opacity:.85; }
+.glct-delve-ctx .ctx-item.danger:hover{ background:rgba(220,70,70,.28); }
+.glct-delve-ctx .ctx-sep{ height:1px; margin:4px 6px; background:rgba(255,255,255,.1); }
+
+/* ============================================================
+   In-card 3D dice tumble + the Turn chat card
+   ============================================================ */
+.glct-delvecard .glct-cc-dice{ position:relative; min-height:22px; display:flex; flex-wrap:wrap; gap:3px; align-items:center; }
+/* while the tumble plays, hide the baked static spans beneath the canvas */
+.glct-delvecard .glct-cc-dice.dx-tumbling > .glct-cc-d{ opacity:0; }
+
+.glct-delvecard .dx-row{ --dxtint:#ff9a3c; padding:6px 4px; border-top:1px solid rgba(255,255,255,.07); }
+.glct-delvecard .dx-row:first-child{ border-top:0; }
+.glct-delvecard .dx-row.ominous{ box-shadow:inset 3px 0 0 color-mix(in srgb,var(--dxtint) 80%, transparent); }
+.glct-delvecard .dx-row-head{ display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+.glct-delvecard .dx-row-head i{ color:var(--dxtint); }
+.glct-delvecard .dx-name{ font-weight:700; }
+.glct-delvecard .dx-stage{ margin-left:auto; font-size:11px; opacity:.7; }
+.glct-delvecard .dx-shift{ margin-left:auto; font-size:11px; font-weight:700; color:var(--dxtint); }
+.glct-delvecard .dx-row-foot{ margin-top:3px; font-size:12px; }
+.glct-delvecard .dx-sum b{ font-weight:800; }
+.glct-delvecard .dx-sum.wipe{ color:var(--dxtint); font-weight:700; }
+.glct-delvecard .dx-sum.terminal{ color:#ff6b6b; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+.glct-delvecard .dx-empty{ opacity:.6; font-style:italic; padding:6px 4px; }
+
+/* ============================================================
+   Delving editor
+   ============================================================ */
+.glct-delveditor{ display:flex; flex-direction:column; gap:12px; padding:6px 4px; }
+.glct-delveditor .dx-ed-grid{ display:grid; grid-template-columns:auto 1fr auto auto; gap:8px 12px; align-items:end; }
+.glct-delveditor .dx-ed-grid label{ display:flex; flex-direction:column; gap:3px; font-size:12px; }
+.glct-delveditor .dx-ed-grid input[type=number]{ width:70px; }
+.glct-delveditor .dx-ed-hint{ margin:4px 0 0; opacity:.7; font-size:12px; font-style:italic; }
+.glct-delveditor .dx-ed-presets{ display:flex; align-items:center; gap:8px; }
+.glct-delveditor .dx-ed-presets .spacer, .glct-delveditor .dx-ed-foot .spacer{ flex:1; }
+
+.glct-delveditor .dx-ed-main{ display:grid; grid-template-columns:1fr 180px; gap:12px; }
+.glct-delveditor .dx-ed-resources{ display:flex; flex-direction:column; gap:10px; max-height:440px; overflow:auto; padding-right:4px; }
+.glct-delveditor .dx-ed-empty{ opacity:.6; font-style:italic; }
+.glct-delveditor .dx-ed-side{ position:sticky; top:0; }
+.glct-delveditor .dx-ed-pvhost{ position:relative; width:100%; height:120px; border-radius:10px; overflow:hidden; background:#0c0d12; border:1px solid rgba(255,255,255,.12); }
+.glct-delveditor .dx-ed-pvlabel{ text-align:center; font-size:12px; opacity:.8; margin-top:5px; }
+
+.glct-delveditor .dx-ed-res{ border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:8px; background:rgba(255,255,255,.03); }
+.glct-delveditor .dx-ed-reshead{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.glct-delveditor .dx-ed-featured{ display:flex; align-items:center; gap:4px; font-size:11px; white-space:nowrap; }
+.glct-delveditor .dx-ed-icon{ width:120px; }
+.glct-delveditor .dx-ed-name{ flex:1; min-width:90px; font-weight:700; }
+.glct-delveditor .dx-ed-vis{ display:flex; align-items:center; gap:4px; font-size:11px; white-space:nowrap; }
+.glct-delveditor .dx-ed-del{ appearance:none; border:0; background:rgba(220,70,70,.15); color:#ff9a9a; width:26px; height:26px; border-radius:6px; cursor:pointer; }
+.glct-delveditor .dx-ed-del:hover:not(:disabled){ background:rgba(220,70,70,.4); }
+.glct-delveditor .dx-ed-del:disabled{ opacity:.3; cursor:default; }
+
+.glct-delveditor .dx-ed-stages{ display:flex; flex-direction:column; gap:5px; }
+.glct-delveditor .dx-ed-stage{ display:flex; align-items:center; gap:4px; flex-wrap:wrap; padding:3px; border-radius:7px; }
+.glct-delveditor .dx-ed-stage:hover{ background:rgba(255,255,255,.04); }
+.glct-delveditor .dx-ed-stageidx{ width:18px; text-align:center; opacity:.6; font-size:11px; }
+.glct-delveditor .dx-ed-sname{ width:104px; }
+.glct-delveditor .dx-ed-num{ width:46px; }
+.glct-delveditor .dx-ed-dlabel{ opacity:.6; font-size:11px; }
+.glct-delveditor .dx-ed-look{ width:96px; }
+.glct-delveditor .dx-ed-arch{ width:84px; }
+.glct-delveditor .dx-ed-drift{ width:90px; }
+.glct-delveditor .dx-ed-stage input[type=color]{ width:26px; height:24px; padding:0; border:none; background:none; cursor:pointer; }
+.glct-delveditor .dx-ed-omin{ display:inline-flex; align-items:center; gap:3px; }
+.glct-delveditor .dx-ed-addstage{ margin-top:6px; font-size:12px; }
+.glct-delveditor .dx-ed-foot{ display:flex; align-items:center; gap:8px; }

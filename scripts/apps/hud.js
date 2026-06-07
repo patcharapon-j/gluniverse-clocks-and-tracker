@@ -16,8 +16,9 @@ import {
 import { WeatherStore } from "../weather/weather-store.js";
 import { WeatherEngine } from "../weather/engine.js";
 import { WeatherEffect } from "../weather/effects.js";
+import { DelvingStore } from "../delving/delving-store.js";
 
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
 const NS = "http://www.w3.org/2000/svg";
 
 // Compact value-flash choreography (ms). The flash is a deliberate four-beat
@@ -51,6 +52,9 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Repaint just the weather chip (after a weatherChanged / enable toggle). */
   static refreshWeather() { this.instance?._paintWeather(); }
 
+  /** Repaint the delving readout + diorama (after a delvingChanged / enable toggle). */
+  static refreshDelving() { this.instance?._paintDelving(); this.instance?._paintWeather(); }
+
   static DEFAULT_OPTIONS = {
     id: "glct-hud",
     classes: ["glct"],
@@ -63,7 +67,11 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       toggleShiftMode: GlctHud.prototype._onToggleShiftMode,
       openMission: GlctHud.prototype._onOpenMission,
       openCalendar: GlctHud.prototype._onOpenCalendar,
-      openWeather: GlctHud.prototype._onOpenWeather
+      openWeather: GlctHud.prototype._onOpenWeather,
+      passTurn: GlctHud.prototype._onPassTurn,
+      toggleDelving: GlctHud.prototype._onToggleDelving,
+      resetDelve: GlctHud.prototype._onResetDelve,
+      openDelving: GlctHud.prototype._onOpenDelving
     }
   };
 
@@ -83,6 +91,10 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   _dialRot = 0;
   _barT = null;         // pending bar-width-tween cleanup timeout
   _wx = null;           // WeatherEffect (chip Pixi diorama), lazily created
+  _dx = null;           // delving featured-stage diorama (Pixi), lazily created
+  _prevTurn = null;     // last painted turns-elapsed (for the tick animation)
+  _delveCtx = null;     // open delving context menu element, if any
+  _delveCtxOff = null;  // teardown for the delving menu's window listeners
   _sig = null;          // signature of the last painted display values
   _peeking = false;     // mid value-flash (compact bar temporarily expanded)
   _peekShown = false;   // the open finished and the value change has been painted
@@ -115,19 +127,26 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     clearTimeout(this._peekEndT); clearTimeout(this._barT); clearTimeout(this._peekTransT);
     this._peeking = false; this._peekStyle = null;
     this._wx?.destroy(); this._wx = null;   // the chip host is recreated on re-render
+    this._dx?.destroy(); this._dx = null;   // delving diorama host is recreated too
+    this._prevTurn = null;
     this._buildDynamic();
     this._applyPosition();
     this._wireViewportClamp();
     this._activateInteractions();
+    this._activateDelving();
     this.update();
     this._paintWeather();
+    this._paintDelving();
   }
 
   async _onClose(options) {
     clearTimeout(this._peekEndT); clearTimeout(this._barT); clearTimeout(this._peekTransT); clearTimeout(this._clampT);
     this._peeking = false;
+    this._closeDelveMenu();
     this._wx?.destroy();
     this._wx = null;
+    this._dx?.destroy();
+    this._dx = null;
     if (this._onViewportResize) window.removeEventListener("resize", this._onViewportResize);
     if (this._resizeRAF) { cancelAnimationFrame(this._resizeRAF); this._resizeRAF = null; }
     return super._onClose(options);
@@ -151,7 +170,9 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const scrim = this.element.querySelector("[data-wxscrim]");
     const bar = this.element.querySelector("[data-bar]");
 
-    const enabled = WeatherStore.enabled && WeatherStore.configured;
+    // While delving is live the featured-resource diorama owns the bar, so the
+    // weather chip + full-bar effect step aside (the delving paint repaints them).
+    const enabled = WeatherStore.enabled && WeatherStore.configured && !DelvingStore.active;
     if (!enabled) {
       cell?.classList.add("hidden");
       host?.classList.add("off");
@@ -213,6 +234,223 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
   async _onOpenWeather() {
     const { WeatherHud } = await import("./weather-hud.js");
     await WeatherHud.open();
+  }
+
+  /* ------------------------------ delving ------------------------------ */
+
+  _mk(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+
+  /** Wire the (static) delving controls once. Handlers read the live featured id
+   *  at click time so re-featuring never leaves a stale binding. */
+  _activateDelving() {
+    const root = this.element;
+    const featId = () => DelvingStore.data.featuredId;
+    const dice = root.querySelector("[data-dxdice]");
+    if (dice) {
+      dice.addEventListener("click", ev => { ev.stopPropagation(); if (game.user.isGM) DelvingStore.editDice(featId(), +1); });
+      dice.addEventListener("contextmenu", ev => { ev.preventDefault(); ev.stopPropagation(); if (game.user.isGM) DelvingStore.editDice(featId(), -1); });
+    }
+    root.querySelector("[data-dxstageless]")?.addEventListener("click", ev => { ev.stopPropagation(); if (game.user.isGM) DelvingStore.stepStage(featId(), -1); });
+    root.querySelector("[data-dxstagemore]")?.addEventListener("click", ev => { ev.stopPropagation(); if (game.user.isGM) DelvingStore.stepStage(featId(), +1); });
+    root.querySelector("[data-dxfeatured]")?.addEventListener("contextmenu", ev => {
+      if (!game.user.isGM) return;
+      ev.preventDefault();
+      this._openDelveMenu(ev, DelvingStore.featured());
+    });
+    // Right-click the Pass-Turn dock button rewinds a turn (mirrors the step buttons).
+    root.querySelector("[data-passbtn]")?.addEventListener("contextmenu", ev => {
+      ev.preventDefault();
+      if (game.user.isGM) DelvingStore.advanceTurn({ rewind: true });
+    });
+  }
+
+  /**
+   * Repaint the delving readout, the featured-stage diorama, and the dock state.
+   * Toggles the `.delving` class that swaps the clock/meter view for the turn +
+   * resource view. Players see the stage + atmosphere; GM-only controls are gated
+   * by the `.is-gm` class (and the dock, which is GM-only in the template).
+   */
+  _paintDelving() {
+    if (!this.rendered) return;
+    const root = this.element;
+    const hud = root.querySelector(".hud-root");
+    const bar = root.querySelector("[data-bar]");
+    const host = root.querySelector("[data-dxbar]");
+    const enabled = DelvingStore.enabled;
+    const active = enabled && DelvingStore.active;
+
+    hud?.classList.toggle("delve-enabled", enabled);
+    hud?.classList.toggle("delving", active);
+    hud?.classList.toggle("is-gm", game.user?.isGM ?? false);
+    this._updateDelveDock();
+
+    if (!active) {
+      host?.classList.add("off");
+      bar?.classList.remove("has-dx");
+      this._dx?.pause();
+      this._prevTurn = null;
+      return;
+    }
+
+    const data = DelvingStore.data;
+    const tn = root.querySelector("[data-dxturn]");
+    if (tn) {
+      tn.textContent = String(data.turnsElapsed);
+      if (this._prevTurn !== null && data.turnsElapsed !== this._prevTurn) {
+        tn.classList.remove("tick"); void tn.offsetWidth; tn.classList.add("tick");
+      }
+    }
+    this._prevTurn = data.turnsElapsed;
+    this._setText("[data-dxturnlbl]", DelvingStore.turn.label);
+
+    const feat = DelvingStore.featured(data);
+    const stage = feat?.stages?.[feat.stageIndex] ?? null;
+    const fx = stage?.effect ?? null;
+    const cell = root.querySelector("[data-delvingcell]");
+
+    if (feat && stage) {
+      this._setText("[data-dxstage]", stage.name ?? "");
+      const ico = root.querySelector("[data-dxicon]");
+      if (ico) ico.className = feat.icon || "fa-solid fa-hourglass-half";
+      this._setText("[data-dxcur]", String(feat.current));
+      this._setText("[data-dxsize]", "d" + (stage.size ?? 6));
+      // Stage name + atmosphere are always public, but the dice count is gated by
+      // the resource's player-visibility flag (a hidden "corruption" featured by
+      // the GM still sets the mood without leaking the number to players).
+      const hideCount = !(game.user?.isGM ?? false) && feat.visibleToPlayers === false;
+      const dice = root.querySelector("[data-dxdice]");
+      if (dice) { dice.style.display = hideCount ? "none" : ""; dice.classList.toggle("empty", feat.current <= 0); }
+      if (cell && fx) {
+        cell.style.setProperty("--dxtint", fx.tintParticle ?? "#ff9a3c");
+        cell.style.setProperty("--dxglow", fx.tintGlow ?? "#ffd27a");
+        cell.classList.toggle("ominous", !!fx.ominous);
+        // dread intensifies as the resource degrades toward its worst stage
+        const frac = feat.stages.length > 1 ? feat.stageIndex / (feat.stages.length - 1) : 0;
+        cell.style.setProperty("--dxstage", frac.toFixed(3));
+      }
+      root.querySelector("[data-dxstageless]")?.toggleAttribute("disabled", feat.stageIndex <= 0);
+      root.querySelector("[data-dxstagemore]")?.toggleAttribute("disabled", feat.stageIndex >= feat.stages.length - 1);
+    }
+
+    this._buildDelveChips(data, feat);
+
+    if (host) {
+      if (document.hidden || !fx) { host.classList.add("off"); bar?.classList.remove("has-dx"); this._dx?.pause(); }
+      else {
+        host.classList.remove("off");
+        bar?.classList.add("has-dx");
+        if (!this._dx) this._dx = WeatherEffect.create(host, fx); else this._dx.setSpec(fx);
+        this._dx?.resize(); this._dx?.resume();
+        if (bar) {
+          bar.style.setProperty("--glct-weather-tint", fx.tintParticle ?? "#ff9a3c");
+          bar.style.setProperty("--glct-weather-glow", fx.tintGlow ?? "#ffd27a");
+          bar.classList.toggle("wx-ominous", !!fx.ominous);
+        }
+      }
+    }
+  }
+
+  /** Compact chips for the non-featured resources the viewer may see. */
+  _buildDelveChips(data, feat) {
+    const host = this.element.querySelector("[data-dxchips]");
+    if (!host) return;
+    const list = DelvingStore.visibleResources(data).filter(r => r.id !== feat?.id);
+    host.replaceChildren(...list.map(r => {
+      const stage = r.stages?.[r.stageIndex] ?? {};
+      const fx = stage.effect ?? {};
+      const chip = this._mk("button", "dx-chip" + (fx.ominous ? " ominous" : ""));
+      chip.type = "button";
+      chip.dataset.id = r.id;
+      chip.style.setProperty("--dxtint", fx.tintParticle ?? "#9aa3b0");
+      chip.style.setProperty("--dxglow", fx.tintGlow ?? "#9aa3b0");
+      chip.title = `${r.name ?? ""} · ${stage.name ?? ""}`;
+      chip.append(this._mk("i", r.icon || "fa-solid fa-hourglass-half"), this._mk("b", null, String(r.current)));
+      chip.addEventListener("click", ev => { ev.stopPropagation(); if (game.user.isGM) DelvingStore.setFeatured(r.id); });
+      chip.addEventListener("contextmenu", ev => { ev.preventDefault(); if (game.user.isGM) this._openDelveMenu(ev, r); });
+      return chip;
+    }));
+  }
+
+  _updateDelveDock() {
+    const root = this.element;
+    const active = DelvingStore.active;
+    root.querySelector("[data-delvebtn]")?.classList.toggle("on", active);
+    this._setText("[data-delvetext]", game.i18n.localize(active ? "GLCT.delving.controls.exit" : "GLCT.delving.controls.enter"));
+    this._setText("[data-passlbl]", game.i18n.format("GLCT.delving.controls.pass", { label: DelvingStore.turn.label }));
+  }
+
+  /* ---- delving resource context menu (GM) ---- */
+
+  _delveMenuItems(r) {
+    const L = k => game.i18n.localize(k);
+    const items = [];
+    if (r.id !== DelvingStore.data.featuredId) items.push({ icon: "fa-star", label: L("GLCT.delving.ctx.feature"), run: () => DelvingStore.setFeatured(r.id) });
+    items.push({ icon: "fa-arrows-rotate", label: L("GLCT.delving.ctx.refill"), run: () => DelvingStore.refill(r.id) });
+    items.push({ icon: "fa-angles-down", label: L("GLCT.delving.ctx.nextStage"), run: () => DelvingStore.stepStage(r.id, +1) });
+    items.push({ icon: "fa-angles-up", label: L("GLCT.delving.ctx.prevStage"), run: () => DelvingStore.stepStage(r.id, -1) });
+    items.push({ sep: true });
+    items.push({ icon: r.visibleToPlayers ? "fa-eye-slash" : "fa-eye", label: L(r.visibleToPlayers ? "GLCT.delving.ctx.hide" : "GLCT.delving.ctx.show"), run: () => DelvingStore.setVisibility(r.id, !r.visibleToPlayers) });
+    items.push({ icon: "fa-gear", label: L("GLCT.delving.ctx.edit"), run: () => this._onOpenDelving() });
+    return items;
+  }
+
+  _openDelveMenu(ev, r) {
+    if (!r || !game.user.isGM) return;
+    this._closeDelveMenu();
+    const menu = this._mk("div", "glct trk-ctx glct-delve-ctx");
+    for (const it of this._delveMenuItems(r)) {
+      if (it.sep) { menu.appendChild(this._mk("div", "ctx-sep")); continue; }
+      const b = this._mk("button", "ctx-item" + (it.danger ? " danger" : ""));
+      b.appendChild(this._mk("i", "fa-solid " + it.icon));
+      b.appendChild(this._mk("span", null, it.label));
+      b.addEventListener("click", e => { e.stopPropagation(); this._closeDelveMenu(); it.run(); });
+      menu.appendChild(b);
+    }
+    menu.style.position = "fixed";
+    menu.style.zIndex = "100";
+    menu.style.visibility = "hidden";
+    document.body.appendChild(menu);
+    const mw = menu.offsetWidth, mh = menu.offsetHeight;
+    menu.style.left = `${Math.max(6, Math.min(ev.clientX, window.innerWidth - mw - 6))}px`;
+    menu.style.top = `${Math.max(6, Math.min(ev.clientY, window.innerHeight - mh - 6))}px`;
+    menu.style.visibility = "";
+    requestAnimationFrame(() => menu.classList.add("show"));
+    this._delveCtx = menu;
+
+    const onDown = e => { if (!menu.contains(e.target)) this._closeDelveMenu(); };
+    const onKey = e => { if (e.key === "Escape") { e.preventDefault(); this._closeDelveMenu(); } };
+    setTimeout(() => {
+      if (!this._delveCtx) return;
+      window.addEventListener("pointerdown", onDown, true);
+      window.addEventListener("contextmenu", onDown, true);
+      window.addEventListener("keydown", onKey, true);
+    }, 0);
+    this._delveCtxOff = () => {
+      window.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("contextmenu", onDown, true);
+      window.removeEventListener("keydown", onKey, true);
+    };
+  }
+
+  _closeDelveMenu() {
+    this._delveCtxOff?.(); this._delveCtxOff = null;
+    this._delveCtx?.remove(); this._delveCtx = null;
+  }
+
+  async _onPassTurn() { if (!game.user.isGM) return; await DelvingStore.advanceTurn(); }
+  async _onToggleDelving() { if (!game.user.isGM) return; await DelvingStore.setActive(!DelvingStore.active); }
+  async _onResetDelve() {
+    if (!game.user.isGM) return;
+    const ok = await DialogV2.confirm({
+      window: { title: game.i18n.localize("GLCT.delving.controls.reset") },
+      content: `<p>${game.i18n.localize("GLCT.delving.confirmReset")}</p>`
+    });
+    if (ok) await DelvingStore.resetDelve();
+  }
+  async _onOpenDelving() {
+    if (!game.user.isGM) return;
+    const { DelvingEditor } = await import("./delving-editor.js");
+    DelvingEditor.show();
   }
 
   /* --------------------------- DOM construction --------------------------- */
