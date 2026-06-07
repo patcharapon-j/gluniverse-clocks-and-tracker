@@ -350,15 +350,19 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     const feat = DelvingStore.featured(data);
     const stage = feat?.stages?.[feat.stageIndex] ?? null;
     const fx = stage?.effect ?? null;
+    const ended = feat ? DelvingStore.isEnded(feat) : false;
+    // The end of the line gets its own, intensified "terminal" atmosphere rather
+    // than just lingering the final stage's effect.
+    const efx = ended ? DelvingStore.terminalEffect(feat) : fx;
     const cell = root.querySelector("[data-delvingcell]");
 
     if (feat && stage) {
-      const ended = DelvingStore.isEnded(feat);
+      // The depleted end keeps the resource's own (worst-stage) name, but presents
+      // it as a distinct terminal state: a skull, a crossed-out count, and the
+      // intensified diorama + edge-glow below.
       this._setText("[data-dxstage]", stage.name ?? "");
       const ico = root.querySelector("[data-dxicon]");
-      if (ico) ico.className = feat.icon || "fa-solid fa-hourglass-half";
-      // At the end of the line (worst stage, empty) show a crossed-out terminal
-      // marker instead of a live "0d6"; otherwise the count + die size.
+      if (ico) ico.className = ended ? "fa-solid fa-skull" : (feat.icon || "fa-solid fa-hourglass-half");
       if (ended) { this._setText("[data-dxcur]", "✕"); this._setText("[data-dxsize]", ""); }
       else { this._setText("[data-dxcur]", String(feat.current)); this._setText("[data-dxsize]", "d" + (stage.size ?? 6)); }
       root.querySelector("[data-dxfeatured] .dx-stagebadge")?.classList.toggle("ended", ended);
@@ -368,13 +372,15 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
       const hideCount = !(game.user?.isGM ?? false) && feat.visibleToPlayers === false;
       const dice = root.querySelector("[data-dxdice]");
       if (dice) { dice.style.display = hideCount ? "none" : ""; dice.classList.toggle("empty", feat.current <= 0 && !ended); dice.classList.toggle("ended", ended); }
-      if (cell && fx) {
-        cell.style.setProperty("--dxtint", fx.tintParticle ?? "#ff9a3c");
-        cell.style.setProperty("--dxglow", fx.tintGlow ?? "#ffd27a");
-        cell.classList.toggle("ominous", !!fx.ominous);
-        // dread intensifies as the resource degrades toward its worst stage
+      if (cell && efx) {
+        cell.style.setProperty("--dxtint", efx.tintParticle ?? "#ff9a3c");
+        cell.style.setProperty("--dxglow", efx.tintGlow ?? "#ffd27a");
+        cell.classList.toggle("ominous", !!efx.ominous);
+        cell.classList.toggle("terminal", ended);
+        // dread intensifies as the resource degrades toward its worst stage; the
+        // ended state pins it past the worst.
         const frac = feat.stages.length > 1 ? feat.stageIndex / (feat.stages.length - 1) : 0;
-        cell.style.setProperty("--dxstage", frac.toFixed(3));
+        cell.style.setProperty("--dxstage", ended ? "1.000" : frac.toFixed(3));
       }
       root.querySelector("[data-dxstageless]")?.toggleAttribute("disabled", feat.stageIndex <= 0);
       root.querySelector("[data-dxstagemore]")?.toggleAttribute("disabled", feat.stageIndex >= feat.stages.length - 1);
@@ -383,19 +389,21 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._buildDelveChips(data, feat);
 
     if (host) {
-      if (document.hidden || !fx) { host.classList.add("off"); scrim?.classList.add("off"); bar?.classList.remove("has-dx"); this._dx?.pause(); }
+      if (document.hidden || !efx) { host.classList.add("off"); scrim?.classList.add("off"); bar?.classList.remove("has-dx"); bar?.classList.remove("dx-terminal"); this._dx?.pause(); }
       else {
         host.classList.remove("off");
         scrim?.classList.remove("off");
         bar?.classList.add("has-dx");
-        if (!this._dx) this._dx = WeatherEffect.create(host, fx); else this._dx.setSpec(fx);
+        if (!this._dx) this._dx = WeatherEffect.create(host, efx); else this._dx.setSpec(efx);
         this._dx?.resize(); this._dx?.resume();
         if (bar) {
           // delve-scoped vars so the right-edge wash never clobbers weather's
           // left-edge tint (both can be live at once).
-          bar.style.setProperty("--glct-delve-tint", fx.tintParticle ?? "#ff9a3c");
-          bar.style.setProperty("--glct-delve-glow", fx.tintGlow ?? "#ffd27a");
-          bar.classList.toggle("dx-ominous", !!fx.ominous);
+          bar.style.setProperty("--glct-delve-tint", efx.tintParticle ?? "#ff9a3c");
+          bar.style.setProperty("--glct-delve-glow", efx.tintGlow ?? "#ffd27a");
+          bar.classList.toggle("dx-ominous", !!efx.ominous);
+          // the depleted end cranks the liquid-glass edge refraction + glow
+          bar.classList.toggle("dx-terminal", ended);
         }
       }
     }

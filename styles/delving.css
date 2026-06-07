@@ -57,6 +57,30 @@
   mask-image:linear-gradient(270deg,#000 0,#000 4%,transparent 26%,transparent 100%);
 }
 
+/* ---- the depleted END: the worst it gets. The liquid-glass edge refraction on
+   the right rim is pushed much harder — a brighter inset ring, a thicker bloom
+   feathering further in, and a slow pulse — so a finished pool reads as a serious,
+   glowing terminal state. Applies on top of .has-dx (defined later, so it wins). */
+#glct-hud .bar.dx-terminal .bar-dx{
+  background:linear-gradient(260deg,
+    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 46%,transparent) 0%,
+    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 26%,transparent) 14%,
+    color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 10%,transparent) 28%,
+    transparent 46%);
+}
+#glct-hud .bar.dx-terminal .bar-dx-scrim{
+  box-shadow:
+    inset 0 0 0 1.5px color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 85%,#fff),
+    inset 0 1px 0 color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 80%,#fff),
+    inset 0 0 22px -1px color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 62%,transparent),
+    inset -22px 0 40px -16px color-mix(in srgb,var(--glct-delve-glow,#ffd27a) 85%,transparent),
+    inset -12px 0 26px -12px color-mix(in srgb,var(--glct-delve-tint,#ff9a3c) 95%,transparent);
+  -webkit-mask-image:linear-gradient(270deg,#000 0,#000 6%,transparent 38%,transparent 100%);
+  mask-image:linear-gradient(270deg,#000 0,#000 6%,transparent 38%,transparent 100%);
+  animation:glctDxTerminalPulse 2.4s ease-in-out infinite;
+}
+@keyframes glctDxTerminalPulse{ 0%,100%{ filter:brightness(1) saturate(1); } 50%{ filter:brightness(1.4) saturate(1.25); } }
+
 /* ---- mode swap: hide the clock/meter/shift cells, reveal the delving cell. The
    date cell (with the weather chip + left-edge weather wash) stays put, so weather
    and delving show side by side. ---- */
@@ -113,11 +137,16 @@
 #glct-hud .dx-dice b{ font-size:19px; font-weight:800; color:#fff; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,.7); }
 #glct-hud .dx-dice i{ font-style:normal; font-size:10.5px; opacity:.65; }
 #glct-hud .dx-dice.empty b{ color:#ff6b6b; text-shadow:0 0 8px rgba(255,80,80,.5); }
-/* depleted at the worst stage — the delve pool has ended (no more dice). A muted,
-   crossed-out terminal marker instead of a live count. */
+/* depleted at the worst stage — the delve pool has ENDED (no more dice). Its own
+   terminal presentation: a skull, a crossed-out marker, and a red, glowing name. */
 #glct-hud .dx-dice.ended{ cursor:default; }
-#glct-hud .dx-dice.ended b{ font-size:15px; color:#9aa0ad; text-shadow:none; }
-#glct-hud .dx-stagebadge.ended .dx-stagename{ opacity:.7; text-decoration:line-through; text-decoration-color:rgba(255,90,90,.6); }
+#glct-hud .dx-dice.ended b{ font-size:16px; color:#ff5a5a; text-shadow:0 0 9px rgba(255,70,70,.65); }
+#glct-hud .dx-stagebadge.ended i{ color:#ff5a5a; filter:drop-shadow(0 0 5px rgba(255,70,70,.7)); }
+#glct-hud .dx-stagebadge.ended .dx-stagename{
+  color:#ff8a8a; font-weight:800; letter-spacing:.02em; text-shadow:0 0 9px rgba(255,70,70,.55);
+  animation:glctDxEndedName 2.4s ease-in-out infinite;
+}
+@keyframes glctDxEndedName{ 0%,100%{ opacity:.82; } 50%{ opacity:1; } }
 
 /* players don't get the GM steppers / dice editing */
 #glct-hud .hud-root:not(.is-gm) .dx-stagestep{ display:none; }
@@ -302,3 +331,9 @@
 .glct-delveditor .dx-ed-omin{ display:inline-flex; align-items:center; gap:3px; }
 .glct-delveditor .dx-ed-addstage{ margin-top:6px; font-size:12px; }
 .glct-delveditor .dx-ed-foot{ display:flex; align-items:center; gap:8px; }
+
+/* Honour reduced-motion: drop the terminal/ended pulses (keep the static glow). */
+@media (prefers-reduced-motion: reduce){
+  #glct-hud .bar.dx-terminal .bar-dx-scrim{ animation:none; }
+  #glct-hud .dx-stagebadge.ended .dx-stagename{ animation:none; opacity:1; }
+}

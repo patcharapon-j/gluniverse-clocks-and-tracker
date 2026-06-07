@@ -101,6 +101,18 @@ export class DelvingStore {
     return int(r.stageIndex) >= last && int(r.current) <= 0;
   }
 
+  /**
+   * The atmosphere spec for a resource's *ended* state — its own, worst-of-all
+   * diorama. Derived from the final stage's effect but pushed to the extreme (full
+   * intensity, forced ominous), so the depleted end reads as a distinct, more
+   * dangerous animation than the (still-playable) final stage.
+   */
+  static terminalEffect(r) {
+    const stages = r?.stages ?? [];
+    const e = stages[stages.length - 1]?.effect ?? {};
+    return { ...e, intensity: 1, ominous: true };
+  }
+
   /** The live effect spec of a resource's current stage (feeds the EffectField). */
   static stageEffect(resource) {
     const st = resource?.stages?.[resource.stageIndex] ?? resource?.stages?.[0] ?? null;
