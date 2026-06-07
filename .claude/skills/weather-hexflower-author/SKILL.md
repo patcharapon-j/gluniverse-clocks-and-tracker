@@ -185,7 +185,11 @@ intensity × drift. Fantasy weather is just an archetype + tint — no new art.
 }
 ```
 
-### Archetypes (the only valid `archetype` values)
+### Archetypes (the only valid `archetype` values — 21)
+
+The first nine are the core weather motions; the rest are an expanded shared set
+(also used by Delving Mode) for fantasy/eldritch conditions. **Any** of the 21 is
+valid here.
 
 | Archetype | Motion | Good for (via tint) |
 | --- | --- | --- |
@@ -198,9 +202,22 @@ intensity × drift. Fantasy weather is just an archetype + tint — no new art.
 | `embers` | rising glowing sparks (additive) | **ember storm**, cinders, firestorm |
 | `gusts` | horizontal driven streaks | wind, **sandstorm** (tan), driving rain |
 | `shards` | fast hard falling chips | hail, sleet, debris, **meteor shower** |
+| `shadow` | dark soft masses pulsing at the edges | gloom, closing dark, dread |
+| `creep` | spreading rot rising from below | blight, corruption, encroaching mould |
+| `spores` | glowing spores hanging in the air | fungal blooms, pollen storms |
+| `miasma` | heavy sickly low haze | poison fog, plague wind, swamp gas |
+| `static` | fast flickering speckle | unreality, signal-storm, wild magic |
+| `swarm` | erratic drifting swarm | locusts, bats, biting insects |
+| `drips` | slow oozing drips | wet caverns, rot, weeping skies |
+| `bubbles` | rising bubbles | flooding, brine, geothermal vents |
+| `runes` | glowing glyph-motes pulsing in place | arcane storms, ley surges |
+| `void` | distant twinkling void / stars | aurora, starfall, eldritch night |
+| `dust` | fine grains drifting sideways | dust storms, dry decay, drought haze |
+| `ripples` | rising water lines | flood tides, rising water |
 
 `drift` values: `fall, rise, left, right, still`. (Blend mode is automatic:
-additive for `flashes`/`motes`/`embers`, normal otherwise.)
+additive for the glowing archetypes — `flashes`/`motes`/`embers`/`spores`/
+`runes`/`void` — normal otherwise.)
 
 ### Library "kinds" (handy presets — set `kind` + copy these defaults)
 
