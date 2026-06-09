@@ -23,14 +23,31 @@ const L = (k) => game.i18n.localize(k);
 const TAB = "glct-trackers";
 
 export class TrackerSheet {
-  /** Wire the character-sheet render hook (no-op on non-PF2e systems).
-   *  We anchor on the core `renderApplicationV2` hook — fired for every AppV2
-   *  window regardless of the sheet's concrete class name, which PF2e has
-   *  renamed across versions — and filter down to owned PF2e character sheets.
-   *  One hook avoids the double-injection two class hooks would cause. */
+  /** Wire the character-sheet render hooks (no-op on non-PF2e systems).
+   *
+   *  Foundry fires a render hook under the *leaf* sheet class name
+   *  (`renderCharacterSheetPF2e`), not under a base class, and PF2e — plus any
+   *  alternate sheet module — has renamed that class across versions. So rather
+   *  than hard-code a name, we read the character-sheet classes actually
+   *  registered in this world (at `ready`, once every system/module has
+   *  registered theirs) and hook each by its real name, with a few static
+   *  fallbacks. `_inject` is idempotent, so if several hooks fire it's harmless. */
   static register() {
     if (game.system?.id !== "pf2e") return;
-    Hooks.on("renderApplicationV2", (app, html) => this._onRender(app, html));
+    Hooks.once("ready", () => this._wireHooks());
+  }
+
+  static _wireHooks() {
+    const names = new Set(["CharacterSheetPF2e", "ActorSheetPF2e", "ApplicationV2", "ActorSheet", "ActorSheetV2"]);
+    try {
+      const reg = CONFIG?.Actor?.sheetClasses?.character ?? {};
+      for (const entry of Object.values(reg)) {
+        const n = entry?.cls?.name;
+        if (n) names.add(n);
+      }
+    } catch (err) { console.warn(`${MODULE_ID} | could not read character sheet classes`, err); }
+    for (const n of names) Hooks.on(`render${n}`, (app, html) => this._onRender(app, html));
+    console.debug(`${MODULE_ID} | sheet-tracker render hooks:`, [...names]);
   }
 
   /** Is the feature switched on for this world? */
