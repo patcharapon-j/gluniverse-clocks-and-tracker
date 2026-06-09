@@ -36,6 +36,7 @@ export const SETTINGS = {
   trackerHudPosition: "trackerHudPosition", // Object {top,left} (client)
   trackerHudHidden: "trackerHudHidden",     // Boolean (client): dock hidden on this screen
   trackerHudCompact: "trackerHudCompact",   // Boolean (client): dock collapsed to playing-card minis
+  sheetTrackersEnabled: "sheetTrackersEnabled", // Boolean (world): PF2e per-PC private trackers tab (default off)
 
   // ---- Weather (Hex Flower Game Engine) ----
   weatherEnabled: "weatherEnabled",                   // Boolean (world): master opt-in (default false)

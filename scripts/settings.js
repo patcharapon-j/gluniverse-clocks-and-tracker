@@ -5,6 +5,7 @@ import { PRESETS, DEFAULT_PRESET } from "./calendar/presets.js";
 import { applyCalendar } from "./calendar/calendar.js";
 import { GlctHud } from "./apps/hud.js";
 import { TrackerHud } from "./apps/tracker-hud.js";
+import { TrackerSheet } from "./apps/tracker-sheet.js";
 import { registerCalendarMenu } from "./apps/calendar-editor.js";
 import { registerShiftNamesMenu } from "./apps/shift-names-editor.js";
 import { registerWeatherMenu } from "./apps/weather-editor.js";
@@ -104,6 +105,17 @@ export function registerSettings() {
 
   game.settings.register(MODULE_ID, SETTINGS.trackerHudCompact, {
     scope: "client", config: false, type: Boolean, default: false
+  });
+
+  // PF2e per-PC private trackers: a "Trackers" tab on the character sheet whose
+  // contents live in actor flags, private to the owner + GM. Shown in settings
+  // only on PF2e worlds (it no-ops elsewhere). Flipping it re-renders open
+  // character sheets so the tab appears/vanishes live.
+  game.settings.register(MODULE_ID, SETTINGS.sheetTrackersEnabled, {
+    name: "GLCT.tracker.settings.sheetTab.name",
+    hint: "GLCT.tracker.settings.sheetTab.hint",
+    scope: "world", config: game.system?.id === "pf2e", type: Boolean, default: false,
+    onChange: () => TrackerSheet.refreshAll()
   });
 
   /* ---------------------------- Weather ---------------------------- */

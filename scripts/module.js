@@ -7,6 +7,7 @@ import { TimeEngine } from "./engine.js";
 import { GlctHud } from "./apps/hud.js";
 import { TrackerHud } from "./apps/tracker-hud.js";
 import { TrackerStore } from "./trackers/trackers.js";
+import { TrackerSheet } from "./apps/tracker-sheet.js";
 import { WeatherHud } from "./apps/weather-hud.js";
 import { WeatherEngine } from "./weather/engine.js";
 import { WeatherStore } from "./weather/weather-store.js";
@@ -52,18 +53,30 @@ function ensureDelvingStyles() {
   document.head.appendChild(link);
 }
 
+/** Same guard for the PC-sheet trackers stylesheet (latest manifest addition). */
+function ensureSheetTrackerStyles() {
+  if (document.querySelector('link[href*="styles/tracker-sheet.css"]')) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `modules/${MODULE_ID}/styles/tracker-sheet.css`;
+  document.head.appendChild(link);
+}
+
 Hooks.once("init", () => {
   registerSettings();
   ensureWeatherStyles();
   ensureSupportStyles();
   ensureDelvingStyles();
+  ensureSheetTrackerStyles();
+  // PF2e per-PC private trackers: wire the character-sheet tab (no-op off-PF2e).
+  TrackerSheet.register();
   // Install the active calendar before GameTime is constructed.
   applyCalendar();
   registerKeybindings();
 
   // Public API for macros / other modules.
   const mod = game.modules.get(MODULE_ID);
-  if (mod) mod.api = { TimeEngine, GlctHud, TrackerHud, TrackerStore, WeatherEngine, WeatherStore, WeatherHud, SupportHud, SupportStore, DelvingStore, HOOKS };
+  if (mod) mod.api = { TimeEngine, GlctHud, TrackerHud, TrackerStore, TrackerSheet, WeatherEngine, WeatherStore, WeatherHud, SupportHud, SupportStore, DelvingStore, HOOKS };
 });
 
 Hooks.once("ready", async () => {

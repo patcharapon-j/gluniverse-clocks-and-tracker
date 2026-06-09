@@ -155,6 +155,9 @@
   "GLCT.tracker.field.label": "Label (optional)",
   "GLCT.tracker.field.visible": "Visible to players",
 
+  "GLCT.tracker.settings.sheetTab.name": "Private trackers on PC sheets (PF2e)",
+  "GLCT.tracker.settings.sheetTab.hint": "Adds a “Trackers” tab to each PF2e character sheet for trackers private to that PC — visible and editable only by the actor's owner(s) and the GM, separate from the shared tracker dock.",
+
   "GLCT.keybindings.toggleHud": "Toggle HUD",
   "GLCT.keybindings.toggleTracker": "Toggle tracker dock",
   "GLCT.keybindings.toggleWeather": "Toggle weather flower",
