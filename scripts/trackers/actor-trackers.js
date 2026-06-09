@@ -50,9 +50,11 @@ export class ActorTrackerStore {
 
   async save(trackers) {
     if (!this.canWrite) return;
-    await this.actor.setFlag(MODULE_ID, FLAG, trackers);
-    // setFlag updates the actor → Foundry re-renders the open sheet → the tab
-    // rebuilds from the new flags, so no manual refresh broadcast is needed.
+    // {render:false} suppresses the heavy full sheet re-render this write would
+    // otherwise trigger; the open Trackers tab repaints itself in place off the
+    // updateActor hook instead (see TrackerSheet._repaint), so value changes
+    // animate. The update still persists + broadcasts normally.
+    await this.actor.update({ [`flags.${MODULE_ID}.${FLAG}`]: trackers }, { render: false });
   }
 
   /** Build a fresh tracker of `type`, ordered after this actor's existing ones. */

@@ -48,6 +48,20 @@ export class TrackerSheet {
     } catch (err) { console.warn(`${MODULE_ID} | could not read character sheet classes`, err); }
     for (const n of names) Hooks.on(`render${n}`, (app, html) => this._onRender(app, html));
     console.debug(`${MODULE_ID} | sheet-tracker render hooks:`, [...names]);
+
+    // Tracker writes go in with {render:false} (no full sheet redraw); this
+    // repaints the open tab in place instead, so value changes animate. Fires on
+    // the writer's client and — for cross-client edits — wherever the sheet is
+    // open, keeping every viewer's tab live without a heavy re-render.
+    Hooks.on("updateActor", (actor, changes) => {
+      if (!this.enabled) return;
+      // Touched our flags? (catches both a set and a `-=trackers` deletion,
+      // whether the diff arrives expanded or already flattened.)
+      const flat = foundry.utils.flattenObject(changes ?? {});
+      if (!Object.keys(flat).some(k => k.startsWith(`flags.${MODULE_ID}`))) return;
+      try { this._repaint(actor); }
+      catch (err) { console.warn(`${MODULE_ID} | sheet trackers repaint failed`, err); }
+    });
   }
 
   /** Is the feature switched on for this world? */
@@ -124,28 +138,90 @@ export class TrackerSheet {
       </div>`;
     body.appendChild(section);
 
-    this._mountRows(section, store);
+    this._rebuildRows(section, store);
+
+    // Add button — wired once per injected section (the header survives row
+    // rebuilds, so it must not be re-wired in _rebuildRows).
+    if (store.canWrite) {
+      section.querySelector("[data-add]")?.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        import("./tracker-editor.js").then(({ TrackerEditor }) => TrackerEditor.create(store));
+      });
+    }
+
     this._wireTabs(nav, body, actor.id);
 
     // Restore our tab if it was the active one before this re-render.
     if (this._activeActors.get(actor.id)) this._setActive(nav, body, TAB);
   }
 
-  /** Build + paint every row, plus the add button + empty hint. */
-  static _mountRows(section, store) {
+  /* ------------------------------ row mount + in-place repaint ------------------------------ */
+
+  // actorId -> { section, rows: Map<id,{el,paint,vsig}>, sig: string[] }. Lets a
+  // tracker change repaint the existing rows in place (animating) rather than
+  // forcing a full sheet re-render.
+  static _mounts = new Map();
+
+  /** (Re)build every row into the section's host and register the mount. */
+  static _rebuildRows(section, store) {
     const host = section.querySelector("[data-rows]");
     const list = store.visible();
     host.replaceChildren();
-    for (const t of list) host.appendChild(this._buildRow(store, t));
+    const rows = new Map();
+    for (const t of list) {
+      const rec = this._buildRow(store, t);
+      host.appendChild(rec.el);
+      rec.paint(t);                                    // initial paint (no animation)
+      rec.vsig = this._valueSig(t);
+      rows.set(t.id, rec);
+    }
+    this._paintMeta(section, list);
+    this._mounts.set(store.actor.id, { section, rows, sig: list.map(t => this._structuralSig(t)) });
+  }
 
+  /** Header count + empty-hint visibility. */
+  static _paintMeta(section, list) {
     section.querySelector("[data-count]")?.replaceChildren(document.createTextNode(String(list.length)));
     const empty = section.querySelector("[data-empty]");
     if (empty) empty.style.display = list.length ? "none" : "";
+  }
 
-    section.querySelector("[data-add]")?.addEventListener("click", (ev) => {
-      ev.preventDefault();
-      import("./tracker-editor.js").then(({ TrackerEditor }) => TrackerEditor.create(store));
-    });
+  /** Fields that change a row's shape (a rebuild); a value-only change animates. */
+  static _structuralSig(t) {
+    return [t.id, t.order, t.type, t.name, t.title, t.subtitle, t.label,
+      t.slices, t.boxes, t.size, t.count, t.discard, t.playerRoll, t.bad].join("|");
+  }
+
+  static _valueSig(t) {
+    if (t.type === "pool") return String(Math.trunc(Number(t.current) || 0));
+    return String(Math.trunc(Number(t.value) || 0));
+  }
+
+  /**
+   * Repaint a mounted tab in place from current flag state — the smooth path
+   * that replaces a full sheet re-render. A structural change rebuilds the rows;
+   * a value change animates the existing row (reel/pie/box motion) like the dock.
+   */
+  static _repaint(actor) {
+    const mount = this._mounts.get(actor.id);
+    if (!mount) return;
+    if (!mount.section.isConnected) { this._mounts.delete(actor.id); return; }
+
+    const store = new ActorTrackerStore(actor);
+    const list = store.visible();
+    const sig = list.map(t => this._structuralSig(t));
+    const same = sig.length === mount.sig.length && sig.every((s, i) => s === mount.sig[i]);
+    if (!same) { this._rebuildRows(mount.section, store); return; }
+
+    for (const t of list) {
+      const rec = mount.rows.get(t.id);
+      if (!rec) continue;
+      const vsig = this._valueSig(t);
+      if (rec.vsig === vsig) continue;                 // nothing changed → no needless repaint
+      rec.paint(t);
+      rec.vsig = vsig;
+    }
+    this._paintMeta(mount.section, list);
   }
 
   /** One tracker row: shared body visuals + sheet-side interactions. */
@@ -188,8 +264,10 @@ export class TrackerSheet {
 
     this._wireValue(store, row, t.type, body.content, body.stepEls ?? [], canWrite);
 
-    body.paint(t);                                     // initial render (no animation)
-    return row;
+    // Return a record (not yet painted): the caller paints once on mount, and
+    // repaints in place on later changes so value animations replay — exactly
+    // like the dock, instead of rebuilding the row from scratch each time.
+    return { el: row, paint: body.paint, vsig: undefined };
   }
 
   /** Left-click steps up / rolls; right-click steps down / resets (owner + GM). */
