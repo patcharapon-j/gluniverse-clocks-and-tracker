@@ -20,7 +20,8 @@
     "styles/hud.css",
     "styles/weather.css",
     "styles/support.css",
-    "styles/delving.css"
+    "styles/delving.css",
+    "styles/tracker-sheet.css"
   ],
   "languages": [
     {

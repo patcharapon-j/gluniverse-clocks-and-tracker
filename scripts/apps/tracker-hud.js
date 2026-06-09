@@ -14,9 +14,9 @@
 
 import { MODULE_ID, SETTINGS } from "../const.js";
 import { TrackerStore } from "../trackers/trackers.js";
+import { TrackerRender } from "../trackers/tracker-render.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
-const NS = "http://www.w3.org/2000/svg";
 
 export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
   static instance = null;
@@ -37,7 +37,9 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static DEFAULT_OPTIONS = {
     id: "glct-tracker-hud",
-    classes: ["glct"],
+    // `glct-trk-skin` carries the shared tracker visuals (also worn by the PC
+    // sheet tab); `glct` is the module-wide theme hook.
+    classes: ["glct", "glct-trk-skin"],
     tag: "div",
     window: { frame: false, positioned: false, minimizable: false, resizable: false },
     actions: {
@@ -148,9 +150,11 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /* ------------------------------ row builders ------------------------------ */
 
-  _el(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
-  _svg(tag, attrs) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
-  _polar(cx, cy, r, deg) { const a = deg * Math.PI / 180; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
+  // Low-level DOM + body builders are shared with the per-PC sheet tab; the dock
+  // delegates to TrackerRender so both mounts produce byte-identical rows.
+  _el(...a) { return TrackerRender.el(...a); }
+  _svg(...a) { return TrackerRender.svg(...a); }
+  _polar(...a) { return TrackerRender.polar(...a); }
 
   /** Shared row shell: grip (GM) · type body · GM tools · overlay. */
   _buildRow(t) {
@@ -269,242 +273,12 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
     return { el: row, paint, paintAfterExpand, flash, cancelPop: cleanup, vsig: undefined };
   }
 
-  _buildBody(t) {
-    switch (t.type) {
-      case "point": return this._bodyPoint(t);
-      case "clock": return this._bodyClock(t);
-      case "pool": return this._bodyPool(t);
-      case "task": return this._bodyTask(t);
-      case "hazard": return this._bodyHazard(t);
-      case "separator": return this._bodySeparator(t);
-      default: return this._bodyPoint(t);
-    }
-  }
-
-  /** Read an optional point bound (min/max): blank/null stays unset (null). */
-  _bound(v) {
-    if (v === null || v === undefined || v === "") return null;
-    const n = Math.trunc(Number(v));
-    return Number.isFinite(n) ? n : null;
-  }
-
-  /* ---- POINT (slot-reel digit) ---- */
-  _bodyPoint(t) {
-    const c = this._el("div", "t-point");
-    const chev = this._el("div", "chev");
-    const nm = this._el("div", "nm", t.name ?? "");
-    const val = this._el("div", "pval");
-    const reel = this._el("div", "reeldig");
-    const maxlbl = this._el("div", "reelmax");      // faint "/max" suffix, only when a max is set
-    val.append(reel, maxlbl);
-    c.append(chev, nm, val);
-    let last = null, sig = null;
-    const paint = (tr) => {
-      nm.textContent = tr.name ?? "";
-      const lo = this._bound(tr.min), hi = this._bound(tr.max);
-      const v = Math.trunc(Number(tr.value) || 0);
-      this._renderReel(reel, v, last);
-      maxlbl.textContent = hi !== null ? `/${hi}` : "";
-      maxlbl.style.display = hi !== null ? "" : "none";
-      val.classList.toggle("at-max", hi !== null && v >= hi);
-      val.classList.toggle("at-min", lo !== null && v <= lo);
-      if (last !== null && v !== last) {
-        const dir = v > last ? "up" : "down";
-        chev.textContent = v > last ? "▲" : "▼";
-        // Clear then re-add the direction class (with a reflow between) so the
-        // float animation replays on every step — even repeats in one direction.
-        chev.className = "chev";
-        void chev.offsetWidth;
-        chev.className = "chev " + dir;
-      }
-      last = v;
-    };
-    return { content: c, paint, stepEls: [val] };
-  }
-
-  /** Render an integer as per-digit reels; animates when the digit layout is stable. */
-  _renderReel(host, value, prev) {
-    const str = String(value);
-    const layout = str.replace(/[0-9]/g, "#");          // sign/structure fingerprint
-    if (host._layout !== layout) {
-      host.replaceChildren();
-      host._wheels = [];
-      for (const ch of str) {
-        if (ch >= "0" && ch <= "9") {
-          const reel = this._el("span", "reel");
-          const strip = this._el("span", "strip");
-          for (let n = 0; n <= 9; n++) strip.appendChild(this._el("span", null, String(n)));
-          reel.appendChild(strip);
-          host.appendChild(reel);
-          host._wheels.push(strip);
-        } else {
-          host.appendChild(this._el("span", "sign", ch));
-        }
-      }
-      host._layout = layout;
-      // set without transition on first lay-out
-      host._wheels.forEach((strip, i) => {
-        strip.style.transition = "none";
-        strip.style.transform = `translateY(-${Number(str.replace(/[^0-9]/g, "")[i]) * 10}%)`;
-      });
-      void host.offsetWidth;
-      host._wheels.forEach(strip => strip.style.transition = "");
-      return;
-    }
-    const digits = str.replace(/[^0-9]/g, "");
-    host._wheels.forEach((strip, i) => {
-      strip.style.transform = `translateY(-${Number(digits[i]) * 10}%)`;
-    });
-  }
-
-  /** Build a segmented clock pie at the given pixel size; returns {svg, segs}. */
-  _makePie(slices, size) {
-    const s = this._svg("svg", { viewBox: "0 0 104 104", width: size, height: size, class: "pie" });
-    const segs = [];
-    for (let i = 0; i < slices; i++) {
-      const a0 = (i / slices) * 360 - 90, a1 = ((i + 1) / slices) * 360 - 90;
-      const [x0, y0] = this._polar(52, 52, 42, a0), [x1, y1] = this._polar(52, 52, 42, a1);
-      const lg = (a1 - a0) <= 180 ? 0 : 1;
-      const seg = this._svg("path", { d: `M52 52 L${x0.toFixed(2)} ${y0.toFixed(2)} A42 42 0 ${lg} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z`, class: "seg" });
-      s.appendChild(seg); segs.push(seg);
-    }
-    s.appendChild(this._svg("circle", { cx: 52, cy: 52, r: 42, class: "ring" }));
-    return { svg: s, segs };
-  }
-
-  /* ---- CLOCK (segmented pie) ---- */
-  _bodyClock(t) {
-    const c = this._el("div", "t-clock");
-    const slices = Math.max(1, Math.trunc(Number(t.slices) || 6));
-    const { svg: s, segs } = this._makePie(slices, 26);
-    const pie = this._el("div", "piewrap"); pie.appendChild(s);
-    const nm = this._el("div", "nm", t.name ?? "");
-    const frac = this._el("div", "frac");
-    c.append(pie, nm, frac);
-    let last = -1;
-    const paint = (tr) => {
-      nm.textContent = tr.name ?? "";
-      const v = Math.max(0, Math.min(slices, Math.trunc(Number(tr.value) || 0)));
-      segs.forEach((sg, i) => {
-        const fill = i < v;
-        sg.classList.toggle("fill", fill);
-        if (fill && i >= last && last >= 0) { sg.classList.remove("justfilled"); void sg.getBoundingClientRect().width; sg.classList.add("justfilled"); }
-      });
-      frac.innerHTML = `<b>${v}</b>/${slices}`;
-      const done = v >= slices;
-      c.classList.toggle("complete", done);
-      // A bad clock filling up is an ominous event — a red "doom" stamp rather
-      // than the usual green "filled".
-      const bad = !!tr.bad;
-      this._setOverlay(c, done ? (bad ? "doom" : "done") : null,
-        game.i18n.localize(bad ? "GLCT.tracker.doom" : "GLCT.tracker.filled"));
-      last = v;
-    };
-    return { content: c, paint, stepEls: [pie, frac] };
-  }
-
-  /* ---- POOL (point-style remaining count; 3D roll handled by Dice So Nice in chat) ---- */
-  // Reads like a point tracker: the number of dice remaining is the hero, and
-  // the die size is a faint "d?" cap — no per-die chips. A down-chevron flicks
-  // on a discard, an up-chevron on a refill, mirroring the point readout.
-  _bodyPool(t) {
-    const c = this._el("div", "t-pool");
-    const chev = this._el("div", "chev");
-    const nm = this._el("div", "nm", t.name ?? "");
-    const val = this._el("div", "pval");
-    const reel = this._el("div", "reeldig");
-    const sizelbl = this._el("div", "reelmax");     // faint "d?" cap, mirroring point's "/max"
-    val.append(reel, sizelbl);
-    c.append(chev, nm, val);
-    if (t.playerRoll) { const p = this._el("div", "play"); p.innerHTML = '<i class="fa-solid fa-play"></i>'; p.title = game.i18n.localize("GLCT.tracker.playersMayRoll"); c.append(p); }
-    let last = null;
-    const paint = (tr) => {
-      nm.textContent = tr.name ?? "";
-      const cur = Math.max(0, Math.trunc(Number(tr.current) || 0));
-      const size = Math.max(2, Math.trunc(Number(tr.size) || 6));
-      this._renderReel(reel, cur, last);
-      sizelbl.textContent = `d${size}`;
-      val.classList.toggle("at-min", cur === 0);     // empty pool reads red, like a point at its floor
-      if (last !== null && cur !== last) {
-        const dir = cur > last ? "up" : "down";
-        chev.textContent = cur > last ? "▲" : "▼";
-        chev.className = "chev";
-        void chev.offsetWidth;
-        chev.className = "chev " + dir;
-      }
-      this._setOverlay(c, cur === 0 ? "empty" : null, game.i18n.localize("GLCT.tracker.empty"));
-      last = cur;
-    };
-    return { content: c, paint, stepEls: [val] };
-  }
-
-  /* ---- TASK (discrete boxes) ---- */
-  _bodyTask(t) {
-    const c = this._el("div", "t-task");
-    const titles = this._el("div", "titles");
-    const tt = this._el("div", "tt", t.title ?? "");
-    const st = this._el("div", "st", t.subtitle ?? "");
-    titles.append(tt, st);
-    const boxes = Math.max(1, Math.trunc(Number(t.boxes) || 6));
-    const br = this._el("div", "boxrow");
-    const cells = [];
-    for (let i = 0; i < boxes; i++) { const b = this._el("div", "box"); br.appendChild(b); cells.push(b); }
-    c.append(titles, br);
-    let last = -1;
-    const paint = (tr) => {
-      tt.textContent = tr.title ?? ""; st.textContent = tr.subtitle ?? "";
-      const v = Math.max(0, Math.min(boxes, Math.trunc(Number(tr.value) || 0)));
-      cells.forEach((cl, i) => {
-        const fill = i < v;
-        cl.classList.toggle("fill", fill);
-        if (fill && i >= last && last >= 0) { cl.classList.remove("justfill"); void cl.offsetWidth; cl.classList.add("justfill"); }
-      });
-      this._setOverlay(c, v >= boxes ? "done" : null, game.i18n.localize("GLCT.tracker.completed"));
-      last = v;
-    };
-    return { content: c, paint, stepEls: [br] };
-  }
-
-  /* ---- HAZARD (red dread boxes; no overlay) ---- */
-  _bodyHazard(t) {
-    const c = this._el("div", "t-task haz");
-    const titles = this._el("div", "titles");
-    const tt = this._el("div", "tt", t.title ?? "");
-    const st = this._el("div", "st", t.subtitle ?? "");
-    titles.append(tt, st);
-    const boxes = Math.max(1, Math.trunc(Number(t.boxes) || 8));
-    const br = this._el("div", "boxrow");
-    const cells = [];
-    for (let i = 0; i < boxes; i++) { const b = this._el("div", "box"); br.appendChild(b); cells.push(b); }
-    c.append(titles, br);
-    let last = -1;
-    const paint = (tr) => {
-      tt.textContent = tr.title ?? ""; st.textContent = tr.subtitle ?? "";
-      const v = Math.max(0, Math.min(boxes, Math.trunc(Number(tr.value) || 0)));
-      cells.forEach((cl, i) => {
-        const fill = i < v;
-        cl.classList.toggle("fill", fill);
-        cl.classList.toggle("head", fill && i === v - 1 && v < boxes);
-        if (fill && i >= last && last >= 0) { cl.classList.remove("justfill"); void cl.offsetWidth; cl.classList.add("justfill"); }
-      });
-      c.closest(".trow")?.classList.toggle("full", v >= boxes);
-      last = v;
-    };
-    return { content: c, paint, stepEls: [br] };
-  }
-
-  /* ---- SEPARATOR (purely visual divider with optional centered label) ---- */
-  _bodySeparator(t) {
-    const c = this._el("div", "t-sep");
-    const lab = this._el("span", "lab", t.label ?? "");
-    c.appendChild(lab);
-    const paint = (tr) => {
-      const txt = (tr.label ?? "").trim();
-      lab.textContent = txt;
-      lab.style.display = txt ? "" : "none";
-    };
-    return { content: c, paint, stepEls: [] };
-  }
+  // Body builders + the reel/pie/overlay helpers live in TrackerRender, shared
+  // with the per-PC sheet tab. The dock keeps thin wrappers for the few helpers
+  // its dock-only code (mini cards, context menu) still calls.
+  _buildBody(t) { return TrackerRender.buildBody(t); }
+  _bound(v) { return TrackerRender.bound(v); }
+  _makePie(...a) { return TrackerRender.makePie(...a); }
 
   /* ---- COMPACT MINI (vertical "playing-card" face for collapsed mode) ---- */
   _buildMini(t) {
@@ -579,14 +353,6 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
     return { el, paint };
-  }
-
-  _setOverlay(bodyEl, kind, txt) {
-    const ovl = bodyEl.closest(".trow")?.querySelector(".rovl");
-    if (!ovl) return;
-    ovl.className = "rovl " + (kind || "");
-    ovl.querySelector(".ot").textContent = kind ? txt : "";
-    if (kind) ovl.classList.add("show");
   }
 
   /* ------------------------------ interactions ------------------------------ */
@@ -874,7 +640,7 @@ export class TrackerHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _editTracker(id) {
     const { TrackerEditor } = await import("./tracker-editor.js");
-    TrackerEditor.edit(id);
+    TrackerEditor.edit(TrackerStore, id);
   }
 
   async _deleteTracker(id) {
