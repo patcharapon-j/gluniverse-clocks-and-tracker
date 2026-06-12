@@ -14,7 +14,20 @@
    the date readout, calendar day numbers, event badges). With only discrete
    weights loaded those weights had no matching face and fell back to the
    system font; the variable axis makes every weight true Oxanium. */
-@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@200..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@200..800&family=JetBrains+Mono:wght@700;800&display=swap');
+
+/* ---- GL Universe "Etched Glass" shared tokens (docs/design-language.md) ----
+   Family-wide semantic accents + the technical label voice. Declared on :root
+   so every GLct scope (HUD, tracker dock, calendar, weather, delving, support)
+   reads the same values; module-local vars below alias into these. */
+:root{
+  --gl-signal:#ffd24a;        /* signal amber — events, pins, "look here"     */
+  --gl-signal-hot:#ffe070;    /* signal peak — pinned glow, lit digits        */
+  --gl-signal-pale:#ffe9b8;   /* signal text tint on dark glass               */
+  --gl-hazard:#ff4a52;        /* unified danger — doom, hazard, ominous       */
+  --gl-cyan:#5eeaff; --gl-good:#5fdb92; --gl-violet:#b497ff;
+  --gl-tech:"Bahnschrift","JetBrains Mono","Share Tech Mono",Consolas,monospace;
+}
 
 /* ---- frameless ApplicationV2 reset + top-center anchoring ---- */
 #glct-hud{
@@ -56,15 +69,23 @@
 }
 
 /* ========== BAR: stacked rows for player/GM consistency ========== */
+/* Etched Glass chamfer: three soft corners + one 14px diagonal cut top-right
+   (the family signature, docs/design-language.md §4.1). clip-path would clip
+   outer box-shadows, so the drop + bloom move to filter:drop-shadow — filters
+   apply after clipping, so the shadow follows the chamfered silhouette. */
 #glct-hud .bar{position:relative;border-radius:15px;overflow:hidden;isolation:isolate;
+  clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
   background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 34%),
     linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.20)),
     linear-gradient(98deg, var(--tint2), #080b11 64%);
   border:1px solid var(--edge);
-  box-shadow:0 26px 70px rgba(0,0,0,.6), 0 2px 0 rgba(0,0,0,.4),
-    inset 0 1px 0 rgba(255,255,255,.16), inset 0 -12px 28px rgba(0,0,0,.38), 0 0 46px var(--glowsoft);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), inset 0 -12px 28px rgba(0,0,0,.38);
+  filter:drop-shadow(0 18px 32px rgba(0,0,0,.55)) drop-shadow(0 2px 0 rgba(0,0,0,.4)) drop-shadow(0 0 23px var(--glowsoft));
   backdrop-filter:blur(16px) saturate(1.15);
-  transition:background 1s ease, box-shadow 1s ease, width .35s cubic-bezier(.4,0,.2,1);}
+  transition:background 1s ease, box-shadow 1s ease, filter 1s ease, width .35s cubic-bezier(.4,0,.2,1);}
+/* the collapsed pill is too small to carry the cut cleanly — full radius there */
+#glct-hud .bar.collapsed{clip-path:none}
+#glct-hud .bar.collapsed .main::after{display:none}
 #glct-hud .bar::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
   background:radial-gradient(70% 150% at 50% -50%, var(--glow), transparent 66%);opacity:.22;transition:1s}
 #glct-hud .sweep{position:absolute;top:0;bottom:0;width:38%;z-index:4;pointer-events:none;
@@ -75,10 +96,16 @@
 
 /* main info row */
 #glct-hud .main{display:flex;align-items:stretch;height:54px;position:relative;z-index:2}
+/* accent hairline tracing the chamfer cut (rides .main — the bar's own
+   ::before/::after are claimed by the light catch and the weather wash) */
+#glct-hud .main::after{content:"";position:absolute;top:-1px;right:-1px;width:21px;height:1px;z-index:6;pointer-events:none;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--tint) 85%,#fff));
+  transform-origin:100% 0;transform:rotate(45deg) translateX(1.5px);
+  box-shadow:0 0 8px var(--glow);opacity:.85;transition:background 1s ease,box-shadow 1s ease}
 #glct-hud .cell{display:flex;flex-direction:column;justify-content:center;padding:0 12px;position:relative;gap:2px}
 #glct-hud .cell + .cell::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:1px;
   background:linear-gradient(180deg,transparent,var(--hair) 22%,var(--hair) 78%,transparent)}
-#glct-hud .lbl{font-size:7.5px;letter-spacing:.22em;text-transform:uppercase;color:#69748c;font-weight:700}
+#glct-hud .lbl{font:700 7.5px/1.45 var(--gl-tech);letter-spacing:.22em;text-transform:uppercase;color:#69748c}
 #glct-hud .grip{width:20px;justify-content:center;align-items:center;flex-direction:row;gap:3px;cursor:grab}
 #glct-hud .grip i{width:3px;height:3px;border-radius:99px;background:rgba(255,255,255,.22);transition:.3s}
 #glct-hud .bar:hover .grip i{background:rgba(255,255,255,.42)}
@@ -92,7 +119,7 @@
 #glct-hud .date:hover{background:rgba(255,255,255,.06)}
 #glct-hud .date:focus-visible{outline:2px solid var(--glow);outline-offset:-2px}
 #glct-hud .date .datestack{display:flex;flex-direction:column;justify-content:center;gap:2px}
-#glct-hud .date .wd{font-size:8px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+#glct-hud .date .wd{font:700 8px/1.45 var(--gl-tech);letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
 #glct-hud .date .m{font-size:16px;font-weight:760;letter-spacing:.2px;line-height:1.05;white-space:nowrap;
   background:linear-gradient(180deg,#fff,#ccd5e8);-webkit-background-clip:text;background-clip:text;color:transparent}
 #glct-hud .date .m sup{font-size:8px;font-weight:600;-webkit-text-fill-color:var(--muted)}
@@ -140,7 +167,7 @@
 /* meter — only the current hour shows its six stretch pips; the other hours
    collapse to a single summary segment so inactive hours stop eating the row. */
 #glct-hud .meter{flex:1 1 auto;min-width:140px;max-width:240px;justify-content:center;align-items:center;gap:6px;padding:0 13px}
-#glct-hud .rem{font-size:8px;color:#69748c;letter-spacing:.12em;text-transform:uppercase;font-weight:700;text-align:center}
+#glct-hud .rem{font:700 8px/1.45 var(--gl-tech);color:#69748c;letter-spacing:.12em;text-transform:uppercase;text-align:center}
 #glct-hud .track{display:flex;gap:6px;align-items:center;justify-content:center;height:18px}
 #glct-hud .hourgrp{display:flex;gap:1.5px;align-items:center;transition:gap .34s ease}
 #glct-hud .pip{flex:0 0 auto;width:5px;height:13px;border-radius:1.5px;background:rgba(255,255,255,.12);
@@ -249,16 +276,18 @@
 #glct-hud .event-badge .events{display:flex;flex-wrap:wrap;gap:4px}
 #glct-hud .hud-root.is-collapsed .event-badge,
 #glct-hud .event-badge.empty{display:none}
-#glct-hud .event{font-size:9.5px;color:#ffe6b5;background:linear-gradient(180deg,rgba(255,196,84,.16),rgba(255,196,84,.05));
-  border:1px solid rgba(255,196,84,.30);border-radius:99px;padding:4px 9px;display:inline-flex;gap:5px;align-items:center;
+#glct-hud .event{font-size:9.5px;color:var(--gl-signal-pale);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--gl-signal) 16%,transparent),color-mix(in srgb,var(--gl-signal) 5%,transparent));
+  border:1px solid color-mix(in srgb,var(--gl-signal) 30%,transparent);border-radius:99px;padding:4px 9px;display:inline-flex;gap:5px;align-items:center;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
   box-shadow:0 6px 16px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.1);backdrop-filter:blur(8px)}
-#glct-hud .event .dot{width:5px;height:5px;border-radius:99px;background:#ffc454;box-shadow:0 0 9px #ffc454;flex:none}
+#glct-hud .event .dot{width:5px;height:5px;border-radius:99px;background:var(--gl-signal);box-shadow:0 0 9px var(--gl-signal);flex:none}
 #glct-hud .event span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#glct-hud .event.today{background:linear-gradient(180deg,rgba(255,196,84,.26),rgba(255,196,84,.09));box-shadow:0 8px 18px rgba(0,0,0,.4),0 0 16px rgba(255,196,84,.28)}
+#glct-hud .event.today{background:linear-gradient(180deg,color-mix(in srgb,var(--gl-signal) 26%,transparent),color-mix(in srgb,var(--gl-signal) 9%,transparent));
+  box-shadow:0 8px 18px rgba(0,0,0,.4),0 0 16px color-mix(in srgb,var(--gl-signal) 28%,transparent)}
 /* GM-pinned events: brighter rim so they read as "kept on screen on purpose" */
-#glct-hud .event.pinned{border-color:rgba(255,196,84,.55)}
-#glct-hud .event.pinned .dot{box-shadow:0 0 9px #ffd36b,0 0 4px #fff}
+#glct-hud .event.pinned{border-color:color-mix(in srgb,var(--gl-signal) 55%,transparent)}
+#glct-hud .event.pinned .dot{box-shadow:0 0 9px var(--gl-signal-hot),0 0 4px #fff}
 
 /* small concise GM control dock — detached, floats just beneath the bar */
 #glct-hud .gmdock{display:inline-flex;flex-wrap:wrap;justify-content:center;gap:3px;margin:7px auto 0;padding:3px;border-radius:10px;max-width:min(96vw,720px);
@@ -391,7 +420,7 @@
 .glct-trk-form :is(input,select,button,textarea):not(.header-control){font-family:inherit}
 
 /* ===================== read-only calendar view ===================== */
-.glct-calendar .glct-cal{--tint:#6b86d6;--accent:#ffc454;padding:4px 6px 10px;color:#eef1f7}
+.glct-calendar .glct-cal{--tint:#6b86d6;--accent:var(--gl-signal);padding:4px 6px 10px;color:#eef1f7}
 .glct-calendar .cal-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .glct-calendar .cal-title{flex:1;text-align:center;font-size:15px;font-weight:700;letter-spacing:.02em}
 .glct-calendar .cal-nav,.glct-calendar .cal-today{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
@@ -401,10 +430,10 @@
 /* whole-month events: badges above the grid instead of a band on every day */
 .glct-calendar .cal-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
 .glct-calendar .cal-badge{display:inline-flex;align-items:center;gap:5px;max-width:100%;
-  background:linear-gradient(180deg,rgba(255,196,84,.22),rgba(255,196,84,.10));
-  border:1px solid rgba(255,196,84,.35);color:#ffe6b5;border-radius:999px;cursor:pointer;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--gl-signal) 22%,transparent),color-mix(in srgb,var(--gl-signal) 10%,transparent));
+  border:1px solid color-mix(in srgb,var(--gl-signal) 35%,transparent);color:var(--gl-signal-pale);border-radius:999px;cursor:pointer;
   font-weight:650;font-size:10.5px;padding:3px 10px;line-height:1.2}
-.glct-calendar .cal-badge:hover{background:linear-gradient(180deg,rgba(255,196,84,.32),rgba(255,196,84,.16))}
+.glct-calendar .cal-badge:hover{background:linear-gradient(180deg,color-mix(in srgb,var(--gl-signal) 32%,transparent),color-mix(in srgb,var(--gl-signal) 16%,transparent))}
 .glct-calendar .cal-badge span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .glct-calendar .cal-badge.gm-only{opacity:.72;border-style:dashed}
 .glct-calendar .cal-badge-note{font-size:8px;opacity:.8}
@@ -428,13 +457,13 @@
 /* event names render as compact bands; multi-day events join across cells */
 .glct-calendar .cal-evs{display:flex;flex-direction:column;gap:2px;margin:1px -6px 0}
 .glct-calendar .cal-ev{position:relative;min-height:13px;line-height:13px;border-radius:4px;margin:0 6px;padding:0 5px;
-  background:linear-gradient(180deg,rgba(255,196,84,.30),rgba(255,196,84,.16));
+  background:linear-gradient(180deg,color-mix(in srgb,var(--gl-signal) 30%,transparent),color-mix(in srgb,var(--gl-signal) 16%,transparent));
   border-left:2px solid var(--accent);overflow:hidden}
 .glct-calendar .cal-ev.empty{background:none;border:none;box-shadow:none}
-.glct-calendar .cal-ev.has-note{box-shadow:0 0 0 1px rgba(255,196,84,.25) inset}
+.glct-calendar .cal-ev.has-note{box-shadow:0 0 0 1px color-mix(in srgb,var(--gl-signal) 25%,transparent) inset}
 .glct-calendar .cal-ev.cont-l{margin-left:0;border-top-left-radius:0;border-bottom-left-radius:0;border-left:none}
 .glct-calendar .cal-ev.cont-r{margin-right:-4px;border-top-right-radius:0;border-bottom-right-radius:0}
-.glct-calendar .cal-ev-name{display:block;font-size:9px;font-weight:650;color:#ffe6b5;white-space:nowrap;
+.glct-calendar .cal-ev-name{display:block;font-size:9px;font-weight:650;color:var(--gl-signal-pale);white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis}
 
 /* ===================== calendar day-detail panel ===================== */
@@ -487,7 +516,7 @@
 .glct-events .ev-when{color:#aab4c8;font-size:12px}
 .glct-events .ev-row button{padding:4px 8px}
 .glct-events .ev-vis,.glct-events .ev-pin{color:#7c869c}
-.glct-events .ev-vis.on,.glct-events .ev-pin.on{color:#ffc454}
+.glct-events .ev-vis.on,.glct-events .ev-pin.on{color:var(--gl-signal)}
 .glct-events .ev-empty{color:#98a2b6;text-align:center;padding:18px 0}
 
 /* ===================== calendar editor ===================== */
@@ -518,7 +547,7 @@
 .glct-trk-skin{
   --ink:#eef1f7; --muted:#98a2b6; --hair:rgba(255,255,255,.08); --edge:rgba(255,255,255,.13);
   --tint:#e9eef7; --glow:rgba(255,255,255,.5); --glowsoft:rgba(255,255,255,.16);
-  --danger:#e0584f; --dangerglow:rgba(224,88,79,.55); --dangersoft:rgba(224,88,79,.22); --good:#67d39b;
+  --danger:var(--gl-hazard); --dangerglow:color-mix(in srgb,var(--gl-hazard) 55%,transparent); --dangersoft:color-mix(in srgb,var(--gl-hazard) 22%,transparent); --good:#67d39b;
   --clock-font:"Oxanium","Segoe UI",system-ui,sans-serif;
   background:none;border:none;box-shadow:none;padding:0;margin:0;width:auto;height:auto;min-width:0;min-height:0;
   pointer-events:none;font:14px/1.45 "Oxanium","Segoe UI",system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;}
@@ -527,18 +556,22 @@
 .glct-trk-skin .glct-trk-root{pointer-events:none}
 .glct-trk-skin .glct-trk-root > *{pointer-events:auto}
 
+/* Etched Glass chamfer (12px cut, top-right) — outer shadows ride on
+   filter:drop-shadow so they follow the cut silhouette (see .bar above). */
 .glct-trk-skin .trk-dock{min-width:168px;width:max-content;max-width:calc(100vw - 28px);
   border-radius:11px;overflow:hidden;isolation:isolate;position:relative;
+  clip-path:polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
   background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 30%),
     linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.22)),linear-gradient(160deg,#161d2c,#080b11 72%);
   border:1px solid var(--edge);
-  box-shadow:0 24px 60px rgba(0,0,0,.6),0 2px 0 rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.15),inset 0 -12px 26px rgba(0,0,0,.36);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),inset 0 -12px 26px rgba(0,0,0,.36);
+  filter:drop-shadow(0 16px 28px rgba(0,0,0,.55)) drop-shadow(0 2px 0 rgba(0,0,0,.4));
   backdrop-filter:blur(16px) saturate(1.15);transition:min-width .3s ease}
 .glct-trk-skin .trk-head{display:flex;align-items:center;gap:5px;height:18px;padding:0 4px 0 7px;position:relative;z-index:5;
   border-bottom:1px solid var(--hair);cursor:grab;user-select:none}
 .glct-trk-skin .dh-grip{display:flex;gap:3px}
 .glct-trk-skin .dh-grip i{width:3px;height:3px;border-radius:99px;background:rgba(255,255,255,.32)}
-.glct-trk-skin .dh-title{flex:1;font-size:8.5px;letter-spacing:.24em;text-transform:uppercase;color:#7c869c;font-weight:700}
+.glct-trk-skin .dh-title{flex:1;font:700 8.5px/1.45 var(--gl-tech);letter-spacing:.24em;text-transform:uppercase;color:#7c869c}
 .glct-trk-skin .dh-count{font-size:9px;color:#5b6478;font-variant-numeric:tabular-nums}
 .glct-trk-skin .dh-add{width:15px;height:15px;border:none;border-radius:4px;cursor:pointer;display:grid;place-items:center;
   background:rgba(255,255,255,.07);color:#aab4c8;font-size:11px;line-height:1;transition:.15s}
@@ -558,7 +591,7 @@
   color:#eaeffa;text-shadow:0 0 10px var(--glowsoft);min-width:0;max-width:200px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .glct-trk-skin .trow.hiddenfromplayers::after{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
-  background:repeating-linear-gradient(180deg,#ffc454 0 4px,transparent 4px 8px);opacity:.7}
+  background:repeating-linear-gradient(180deg,var(--gl-signal) 0 4px,transparent 4px 8px);opacity:.7}
 .glct-trk-skin .trow.dragging{background:rgba(255,255,255,.06);box-shadow:0 14px 30px rgba(0,0,0,.6),0 0 26px var(--glow);z-index:30}
 
 /* GM right-click context menu — gathers every per-row control */
@@ -576,9 +609,9 @@
   text-align:left;white-space:nowrap;transition:background .12s,color .12s}
 .glct-trk-skin .trk-ctx .ctx-item i{width:13px;text-align:center;font-size:10px;color:#8893a8;transition:color .12s}
 .glct-trk-skin .trk-ctx .ctx-item:hover{background:rgba(255,255,255,.08);color:#fff}
-.glct-trk-skin .trk-ctx .ctx-item:hover i{color:#ffc454}
-.glct-trk-skin .trk-ctx .ctx-item.danger:hover{background:rgba(224,88,79,.16);color:#ffd9d4}
-.glct-trk-skin .trk-ctx .ctx-item.danger:hover i{color:#e0584f}
+.glct-trk-skin .trk-ctx .ctx-item:hover i{color:var(--gl-signal)}
+.glct-trk-skin .trk-ctx .ctx-item.danger:hover{background:color-mix(in srgb,var(--gl-hazard) 16%,transparent);color:#ffd9d4}
+.glct-trk-skin .trk-ctx .ctx-item.danger:hover i{color:var(--gl-hazard)}
 .glct-trk-skin .trk-ctx .ctx-sep{height:1px;margin:4px 6px;background:var(--hair)}
 
 .glct-trk-skin .rovl{position:absolute;inset:0;z-index:6;display:grid;place-items:center;pointer-events:none;opacity:0;
@@ -588,13 +621,13 @@
   transform:scale(.7);transition:transform .45s cubic-bezier(.34,1.6,.5,1)}
 .glct-trk-skin .rovl.show .ot{transform:scale(1)}
 .glct-trk-skin .rovl.empty{background:linear-gradient(90deg,rgba(20,6,6,.78),rgba(28,8,8,.6))}
-.glct-trk-skin .rovl.empty .ot{color:#ff7a6f;text-shadow:0 0 16px rgba(224,88,79,.9)}
+.glct-trk-skin .rovl.empty .ot{color:#ff7a6f;text-shadow:0 0 16px color-mix(in srgb,var(--gl-hazard) 90%,transparent)}
 .glct-trk-skin .rovl.done{background:linear-gradient(90deg,rgba(6,26,17,.7),rgba(8,22,15,.55))}
 .glct-trk-skin .rovl.done .ot{color:#8af0bd;text-shadow:0 0 16px rgba(103,211,155,.9)}
 .glct-trk-skin .rovl.done.show .ot{animation:glct-stamp .55s cubic-bezier(.34,1.6,.5,1)}
 /* A completed bad clock stamps red "doom" rather than green "filled". */
 .glct-trk-skin .rovl.doom{background:linear-gradient(90deg,rgba(28,8,8,.74),rgba(20,6,6,.56))}
-.glct-trk-skin .rovl.doom .ot{color:#ff7a6f;text-shadow:0 0 16px rgba(224,88,79,.9)}
+.glct-trk-skin .rovl.doom .ot{color:#ff7a6f;text-shadow:0 0 16px color-mix(in srgb,var(--gl-hazard) 90%,transparent)}
 .glct-trk-skin .rovl.doom.show .ot{animation:glct-stamp .55s cubic-bezier(.34,1.6,.5,1)}
 @keyframes glct-stamp{0%{transform:scale(1.5);opacity:0}55%{transform:scale(.92)}100%{transform:scale(1);opacity:1}}
 
@@ -632,7 +665,7 @@
 .glct-trk-skin .t-point .pval.at-min .reeldig,
 .glct-trk-skin .t-pool .pval.at-min .reeldig{color:#ff8a7e}
 .glct-trk-skin .t-point .pval.at-min,
-.glct-trk-skin .t-pool .pval.at-min{filter:drop-shadow(0 0 10px rgba(224,88,79,.55))}
+.glct-trk-skin .t-pool .pval.at-min{filter:drop-shadow(0 0 10px color-mix(in srgb,var(--gl-hazard) 55%,transparent))}
 .glct-trk-skin .reeldig .reel{display:inline-block;height:1.05em;width:.62em;overflow:hidden;text-align:center}
 .glct-trk-skin .reeldig .strip{display:flex;flex-direction:column;transition:transform .5s cubic-bezier(.2,.85,.22,1)}
 .glct-trk-skin .reeldig .strip span{height:1.05em;line-height:1.05em}
@@ -673,15 +706,15 @@
 
 /* HAZARD overrides — red, persistent dread */
 .glct-trk-skin .trow.hazard{--tint:var(--danger);--glow:var(--dangerglow);--glowsoft:var(--dangersoft);animation:glct-dread 3.2s ease-in-out infinite}
-@keyframes glct-dread{0%,100%{box-shadow:inset 0 0 0 9999px rgba(224,88,79,0)}50%{box-shadow:inset 0 0 20px rgba(224,88,79,.16)}}
-.glct-trk-skin .trow.hazard::before{background:linear-gradient(90deg,rgba(224,88,79,.22),transparent 62%);opacity:.7}
+@keyframes glct-dread{0%,100%{box-shadow:inset 0 0 0 9999px color-mix(in srgb,var(--gl-hazard) 0%,transparent)}50%{box-shadow:inset 0 0 20px color-mix(in srgb,var(--gl-hazard) 16%,transparent)}}
+.glct-trk-skin .trow.hazard::before{background:linear-gradient(90deg,color-mix(in srgb,var(--gl-hazard) 22%,transparent),transparent 62%);opacity:.7}
 .glct-trk-skin .trow.hazard .nm{color:#e8a39d}
 .glct-trk-skin .trow.hazard .tt{background:none!important;color:#ffd9d4!important;-webkit-text-fill-color:#ffd9d4;text-shadow:0 0 12px var(--dangersoft)}
 .glct-trk-skin .trow.hazard .st{color:#c98e89}
 .glct-trk-skin .haz-scan{position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:repeating-linear-gradient(0deg,rgba(224,88,79,.06) 0 2px,transparent 2px 5px);mix-blend-mode:screen;opacity:.55;animation:glct-scan 6s linear infinite}
+  background:repeating-linear-gradient(0deg,color-mix(in srgb,var(--gl-hazard) 06%,transparent) 0 2px,transparent 2px 5px);mix-blend-mode:screen;opacity:.55;animation:glct-scan 6s linear infinite}
 @keyframes glct-scan{0%{background-position:0 0}100%{background-position:0 50px}}
-.glct-trk-skin .haz .box{border-color:rgba(224,88,79,.45)}
+.glct-trk-skin .haz .box{border-color:color-mix(in srgb,var(--gl-hazard) 45%,transparent)}
 /* Solid danger fill (no gradient) with a calendar-style glow + dread flicker. */
 .glct-trk-skin .haz .box.fill{background:var(--danger);border-color:transparent;
   box-shadow:0 0 9px var(--dangerglow),inset 0 1px 0 rgba(255,255,255,.25);
@@ -690,15 +723,15 @@
 .glct-trk-skin .haz .box.head{animation:glct-hazhead 1s ease-in-out infinite}
 @keyframes glct-hazhead{0%,100%{box-shadow:0 0 7px var(--dangerglow)}50%{box-shadow:0 0 18px #ff9a8f}}
 .glct-trk-skin .trow.hazard.full{animation:glct-dreadfull 1s ease-in-out infinite}
-@keyframes glct-dreadfull{0%,100%{box-shadow:inset 0 0 26px rgba(224,88,79,.32)}50%{box-shadow:inset 0 0 46px rgba(224,88,79,.6)}}
+@keyframes glct-dreadfull{0%,100%{box-shadow:inset 0 0 26px color-mix(in srgb,var(--gl-hazard) 32%,transparent)}50%{box-shadow:inset 0 0 46px color-mix(in srgb,var(--gl-hazard) 60%,transparent)}}
 
 /* BAD CLOCK — an ominous clock whose completion is bad news. Wears the same
    hazard-red identity: the pie fills red (segments already use --tint), the row
    simmers with dread, and a scan line drifts across it. */
 .glct-trk-skin .trow.badclock{--tint:var(--danger);--glow:var(--dangerglow);--glowsoft:var(--dangersoft);animation:glct-dread 3.2s ease-in-out infinite}
-.glct-trk-skin .trow.badclock::before{background:linear-gradient(90deg,rgba(224,88,79,.22),transparent 62%);opacity:.7}
+.glct-trk-skin .trow.badclock::before{background:linear-gradient(90deg,color-mix(in srgb,var(--gl-hazard) 22%,transparent),transparent 62%);opacity:.7}
 .glct-trk-skin .trow.badclock .nm{color:#e8a39d}
-.glct-trk-skin .trow.badclock .t-clock .pie .ring{stroke:rgba(224,88,79,.4)}
+.glct-trk-skin .trow.badclock .t-clock .pie .ring{stroke:color-mix(in srgb,var(--gl-hazard) 40%,transparent)}
 .glct-trk-skin .trow.badclock .t-clock .frac{color:#e8a39d}
 .glct-trk-skin .trow.badclock .t-clock .frac b{color:#ffd9d4}
 /* Compact card keeps the red identity. */
@@ -807,7 +840,7 @@
 .glct-chatcard.empty .glct-cc-sum{justify-content:center}
 .glct-chatcard .glct-cc-sum .keep{color:var(--good);font-weight:700}
 .glct-chatcard .glct-cc-sum .gone{color:#ff8a7e;font-weight:700}
-.glct-chatcard.empty .glct-cc-empty{color:#ff7a6f;font-weight:800;letter-spacing:.18em;font-family:var(--clock-font);font-size:15px;text-align:center;text-shadow:0 0 14px rgba(224,88,79,.55)}
+.glct-chatcard.empty .glct-cc-empty{color:#ff7a6f;font-weight:800;letter-spacing:.18em;font-family:var(--clock-font);font-size:15px;text-align:center;text-shadow:0 0 14px color-mix(in srgb,var(--gl-hazard) 55%,transparent)}
 
 /* Pool-roll messages (tagged .glct-pool-msg in a renderChatMessage hook): let
    the custom card own the whole chat entry. Foundry's header is collapsed to

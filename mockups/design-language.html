@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GL Universe — Etched Glass Design Language</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@200..800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   GL UNIVERSE — ETCHED GLASS  ·  canonical token block
+   ============================================================ */
+:root{
+  /* ink ramp */
+  --gl-ink-0:#02070b; --gl-ink-1:#080b11; --gl-ink-2:#0b0f17; --gl-ink-3:#161d2c;
+  /* text */
+  --gl-text:#eef1f7; --gl-text-bright:#f3fbff; --gl-text-dim:#98a2b6; --gl-text-faint:rgba(243,251,255,.38);
+  /* lines */
+  --gl-hair:rgba(255,255,255,.08); --gl-edge:rgba(255,255,255,.13); --gl-line-strong:rgba(244,252,255,.55);
+  /* fixed semantics */
+  --gl-signal:#ffd24a; --gl-cyan:#5eeaff; --gl-hazard:#ff4a52; --gl-good:#5fdb92; --gl-violet:#b497ff; --gl-mission:#37d99a;
+  /* dynamic accent channel (switcher sets this) */
+  --gl-accent:#6b86d6;
+  /* derived */
+  --gl-glow:     color-mix(in srgb, var(--gl-accent) 50%, transparent);
+  --gl-glowsoft: color-mix(in srgb, var(--gl-accent) 18%, transparent);
+  /* motion */
+  --gl-ease:cubic-bezier(.16,1,.3,1); --gl-snap:cubic-bezier(.2,1.35,.22,1);
+  --gl-pop:cubic-bezier(.34,1.56,.5,1); --gl-exit:cubic-bezier(.55,0,.84,0);
+  /* voices */
+  --gl-display:"Oxanium","Segoe UI",system-ui,sans-serif;
+  --gl-tech:"Bahnschrift","JetBrains Mono","Share Tech Mono",Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font:14px/1.5 var(--gl-display); color:var(--gl-text); -webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(1100px 700px at 50% -5%, #131a2c, transparent 55%),
+    radial-gradient(900px 520px at 85% 110%, #1d1426, transparent 60%),
+    var(--gl-ink-0);
+  padding:34px 18px 120px;
+}
+
+/* ---------- page chrome ---------- */
+.wrap{max-width:1180px;margin:0 auto}
+.kicker{font:950 9px/1 var(--gl-tech);letter-spacing:.45em;text-transform:uppercase;color:var(--gl-text-faint);display:flex;align-items:center;gap:9px}
+.kicker::before{content:"";width:14px;height:1px;background:var(--gl-signal);box-shadow:0 0 8px color-mix(in srgb,var(--gl-signal) 70%,transparent)}
+h1{font:760 30px/1.1 var(--gl-display);margin:10px 0 4px;letter-spacing:.01em;
+  background:linear-gradient(180deg,#fff,#cdd6e8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--gl-text-dim);font-size:13px;max-width:760px}
+.sub b{color:#cdd6e6}
+section{margin-top:52px}
+.shead{display:flex;align-items:baseline;gap:14px;border-bottom:1px solid var(--gl-hair);padding-bottom:9px;margin-bottom:20px}
+.shead .no{font:800 11px var(--gl-tech);color:var(--gl-signal);letter-spacing:.1em}
+.shead h2{font:740 16px/1 var(--gl-display);margin:0;letter-spacing:.02em}
+.shead .note{margin-left:auto;font:700 8px var(--gl-tech);letter-spacing:.18em;text-transform:uppercase;color:var(--gl-text-faint)}
+.cap{color:var(--gl-text-dim);font-size:12px;margin:14px 2px 0;max-width:860px}
+.cap b{color:#cdd6e6}
+
+/* ---------- accent switcher ---------- */
+.deck{position:sticky;top:12px;z-index:50;display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:22px 0 0;
+  padding:8px 10px;border-radius:12px;border:1px solid var(--gl-hair);
+  background:linear-gradient(180deg,rgba(16,21,32,.92),rgba(9,12,19,.92));
+  backdrop-filter:blur(12px);box-shadow:0 10px 30px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07);width:max-content;max-width:100%}
+.deck .dl{font:950 7.5px var(--gl-tech);letter-spacing:.22em;text-transform:uppercase;color:var(--gl-text-faint);margin-right:4px}
+.tgl{border:1px solid var(--gl-hair);background:#121724;color:var(--gl-text);padding:6px 11px;font:700 11px var(--gl-display);cursor:pointer;
+  clip-path:polygon(5px 0,100% 0,100% 100%,0 100%,0 5px);transition:background .18s var(--gl-ease),box-shadow .18s var(--gl-ease)}
+.tgl:hover{background:#1b2233}
+.tgl.active{background:var(--sw,var(--gl-accent));color:var(--gl-ink-0);border-color:transparent;box-shadow:0 0 16px var(--gl-glowsoft)}
+
+/* ============================================================
+   MATERIAL — glass levels
+   ============================================================ */
+.row{display:flex;gap:18px;flex-wrap:wrap}
+.glass-panel{
+  position:relative;isolation:isolate;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 34%),
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.20)),
+    linear-gradient(98deg, color-mix(in srgb, var(--gl-accent) 14%, var(--gl-ink-1)), var(--gl-ink-1) 64%);
+  border:1px solid var(--gl-edge);
+  box-shadow:0 26px 70px rgba(0,0,0,.6), 0 2px 0 rgba(0,0,0,.4),
+    inset 0 1px 0 rgba(255,255,255,.16), inset 0 -12px 28px rgba(0,0,0,.38), 0 0 46px var(--gl-glowsoft);
+  backdrop-filter:blur(16px) saturate(1.15);
+  transition:background 1s ease, box-shadow 1s ease;
+}
+.glass-panel::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;border-radius:inherit;
+  background:radial-gradient(70% 150% at 50% -50%, var(--gl-glow), transparent 66%);opacity:.22;transition:1s}
+/* the chamfer: 3 soft corners + 1 cut */
+.chamfer{border-radius:14px;clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%)}
+.chamfer-line{position:absolute;top:-1px;right:-1px;width:21px;height:1px;z-index:3;
+  background:linear-gradient(90deg,transparent,var(--gl-accent));transform-origin:100% 0;transform:rotate(45deg) translateX(1.5px);
+  box-shadow:0 0 8px var(--gl-glow);opacity:.9}
+
+/* L-bracket */
+.bracket{position:absolute;top:6px;left:6px;width:8px;height:8px;z-index:3;
+  border-top:1px solid var(--gl-line-strong);border-left:1px solid var(--gl-line-strong);transition:border-color .18s var(--gl-ease)}
+.bracket.lit{border-color:var(--gl-accent);filter:drop-shadow(0 0 4px var(--gl-glow))}
+
+/* micro label */
+.micro{font:950 7.5px var(--gl-tech);letter-spacing:.22em;text-transform:uppercase;color:var(--gl-text-faint)}
+.micro.amber{color:color-mix(in srgb,var(--gl-signal) 80%, #fff)}
+
+/* data strip */
+.datastrip{display:inline-flex;align-items:flex-end;gap:0;height:8px;opacity:.5}
+.datastrip i{display:block;width:1px;height:100%;background:rgba(255,255,255,.35)}
+.datastrip i:nth-child(3n){margin-left:3px}.datastrip i:nth-child(4n){margin-left:1px;height:60%}
+.datastrip i:nth-child(5n){margin-left:2px}.datastrip i:nth-child(7n){width:2px;margin-left:2px}
+
+/* precision rule */
+.rule{height:1px;background:linear-gradient(90deg,transparent,var(--gl-accent) 24%,var(--gl-accent) 76%,transparent);
+  box-shadow:0 0 14px color-mix(in srgb,var(--gl-accent) 70%,transparent)}
+
+/* hazard stripes */
+.stripes{background:repeating-linear-gradient(-45deg,
+  color-mix(in srgb,var(--gl-hazard) 55%,transparent) 0 8px, transparent 8px 16px)}
+/* signal stripes — Endfield black×yellow caution, opaque decal */
+.sigstripes{background:repeating-linear-gradient(45deg, var(--gl-ink-0) 0 8px, var(--gl-signal) 8px 16px)}
+/* CMYK registration chips */
+.cmyk{display:inline-flex;gap:2px;align-items:center}
+.cmyk i{width:4px;height:4px;display:block}
+.cmyk i:nth-child(1){background:#191919;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.cmyk i:nth-child(2){background:#00ffff}.cmyk i:nth-child(3){background:#ff00ff}.cmyk i:nth-child(4){background:var(--gl-signal)}
+/* crop marks (print registration) */
+.cropwrap{position:relative}
+.crop{position:absolute;width:9px;height:9px;pointer-events:none;opacity:.5}
+.crop i{position:absolute;background:var(--gl-line-strong)}
+.crop.tl{top:-5px;left:-5px}.crop.tr{top:-5px;right:-5px}.crop.bl{bottom:-5px;left:-5px}.crop.br{bottom:-5px;right:-5px}
+.crop.tl i:first-child,.crop.tr i:first-child{top:0;width:9px;height:1px}
+.crop.tl i:last-child,.crop.tr i:last-child{top:0;width:1px;height:9px}
+.crop.tl i:last-child,.crop.bl i:last-child{left:0}.crop.tr i:last-child,.crop.br i:last-child{right:0}
+.crop.bl i:first-child,.crop.br i:first-child{bottom:0;width:9px;height:1px}
+.crop.bl i:last-child,.crop.br i:last-child{bottom:0;width:1px;height:9px}
+/* blueprint grid */
+.bpgrid{background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:28px 28px}
+
+/* ---------- token swatches ---------- */
+.swgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.sw{position:relative;padding:12px 12px 10px;background:linear-gradient(170deg,#10141f,#0a0d15);border:1px solid var(--gl-hair);
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+.sw .chip{width:100%;height:34px;margin-bottom:9px;border:1px solid rgba(255,255,255,.1);
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+.sw .nm{font:700 11px var(--gl-display);letter-spacing:.02em}
+.sw .vl{font:700 9px var(--gl-tech);letter-spacing:.08em;color:var(--gl-text-dim);margin-top:2px}
+.sw .ro{font:950 6.5px var(--gl-tech);letter-spacing:.18em;text-transform:uppercase;color:var(--gl-text-faint);margin-top:5px}
+
+/* ---------- material demo cards ---------- */
+.mat{width:340px;min-height:170px;padding:16px 18px 18px;position:relative}
+.mat .micro{display:block;margin-bottom:8px}
+.mat h3{font:740 15px/1.2 var(--gl-display);margin:0 0 6px}
+.mat p{font-size:11.5px;color:var(--gl-text-dim);margin:0;line-height:1.55}
+.backdrop-demo{position:relative;padding:26px;border-radius:14px;overflow:hidden;border:1px dashed rgba(255,255,255,.09);
+  background:
+   radial-gradient(220px 140px at 20% 30%, #2b3a63, transparent 70%),
+   radial-gradient(260px 160px at 75% 75%, #4a2a55, transparent 70%),
+   radial-gradient(200px 130px at 60% 20%, #1d4a44, transparent 70%), #0a0e16}
+.glass-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;font:700 10px var(--gl-display);color:#ffe6b5;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--gl-signal) 16%,transparent),color-mix(in srgb,var(--gl-signal) 5%,transparent));
+  border:1px solid color-mix(in srgb,var(--gl-signal) 30%,transparent);border-radius:99px;
+  box-shadow:0 6px 16px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.1);backdrop-filter:blur(8px)}
+.glass-chip .dot{width:5px;height:5px;border-radius:99px;background:var(--gl-signal);box-shadow:0 0 9px var(--gl-signal)}
+.glass-deck{position:relative;padding:18px 40px;text-align:center;
+  background:linear-gradient(180deg,rgba(10,22,30,.62),rgba(2,7,11,.78) 52%,rgba(2,6,10,.7));
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--gl-accent) 30%,rgba(255,255,255,.22)),
+   inset 0 -1px 0 rgba(0,0,0,.7), inset 0 0 0 1px color-mix(in srgb,var(--gl-accent) 22%,var(--gl-hair)),
+   inset 0 0 38px color-mix(in srgb,var(--gl-accent) 12%,transparent), 0 26px 70px rgba(0,0,0,.62);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent)}
+
+/* ============================================================
+   SPECIMEN — elevated HUD bar (Clocks & Tracker)
+   ============================================================ */
+.hudwrap{padding:34px 18px;border-radius:14px;border:1px dashed rgba(255,255,255,.09);
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.014) 0 14px,transparent 14px 28px);position:relative}
+.hudwrap .scr{position:absolute;bottom:8px;right:12px;font:700 10px var(--gl-tech);letter-spacing:.18em;color:#3b4254}
+.hud{position:relative;width:min(880px,100%);height:56px;margin:0 auto;overflow:hidden;isolation:isolate;display:flex;align-items:stretch}
+.hud .cell{display:flex;flex-direction:column;justify-content:center;padding:0 14px;position:relative;gap:2px;z-index:2}
+.hud .cell + .cell::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:1px;
+  background:linear-gradient(180deg,transparent,var(--gl-hair) 22%,var(--gl-hair) 78%,transparent)}
+.hud .lbl{font:950 7px var(--gl-tech);letter-spacing:.22em;text-transform:uppercase;color:#69748c}
+.hud .grip{width:22px;flex-direction:row;justify-content:center;align-items:center;gap:3px;cursor:grab}
+.hud .grip i{width:3px;height:3px;border-radius:99px;background:rgba(255,255,255,.22)}
+.hud .date .m{font:760 15.5px/1.05 var(--gl-display);white-space:nowrap;
+  background:linear-gradient(180deg,#fff,#ccd5e8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hud .watch .name{font:740 13px var(--gl-display);letter-spacing:.05em;text-shadow:0 0 14px var(--gl-glowsoft);white-space:nowrap}
+.hud .clockcell{align-items:flex-start}
+.hud .clock{font:700 17px var(--gl-display);font-variant-numeric:tabular-nums;letter-spacing:.04em;display:flex;align-items:center;gap:7px;
+  text-shadow:0 0 16px var(--gl-glowsoft)}
+.hud .pulse{width:5px;height:5px;border-radius:99px;background:var(--gl-accent);box-shadow:0 0 8px var(--gl-glow);animation:gl-bp 2.6s ease-in-out infinite}
+@keyframes gl-bp{0%,100%{opacity:.4}50%{opacity:1}}
+.hud .pips{display:flex;gap:3px;align-items:center;margin-top:1px}
+.hud .pip{width:9px;height:12px;border-radius:2px;background:rgba(255,255,255,.12)}
+.hud .pip.fill{background:var(--gl-accent);box-shadow:0 0 5px var(--gl-glowsoft)}
+.hud .pip.head{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.9)}
+.hud .mission{justify-content:center}
+.hud .msrow{display:flex;align-items:center;gap:7px}
+.hud .msnum{font:780 16px var(--gl-display);font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--gl-signal) 88%,#fff);
+  text-shadow:0 0 14px color-mix(in srgb,var(--gl-signal) 45%,transparent)}
+.hud .wx{margin-left:auto;justify-content:center;padding-right:18px}
+.hud .wxrow{display:flex;align-items:center;gap:8px;font:700 11.5px var(--gl-display)}
+.hud .wxic{font-size:13px;filter:drop-shadow(0 0 6px rgba(127,180,230,.8))}
+/* weather edge refraction (left) */
+.hud .wxwash{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(100deg, color-mix(in srgb,#cfe8ff 30%,transparent) 0%, color-mix(in srgb,#cfe8ff 14%,transparent) 22%, transparent 48%);
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 16%,transparent 42%);mask-image:linear-gradient(90deg,#000 0,#000 16%,transparent 42%)}
+.hud .wxrim{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,#7fb4e6 55%,transparent), inset 0 1px 0 color-mix(in srgb,#cfe8ff 62%,#fff),
+   inset 0 0 14px -2px color-mix(in srgb,#7fb4e6 42%,transparent), inset 14px 0 26px -16px color-mix(in srgb,#cfe8ff 75%,transparent);
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 14%,transparent 32%);mask-image:linear-gradient(90deg,#000 0,#000 14%,transparent 32%)}
+/* hud micro-annotations (the etching) */
+.hud .tag{position:absolute;right:24px;top:5px;z-index:3;display:flex;align-items:center;gap:6px}
+.hud .tag .micro{font-size:6.5px;letter-spacing:.26em}
+/* sheen sweep on demand */
+.sweep{position:absolute;top:0;bottom:0;width:34%;z-index:4;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.14),transparent);
+  transform:translateX(-180%) skewX(-12deg);opacity:0}
+.swept .sweep{animation:gl-sweep 1s cubic-bezier(.4,0,.2,1)}
+@keyframes gl-sweep{0%{transform:translateX(-180%) skewX(-12deg);opacity:0}18%{opacity:1}100%{transform:translateX(320%) skewX(-12deg);opacity:0}}
+
+/* ============================================================
+   SPECIMEN — elevated initiative cards
+   ============================================================ */
+.cardrow{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.gcard{position:relative;width:190px;height:64px;isolation:isolate;cursor:pointer;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
+  background:
+   linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 36%, rgba(0,0,0,.18)),
+   radial-gradient(120% 60% at 20% 0%, rgba(255,255,255,.10), transparent 50%),
+   linear-gradient(120deg, color-mix(in srgb, var(--acc,var(--gl-cyan)) 10%, var(--gl-ink-0)), var(--gl-ink-0) 70%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), inset 0 -1px 0 rgba(0,0,0,.6),
+   inset 0 0 0 1px var(--gl-hair), inset 0 0 28px rgba(0,0,0,.4);
+  transition:box-shadow .18s var(--gl-ease)}
+.gcard .acc{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--acc,var(--gl-cyan));box-shadow:0 0 16px var(--acc,var(--gl-cyan));z-index:7}
+.gcard .br{position:absolute;top:5px;left:9px;width:8px;height:8px;border-top:1px solid var(--gl-line-strong);border-left:1px solid var(--gl-line-strong);z-index:7;transition:.18s var(--gl-ease)}
+.gcard .nm{position:absolute;left:16px;bottom:9px;font:950 11px var(--gl-tech);letter-spacing:.08em;text-transform:uppercase;z-index:6;
+  text-shadow:0 2px 8px rgba(0,0,0,.9)}
+.gcard .init{position:absolute;right:7px;top:7px;z-index:6;padding:2px 7px;font:800 13px var(--gl-tech);font-variant-numeric:tabular-nums;
+  background:rgba(2,7,11,.78);clip-path:polygon(4px 0,100% 0,100% 100%,0 100%,0 4px)}
+.gcard .scrim{position:absolute;inset:0;z-index:5;background:linear-gradient(95deg,rgba(2,5,8,.88),rgba(2,5,8,.42) 50%,rgba(2,5,8,0))}
+.gcard .sheen{position:absolute;left:0;right:0;top:32%;height:1px;z-index:8;opacity:0;transform:scaleX(0);transform-origin:left center;
+  background:linear-gradient(90deg,transparent,var(--acc,var(--gl-cyan)) 24%,var(--acc,var(--gl-cyan)) 76%,transparent);
+  box-shadow:0 0 14px color-mix(in srgb,var(--acc,var(--gl-cyan)) 70%,transparent)}
+.gcard:hover .sheen{opacity:1;transform:scaleX(1);transition:transform .18s var(--gl-ease),opacity .18s var(--gl-ease)}
+.gcard.active{width:218px;height:96px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+  background:
+   linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,0) 36%, rgba(0,0,0,.18)),
+   radial-gradient(120% 60% at 20% 0%, rgba(255,255,255,.12), transparent 50%),
+   linear-gradient(120deg, color-mix(in srgb, var(--acc,var(--gl-cyan)) 16%, var(--gl-ink-0)), var(--gl-ink-0) 72%);
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--acc,var(--gl-cyan)) 20%,transparent), inset 0 -1px 0 rgba(0,0,0,.6),
+   inset 0 0 0 1px color-mix(in srgb,var(--acc,var(--gl-cyan)) 70%,var(--gl-hair)),
+   inset 0 0 32px rgba(0,0,0,.4), 0 18px 36px rgba(0,0,0,.7), 0 0 32px color-mix(in srgb,var(--acc,var(--gl-cyan)) 34%,transparent)}
+.gcard.active .acc{width:4px;background:linear-gradient(180deg,var(--acc,var(--gl-cyan)),var(--gl-violet) 50%,#ff66b3);
+  box-shadow:0 0 24px var(--acc,var(--gl-cyan)),0 0 24px var(--gl-violet)}
+.gcard.active .br{border-color:var(--acc,var(--gl-cyan));filter:drop-shadow(0 0 4px var(--acc,var(--gl-cyan)))}
+.gcard.active .nm{font-size:14px;bottom:11px}
+.gcard.active .init{background:var(--acc,var(--gl-cyan));color:var(--gl-ink-0);font-size:15px}
+.gcard.active .kick{position:absolute;left:24px;top:7px;z-index:6;font:950 6.5px var(--gl-tech);letter-spacing:.26em;color:color-mix(in srgb,var(--acc,var(--gl-cyan)) 85%,#fff)}
+.gcard.active .sheen{animation:gl-sheendraw .36s var(--gl-ease) .1s both}
+@keyframes gl-sheendraw{from{opacity:0;transform:scaleX(0)}30%{opacity:1}to{opacity:1;transform:scaleX(1)}}
+.gcard.defeated{filter:saturate(.18) brightness(.62);opacity:.65}
+.gcard.hazardous .acc{background:var(--gl-hazard);box-shadow:0 0 16px var(--gl-hazard);animation:gl-dread 3.2s ease-in-out infinite}
+.gcard.hazardous .ribbon{position:absolute;right:0;top:0;bottom:0;width:4px;z-index:7;opacity:.8}
+@keyframes gl-dread{0%,100%{filter:brightness(.85)}50%{filter:brightness(1.35)}}
+
+/* ============================================================
+   SPECIMEN — ceremony (round splash, signal amber)
+   ============================================================ */
+.ceremony{position:relative;padding:46px 20px 54px;border-radius:14px;border:1px dashed rgba(255,255,255,.09);overflow:hidden;
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.012) 0 14px,transparent 14px 28px);text-align:center;cursor:pointer}
+.ceremony .crule{position:absolute;left:6%;right:6%;top:50%;height:1px;transform:scaleX(0);opacity:0;
+  background:linear-gradient(90deg,transparent,var(--gl-signal) 24%,var(--gl-signal) 76%,transparent);
+  box-shadow:0 0 18px color-mix(in srgb,var(--gl-signal) 70%,transparent)}
+.ceremony .cdeck{display:inline-block;position:relative;padding:14px 64px 22px}
+.ceremony .clabel{display:flex;align-items:center;justify-content:center;gap:10px;font:950 12px var(--gl-tech);
+  letter-spacing:.55em;text-transform:uppercase;color:rgba(243,251,255,.85);text-indent:.55em}
+.ceremony .clabel::before{content:"";width:14px;height:1px;background:var(--gl-signal);box-shadow:0 0 8px var(--gl-signal)}
+.ceremony .cnum{font:800 clamp(72px,11vw,128px)/0.78 var(--gl-display);font-variant-numeric:tabular-nums;letter-spacing:.01em;
+  color:var(--gl-text-bright);margin-top:10px}
+.ceremony .cnum .d{display:inline-block;opacity:.18}
+.ceremony .csub{margin-top:16px;font:950 9px var(--gl-tech);letter-spacing:.45em;text-transform:uppercase;color:var(--gl-text-faint)}
+.ceremony.play .crule{animation:gl-rulein .26s var(--gl-ease) both}
+.ceremony.play .cnum .d{animation:gl-digit .42s cubic-bezier(.2,1,.3,1) both}
+.ceremony.play .cnum .d:nth-child(1){animation-delay:.22s}
+.ceremony.play .cnum .d:nth-child(2){animation-delay:.3s}
+@keyframes gl-rulein{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
+@keyframes gl-digit{0%{opacity:.18;filter:brightness(1)}40%{opacity:1;filter:brightness(1.6);text-shadow:0 0 32px color-mix(in srgb,var(--gl-signal) 60%,transparent),0 16px 50px rgba(0,0,0,.85)}
+ 100%{opacity:1;filter:brightness(1.08);text-shadow:0 0 22px color-mix(in srgb,var(--gl-signal) 38%,transparent),0 14px 42px rgba(0,0,0,.86)}}
+.ceremony .hint2{position:absolute;bottom:10px;right:14px;font:700 8px var(--gl-tech);letter-spacing:.2em;color:#3b4254;text-transform:uppercase}
+
+/* ---------- buttons & states ---------- */
+.btnrow{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.gbtn{border:1px solid var(--gl-hair);background:var(--gl-ink-2);color:rgba(243,251,255,.82);padding:8px 16px;cursor:pointer;
+  font:950 9px var(--gl-tech);letter-spacing:.18em;text-transform:uppercase;
+  clip-path:polygon(6px 0,100% 0,100% 100%,0 100%,0 6px);
+  transition:background .18s var(--gl-ease),color .18s var(--gl-ease),transform .12s,box-shadow .18s var(--gl-ease)}
+.gbtn:hover{background:#1a2233;transform:translateY(-1px)}
+.gbtn:active{transform:translateY(0) scale(.97)}
+.gbtn.primary{background:var(--gl-accent);color:var(--gl-ink-0);border-color:transparent;
+  box-shadow:0 0 18px color-mix(in srgb,var(--gl-accent) 42%,transparent)}
+.gbtn.primary:hover{filter:brightness(1.12);box-shadow:0 0 30px color-mix(in srgb,var(--gl-accent) 55%,transparent)}
+.gbtn.signal{background:var(--gl-signal);color:var(--gl-ink-0);border-color:transparent;
+  box-shadow:0 0 18px color-mix(in srgb,var(--gl-signal) 42%,transparent)}
+.gbtn.danger{background:transparent;color:var(--gl-hazard);border-color:color-mix(in srgb,var(--gl-hazard) 40%,transparent)}
+.gbtn.danger:hover{background:color-mix(in srgb,var(--gl-hazard) 14%,transparent)}
+
+.staterow{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.statebox{position:relative;height:88px;padding:12px 14px;isolation:isolate;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
+  background:linear-gradient(170deg,#0f1420,#090c13);box-shadow:inset 0 0 0 1px var(--gl-hair), inset 0 1px 0 rgba(255,255,255,.05)}
+.statebox .micro{display:block;margin-bottom:6px}
+.statebox .big{font:760 17px var(--gl-display)}
+.statebox.hover-d{box-shadow:inset 0 0 0 1px var(--gl-hair), inset 0 1px 0 rgba(255,255,255,.05)}
+.statebox.hover-d::after{content:"";position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gl-accent) 30%,var(--gl-accent) 70%,transparent);box-shadow:0 0 10px var(--gl-glow)}
+.statebox.active-d{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gl-accent) 70%,var(--gl-hair)), inset 0 1px 0 color-mix(in srgb,var(--gl-accent) 20%,transparent), 0 0 26px var(--gl-glowsoft)}
+.statebox.active-d .edge{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gl-accent);box-shadow:0 0 18px var(--gl-glow)}
+.statebox.hazard-d{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gl-hazard) 50%,var(--gl-hair)), 0 0 26px color-mix(in srgb,var(--gl-hazard) 20%,transparent);animation:gl-dread 3.2s ease-in-out infinite}
+.statebox.hazard-d .rib{position:absolute;right:0;top:0;bottom:0;width:4px}
+.statebox.terminal-d{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,#ffd27a 85%,#fff), inset -22px 0 40px -16px color-mix(in srgb,#ffd27a 85%,transparent), 0 0 30px color-mix(in srgb,#ff9a3c 30%,transparent);animation:gl-term 2.4s ease-in-out infinite}
+@keyframes gl-term{0%,100%{filter:brightness(.92)}50%{filter:brightness(1.25)}}
+.statebox.defeated-d{filter:saturate(.18) brightness(.62);opacity:.65}
+
+/* type specimen */
+.typegrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:760px){.typegrid{grid-template-columns:1fr}}
+.typebox{padding:18px;background:linear-gradient(170deg,#0f1420,#090c13);box-shadow:inset 0 0 0 1px var(--gl-hair);position:relative;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%)}
+.typebox .micro{display:block;margin-bottom:12px}
+.t-hero{font:760 34px/1 var(--gl-display);background:linear-gradient(180deg,#fff,#cdd6e8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.t-num{font:700 26px var(--gl-display);font-variant-numeric:tabular-nums;text-shadow:0 0 16px var(--gl-glowsoft)}
+.t-title{font:740 16px var(--gl-display)}
+.t-label{font:950 9px var(--gl-tech);letter-spacing:.34em;text-transform:uppercase;color:rgba(243,251,255,.85)}
+.t-sub{font:950 8.5px var(--gl-tech);letter-spacing:.45em;text-transform:uppercase;color:var(--gl-text-faint)}
+.t-body{font:400 12.5px/1.55 var(--gl-display);color:var(--gl-text-dim)}
+.trow{display:flex;align-items:baseline;gap:16px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.trow:last-child{border-bottom:none}
+.trow .use{margin-left:auto;font:700 8px var(--gl-tech);letter-spacing:.14em;color:#566073;text-transform:uppercase;text-align:right}
+
+footer{margin-top:70px;display:flex;align-items:center;gap:12px;color:#3f4761;font:700 9px var(--gl-tech);letter-spacing:.22em;text-transform:uppercase}
+footer .rule{flex:1;opacity:.25}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="kicker">GL Universe · Design Language · v1.0</div>
+  <h1>Etched Glass</h1>
+  <p class="sub">The unified GL Universe look: <b>liquid glass</b> (Clocks &amp; Tracker's "Arcane Glass" material) as the surface,
+  <b>Arknights: Endfield precision</b> (the Initiative module's drafting layer) etched on top of it.
+  Frosted, blurred, glow-bloomed slabs of dark glass — annotated with chamfered corners, L-brackets,
+  micro-tracked labels and 1px rules of light. Signal amber <b style="color:var(--gl-signal)">#FFD24A</b> is the family's ceremony color.</p>
+
+  <div class="deck">
+    <span class="dl">Accent channel —</span>
+    <button class="tgl active" data-acc="#6b86d6" style="--sw:#6b86d6">Night</button>
+    <button class="tgl" data-acc="#e0a368" style="--sw:#e0a368">Dawn</button>
+    <button class="tgl" data-acc="#6fb8d8" style="--sw:#6fb8d8">Day</button>
+    <button class="tgl" data-acc="#b884d0" style="--sw:#b884d0">Dusk</button>
+    <button class="tgl" data-acc="#5eeaff" style="--sw:#5eeaff">Friendly</button>
+    <button class="tgl" data-acc="#ff4a52" style="--sw:#ff4a52">Hostile</button>
+    <button class="tgl" data-acc="#b497ff" style="--sw:#b497ff">Mystery</button>
+    <button class="tgl" data-acc="#ffd24a" style="--sw:#ffd24a">Signal</button>
+  </div>
+
+  <!-- ============ 01 TOKENS ============ -->
+  <section>
+    <div class="shead"><span class="no">01</span><h2>Color tokens</h2><span class="note">--gl-* · semantic + dynamic accent</span></div>
+    <div class="swgrid">
+      <div class="sw"><div class="chip" style="background:#02070b"></div><div class="nm">Ink 0</div><div class="vl">#02070B</div><div class="ro">Void · decks</div></div>
+      <div class="sw"><div class="chip" style="background:#080b11"></div><div class="nm">Ink 1</div><div class="vl">#080B11</div><div class="ro">Glass body</div></div>
+      <div class="sw"><div class="chip" style="background:#0b0f17"></div><div class="nm">Ink 2</div><div class="vl">#0B0F17</div><div class="ro">Inputs · wells</div></div>
+      <div class="sw"><div class="chip" style="background:#161d2c"></div><div class="nm">Ink 3</div><div class="vl">#161D2C</div><div class="ro">Raised rows</div></div>
+      <div class="sw"><div class="chip" style="background:#ffd24a;box-shadow:0 0 22px rgba(255,210,74,.4)"></div><div class="nm">Signal</div><div class="vl">#FFD24A</div><div class="ro">Ceremony · mission</div></div>
+      <div class="sw"><div class="chip" style="background:#5eeaff;box-shadow:0 0 22px rgba(94,234,255,.35)"></div><div class="nm">Cyan</div><div class="vl">#5EEAFF</div><div class="ro">System · friendly</div></div>
+      <div class="sw"><div class="chip" style="background:#ff4a52;box-shadow:0 0 22px rgba(255,74,82,.35)"></div><div class="nm">Hazard</div><div class="vl">#FF4A52</div><div class="ro">Danger · doom</div></div>
+      <div class="sw"><div class="chip" style="background:#5fdb92"></div><div class="nm">Good</div><div class="vl">#5FDB92</div><div class="ro">Success · max</div></div>
+      <div class="sw"><div class="chip" style="background:#b497ff"></div><div class="nm">Violet</div><div class="vl">#B497FF</div><div class="ro">Mystery · hidden</div></div>
+      <div class="sw"><div class="chip" style="background:#37d99a"></div><div class="nm">Mission</div><div class="vl">#37D99A</div><div class="ro">Goal emerald</div></div>
+      <div class="sw"><div class="chip" style="background:linear-gradient(98deg,#6b86d6,#e0a368,#6fb8d8,#b884d0)"></div><div class="nm">Shift tints</div><div class="vl">Night→Dusk</div><div class="ro">→ --gl-accent</div></div>
+      <div class="sw"><div class="chip" style="background:linear-gradient(180deg,var(--gl-accent),#b497ff,#ff66b3)"></div><div class="nm">Holo ramp</div><div class="vl">accent→violet→#FF66B3</div><div class="ro">One element max</div></div>
+    </div>
+    <p class="cap">Everything contextual flows through one variable — <b>--gl-accent</b> — set by shift, disposition, weather or delve stage
+    (try the switcher above). Glows are never hand-picked: <b>color-mix(in srgb, accent N%, transparent)</b>.</p>
+  </section>
+
+  <!-- ============ 02 MATERIAL ============ -->
+  <section>
+    <div class="shead"><span class="no">02</span><h2>Material — three glass levels</h2><span class="note">blur 16 · blur 8 · masked deck</span></div>
+    <div class="backdrop-demo">
+      <div class="row">
+        <div class="mat glass-panel chamfer">
+          <i class="chamfer-line"></i><i class="bracket lit"></i>
+          <span class="micro" style="margin-left:14px">glass-panel · blur 16</span>
+          <h3>Primary surface</h3>
+          <p>HUD bars, rail decks, windows. Three-layer gradient on ink, 1px edge rim, top light catch, bottom inset depth, accent bloom. Chamfered top-right corner with a hairline of accent light on the cut.</p>
+        </div>
+        <div class="mat" style="display:flex;flex-direction:column;gap:14px;justify-content:center;background:none;border:none;box-shadow:none">
+          <span class="micro">glass-chip · blur 8</span>
+          <div><span class="glass-chip"><span class="dot"></span> FESTIVAL OF LANTERNS · 3 DAYS</span></div>
+          <div><span class="glass-chip" style="--gl-signal:#5eeaff;color:#cdeffc">SCAN COMPLETE</span></div>
+          <span class="micro" style="margin-top:8px">glass-deck · ceremony</span>
+          <div class="glass-deck">
+            <div class="micro amber" style="letter-spacing:.4em">Watch Change</div>
+            <div style="font:760 23px var(--gl-display);margin-top:4px">DUSK WATCH</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="cap"><b>Glass is never flat.</b> Every level keeps the same anatomy — rim, light catch, depth, bloom — only the weight changes.
+    Backdrop blur lives at panel level only; chips inside panels fake it with alpha fills.</p>
+  </section>
+
+  <!-- ============ 03 ETCHING ============ -->
+  <section>
+    <div class="shead"><span class="no">03</span><h2>The etching — geometry &amp; devices</h2><span class="note">chamfer · bracket · rule · stripes · strip</span></div>
+    <div class="staterow">
+      <div class="statebox"><span class="micro">Chamfer · panels</span>
+        <div style="position:relative;height:40px;margin-top:6px;border-radius:10px;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);background:linear-gradient(120deg,color-mix(in srgb,var(--gl-accent) 18%,#0d1119),#0d1119);box-shadow:inset 0 0 0 1px var(--gl-edge), inset 0 1px 0 rgba(255,255,255,.1)"></div></div>
+      <div class="statebox"><span class="micro">Notch · chips</span>
+        <div style="display:flex;gap:8px;margin-top:8px"><span style="padding:5px 12px;font:800 12px var(--gl-tech);background:rgba(2,7,11,.85);box-shadow:inset 0 0 0 1px var(--gl-hair);clip-path:polygon(4px 0,100% 0,100% 100%,0 100%,0 4px)">21</span>
+        <span style="padding:5px 12px;font:800 12px var(--gl-tech);background:var(--gl-accent);color:var(--gl-ink-0);clip-path:polygon(4px 0,100% 0,100% 100%,0 100%,0 4px)">17</span></div></div>
+      <div class="statebox"><span class="micro">L-bracket · tick</span>
+        <div style="position:relative;height:40px;margin-top:6px">
+          <i class="bracket" style="top:2px;left:2px"></i><i class="bracket lit" style="top:2px;left:34px"></i>
+          <div style="position:absolute;bottom:4px;left:2px;display:flex;align-items:center;gap:8px"><i style="width:14px;height:1px;background:var(--gl-signal);box-shadow:0 0 8px var(--gl-signal)"></i><span class="micro amber">Round</span></div>
+        </div></div>
+      <div class="statebox"><span class="micro">Precision rule</span>
+        <div class="rule" style="margin-top:22px"></div>
+        <div class="rule" style="margin-top:14px;opacity:.3;box-shadow:none"></div></div>
+      <div class="statebox"><span class="micro">Stripes · signal / hazard</span>
+        <div class="sigstripes" style="height:8px;margin-top:14px"></div>
+        <div class="stripes" style="height:8px;margin-top:8px"></div>
+        <div class="stripes" style="height:18px;margin-top:8px;opacity:.14"></div></div>
+      <div class="statebox"><span class="micro">Data strip · serial</span>
+        <div style="margin-top:18px" class="datastrip"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="micro" style="margin-top:8px;font-size:6.5px">GLU·TIME // 0042</div></div>
+      <div class="statebox"><span class="micro">Crop marks · CMYK chips</span>
+        <div class="cropwrap" style="height:34px;margin:14px 8px 0;background:rgba(255,255,255,.02);box-shadow:inset 0 0 0 1px var(--gl-hair)">
+          <span class="crop tl"><i></i><i></i></span><span class="crop tr"><i></i><i></i></span>
+          <span class="crop bl"><i></i><i></i></span><span class="crop br"><i></i><i></i></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px"><span class="cmyk"><i></i><i></i><i></i><i></i></span><span class="micro" style="font-size:6.5px">REG · PRESS SHEET</span></div></div>
+      <div class="statebox bpgrid"><span class="micro">Blueprint grid</span>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:7px">
+          <span style="color:var(--gl-accent);font-size:8px">▲</span><span class="micro" style="font-size:6.5px;color:var(--gl-text-dim)">Triangle bullet · live row</span></div>
+        <div style="margin-top:5px;display:flex;align-items:center;gap:7px">
+          <span style="color:var(--gl-text-faint);font-size:8px">▲</span><span class="micro" style="font-size:6.5px">Idle row</span></div></div>
+    </div>
+    <p class="cap">Devices annotate like a technical drawing — quiet hairlines until their state matters. <b>One cut corner per silhouette.</b>
+    Two stripe registers: opaque <b>black×signal</b> caution (mission edging, confirm) and translucent <b>hazard red</b> (doom, terminal) — ceremony only, never decoration.
+    Print-press artifacts (crop marks, CMYK registration chips, serials) are Endfield's provenance garnish: at most one per window.</p>
+  </section>
+
+  <!-- ============ 04 TYPOGRAPHY ============ -->
+  <section>
+    <div class="shead"><span class="no">04</span><h2>Typography — two voices</h2><span class="note">Oxanium display · Bahnschrift/mono technical</span></div>
+    <div class="typegrid">
+      <div class="typebox"><span class="micro">Display voice · Oxanium</span>
+        <div class="trow"><span class="t-hero">Dusk Watch</span><span class="use">hero title</span></div>
+        <div class="trow"><span class="t-num">17:40</span><span class="use">live numeral</span></div>
+        <div class="trow"><span class="t-title">Reach the gate</span><span class="use">title 16</span></div>
+        <div class="trow"><span class="t-body">Each day is four watches of six hours; each hour, six stretches.</span><span class="use">body</span></div>
+      </div>
+      <div class="typebox"><span class="micro">Technical voice · Bahnschrift / JetBrains Mono</span>
+        <div class="trow"><span class="t-label">Round · 02</span><span class="use">label ·34em</span></div>
+        <div class="trow"><span class="t-sub">Initiative · Cycle — 02</span><span class="use">sub ·45em</span></div>
+        <div class="trow"><span class="micro">Stretch 4 / 6 · 20 min</span><span class="use">micro ·22em</span></div>
+        <div class="trow"><span class="micro amber">Mission · 14 stretches to go</span><span class="use">signal kicker</span></div>
+      </div>
+    </div>
+    <p class="cap"><b>Numerals are always Oxanium + tabular.</b> Anything that reads like an instrument annotation — kickers, sub-strings,
+    chrome — is the technical voice, uppercase, tracked .12–.55em, weight 950.</p>
+  </section>
+
+  <!-- ============ 05 HUD SPECIMEN ============ -->
+  <section>
+    <div class="shead"><span class="no">05</span><h2>Specimen — elevated time HUD</h2><span class="note">click the bar → sheen sweep</span></div>
+    <div class="hudwrap">
+      <div class="hud glass-panel chamfer" id="hud" title="Click: sheen sweep">
+        <i class="chamfer-line"></i>
+        <div class="wxwash"></div><div class="wxrim"></div>
+        <div class="sweep"></div>
+        <div class="tag"><span class="datastrip" style="height:6px"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="micro">GLU·TIME</span></div>
+        <div class="cell grip"><i></i><i></i><i></i></div>
+        <div class="cell wxcell" style="padding-left:16px">
+          <span class="lbl">Weather</span>
+          <span class="wxrow"><span class="wxic">🌧</span> Cold Rain · 8°</span>
+        </div>
+        <div class="cell date">
+          <span class="lbl">Erastus 14 · 4724 AR</span>
+          <span class="m">Fireday</span>
+        </div>
+        <div class="cell watch">
+          <span class="lbl">Watch 3 / 4</span>
+          <span class="name">Dusk Watch</span>
+        </div>
+        <div class="cell clockcell">
+          <span class="clock">17:40 <span class="pulse"></span></span>
+          <span class="pips"><span class="pip fill"></span><span class="pip fill"></span><span class="pip fill"></span><span class="pip head"></span><span class="pip"></span><span class="pip"></span></span>
+        </div>
+        <div class="cell mission wx">
+          <span class="lbl" style="color:color-mix(in srgb,var(--gl-signal) 60%,#69748c)">Mission · Reach the gate</span>
+          <span class="msrow"><span class="msnum">14</span><span class="micro amber" style="font-size:6.5px">Stretches to go</span></span>
+        </div>
+      </div>
+      <span class="scr">FOUNDRY · TOP BAR · 56PX</span>
+    </div>
+    <p class="cap">The Arcane Glass bar, etched: <b>chamfered top-right corner</b> with an accent hairline on the cut, a <b>GLU·TIME data-strip
+    tag</b>, the weather system's masked left-edge refraction untouched, and the mission countdown re-pointed at <b>signal amber</b>.
+    Shift tint still owns the accent channel — switch it above and watch the glass re-light.</p>
+  </section>
+
+  <!-- ============ 06 CARDS SPECIMEN ============ -->
+  <section>
+    <div class="shead"><span class="no">06</span><h2>Specimen — elevated initiative cards</h2><span class="note">hover a card · glassier surfaces, holo edge</span></div>
+    <div class="cardrow">
+      <div class="gcard active" style="--acc:var(--gl-cyan)">
+        <div class="scrim"></div><span class="acc"></span><i class="br"></i>
+        <span class="kick">ACTIVE · PC</span><span class="sheen"></span>
+        <span class="nm">Seelah</span><span class="init">21</span>
+      </div>
+      <div class="gcard" style="--acc:#ffce6a">
+        <div class="scrim"></div><span class="acc"></span><i class="br"></i><span class="sheen"></span>
+        <span class="nm">Town Guard</span><span class="init">17</span>
+      </div>
+      <div class="gcard hazardous" style="--acc:var(--gl-hazard)">
+        <div class="scrim"></div><span class="acc"></span><i class="br"></i><span class="sheen"></span>
+        <span class="ribbon stripes"></span>
+        <span class="nm">Wight Commander</span><span class="init">15</span>
+      </div>
+      <div class="gcard" style="--acc:var(--gl-violet)">
+        <div class="scrim"></div><span class="acc"></span><i class="br"></i><span class="sheen"></span>
+        <span class="nm" style="color:var(--gl-violet)">???</span><span class="init">??</span>
+      </div>
+      <div class="gcard defeated" style="--acc:var(--gl-hazard)">
+        <div class="scrim"></div><span class="acc"></span><i class="br"></i>
+        <span class="nm">Skeleton</span><span class="init">08</span>
+      </div>
+    </div>
+    <p class="cap">Initiative's notched geometry, upgraded to the glass material: accent-tinted three-layer surface, inset rim + depth.
+    The active card earns the <b>holo edge ramp</b> (the one allowed per screen) and its sheen line; the hostile elite carries a
+    <b>hazard-stripe ribbon</b> on the trailing edge with the dread pulse.</p>
+  </section>
+
+  <!-- ============ 07 CEREMONY ============ -->
+  <section>
+    <div class="shead"><span class="no">07</span><h2>Ceremony — the reveal contract</h2><span class="note">rule moves → content lights → settle</span></div>
+    <div class="ceremony bpgrid" id="ceremony" title="Click to replay">
+      <div class="crule"></div>
+      <div class="cdeck glass-deck cropwrap">
+        <span class="crop tl"><i></i><i></i></span><span class="crop tr"><i></i><i></i></span>
+        <span class="crop bl"><i></i><i></i></span><span class="crop br"><i></i><i></i></span>
+        <div class="clabel">Round</div>
+        <div class="cnum"><span class="d">0</span><span class="d">3</span></div>
+        <div class="csub">Initiative · Cycle — 03</div>
+      </div>
+      <span class="hint2">Click to replay</span>
+    </div>
+    <p class="cap">Digits exist as <b>etched ghosts at 18% opacity</b>; the signal-amber precision rule draws across and lights them as it passes —
+    brightness bursts to 1.6, settles to 1.08. Anticipation ≤ 80ms, selective overshoot on numerals only.
+    Ceremony color is <b>signal amber</b> regardless of accent context: system events outrank dispositions.</p>
+  </section>
+
+  <!-- ============ 08 CONTROLS & STATES ============ -->
+  <section>
+    <div class="shead"><span class="no">08</span><h2>Controls &amp; state language</h2><span class="note">press 120ms · hover rule 180ms</span></div>
+    <div class="btnrow">
+      <button class="gbtn primary">End Turn</button>
+      <button class="gbtn signal">Pass Turn</button>
+      <button class="gbtn">Roll Pool</button>
+      <button class="gbtn danger">Abandon Delve</button>
+    </div>
+    <div class="staterow" style="margin-top:16px">
+      <div class="statebox"><span class="micro">Idle</span><span class="big" style="color:var(--gl-text-dim)">Torches</span></div>
+      <div class="statebox hover-d"><span class="micro">Hover · rule draws</span><span class="big">Torches</span></div>
+      <div class="statebox active-d"><span class="edge"></span><span class="micro" style="color:var(--gl-accent);margin-left:6px">Featured</span><span class="big" style="margin-left:6px">Torches · 6d6</span></div>
+      <div class="statebox hazard-d"><span class="rib stripes"></span><span class="micro" style="color:var(--gl-hazard)">Hazard · dread</span><span class="big" style="color:#ffb3b6">Corruption</span></div>
+      <div class="statebox terminal-d"><span class="micro" style="color:#ffd27a">Terminal · 2.4s pulse</span><span class="big" style="color:#ffe2b0">☠ Pitch Black</span></div>
+      <div class="statebox defeated-d"><span class="micro">Spent</span><span class="big">Skeleton</span></div>
+    </div>
+    <p class="cap">Six states, one grammar: idle is near-monochrome; hover draws a rule; featured earns the edge bar + rim;
+    hazard goes red with dread; terminal intensifies the refraction; spent desaturates — <b>but the brackets never disappear</b>.</p>
+  </section>
+
+  <footer><span class="cmyk"><i></i><i></i><i></i><i></i></span><span>GL Universe · Etched Glass · docs/design-language.md</span><span class="rule"></span><span>Arcane Glass × Endfield · GLU·DL // 0001</span></footer>
+</div>
+
+<script>
+// accent switcher
+document.querySelectorAll('.tgl').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tgl').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.documentElement.style.setProperty('--gl-accent', b.dataset.acc);
+}));
+// hud sheen sweep
+const hud=document.getElementById('hud');
+hud.addEventListener('click',()=>{hud.classList.remove('swept');void hud.offsetWidth;hud.classList.add('swept');});
+// ceremony replay
+const cer=document.getElementById('ceremony');
+function play(){cer.classList.remove('play');void cer.offsetWidth;cer.classList.add('play');}
+cer.addEventListener('click',play);
+new IntersectionObserver(e=>{if(e[0].isIntersecting){play();}},{threshold:.5}).observe(cer);
+</script>
+</body>
+</html>
