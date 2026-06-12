@@ -77,7 +77,7 @@
 /* DOWNED — red banner across the disc centre, above the art */
 #glct-support-hud .coin .dband{display:none}
 #glct-support-hud .is-downed .disc .art{filter:grayscale(.85) brightness(.58)}
-#glct-support-hud .is-downed .ring .seg.on{stroke:#e0584f;filter:drop-shadow(0 0 5px rgba(224,88,79,.6))}
+#glct-support-hud .is-downed .ring .seg.on{stroke:var(--gl-hazard);filter:drop-shadow(0 0 5px color-mix(in srgb,var(--gl-hazard) 60%,transparent))}
 #glct-support-hud .is-downed .coin .dband{display:block;position:absolute;left:0;right:0;top:50%;z-index:7;
   transform:translateY(-50%);text-align:center;font:800 10.5px/1 "Oxanium","Segoe UI",sans-serif;
   letter-spacing:.3em;text-indent:.3em;text-transform:uppercase;color:#ff5a4d;
@@ -109,13 +109,13 @@
 #glct-support-hud .hero .state{position:absolute;left:13px;top:11px;z-index:2;display:inline-flex;align-items:center;gap:5px;
   font:800 8px/1 "Oxanium","Segoe UI",sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:99px;border:1px solid;white-space:nowrap}
 #glct-support-hud .hero .state.ok{color:#9ff0c4;border-color:rgba(111,224,160,.4);background:rgba(111,224,160,.14)}
-#glct-support-hud .hero .state.down{display:none;color:#ffd0cb;border-color:rgba(224,88,79,.5);background:rgba(224,88,79,.2)}
+#glct-support-hud .hero .state.down{display:none;color:#ffd0cb;border-color:color-mix(in srgb,var(--gl-hazard) 50%,transparent);background:color-mix(in srgb,var(--gl-hazard) 20%,transparent)}
 #glct-support-hud .is-downed .state.ok{display:none}
 #glct-support-hud .is-downed .state.down{display:inline-flex}
 #glct-support-hud .is-downed .hero .art{filter:grayscale(.85) brightness(.58)}
 #glct-support-hud .sheet-close{position:absolute;right:9px;top:8px;z-index:3;width:22px;height:22px;border-radius:7px;
   border:1px solid var(--hair);background:rgba(8,11,17,.55);color:#cdd6e6;cursor:pointer;display:grid;place-items:center;font-size:11px;transition:.14s}
-#glct-support-hud .sheet-close:hover{background:rgba(224,88,79,.25);color:#fff}
+#glct-support-hud .sheet-close:hover{background:color-mix(in srgb,var(--gl-hazard) 25%,transparent);color:#fff}
 
 /* DOWNED band across the hero (and reused by the card takeover header) */
 #glct-support-hud .dband-wide{display:none}
@@ -275,7 +275,7 @@
   font:600 12px/1 "Oxanium","Segoe UI",sans-serif;transition:.14s}
 .glct-supeditor .sup-eb:hover{background:rgba(127,160,231,.16)}
 .glct-supeditor .sup-eb.primary{background:#5a7fd6;color:#fff;border-color:transparent}
-.glct-supeditor .sup-eb.danger:hover{background:rgba(224,88,79,.2)}
+.glct-supeditor .sup-eb.danger:hover{background:color-mix(in srgb,var(--gl-hazard) 20%,transparent)}
 .glct-supeditor .sup-eb.mini{padding:6px 8px}
 .glct-supeditor .sup-ed-body{display:grid;grid-template-columns:200px 1fr;gap:12px;align-items:start}
 .glct-supeditor .sup-ed-list{display:flex;flex-direction:column;gap:4px;max-height:62vh;overflow-y:auto;
@@ -351,6 +351,6 @@
   font:600 11.5px/1.3 "Oxanium","Segoe UI",sans-serif;transition:.16s}
 .glct-sup-import .imp-chip.idle{background:rgba(127,160,231,.12);color:var(--color-text-dark-secondary,#888);border:1px solid rgba(127,160,231,.22)}
 .glct-sup-import .imp-chip.ok{background:rgba(127,214,160,.16);color:#2f8f5c;border:1px solid rgba(127,214,160,.45)}
-.glct-sup-import .imp-chip.err{background:rgba(224,88,79,.14);color:#c0473e;border:1px solid rgba(224,88,79,.4)}
+.glct-sup-import .imp-chip.err{background:color-mix(in srgb,var(--gl-hazard) 14%,transparent);color:#c0473e;border:1px solid color-mix(in srgb,var(--gl-hazard) 40%,transparent)}
 .glct-sup-import .imp-hint{margin:0;font-size:11.5px;color:var(--color-text-dark-secondary,#888)}
 .glct-sup-import .imp-hint i{color:#e0b15a}

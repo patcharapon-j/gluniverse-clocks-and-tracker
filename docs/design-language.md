@@ -451,13 +451,21 @@ Brackets stay visible — the drafting layer never disappears.
 Already canonical for: glass-panel recipe, edge refraction, scrims, slot reel,
 tactile pop, shift-tint accent channel, reduced-motion discipline.
 
-To adopt from this spec:
-- Chamfer the HUD bar's top-right corner (§4.1) + hairline on the cut.
-- Add L-bracket + micro-kicker to the tracker dock and weather/delving windows.
-- Re-point ambers (`#ffc454`, mission countdown) at `--gl-signal`.
-- Unify `--danger: #e0584f` → `--gl-hazard` (and derive glows via color-mix).
-- Adopt technical voice (Bahnschrift/mono) for `.lbl`-class micro-labels
-  (currently Oxanium); Oxanium stays for all numerals/titles.
+Adoption status (shared `--gl-*` tokens live in `styles/hud.css` on `:root`):
+- ✅ HUD bar chamfered top-right (§4.1) + accent hairline on the cut. Note the
+  implementation detail: `clip-path` clips outer box-shadows, so the bar's drop
+  + bloom moved to `filter: drop-shadow(...)` (filters apply post-clip and
+  follow the cut silhouette). The hairline rides `.main::after` because the
+  bar's own pseudo-elements are claimed (light catch / weather wash).
+- ✅ Tracker dock chamfered (12px cut), same shadow technique.
+- ✅ Ambers re-pointed at `--gl-signal` (event chips, calendar accent, pins);
+  pale text tint = `--gl-signal-pale`, pinned glow = `--gl-signal-hot`.
+- ✅ `--danger #e0584f` → `--gl-hazard` across all five stylesheets, with every
+  rgba() glow derived via `color-mix`.
+- ✅ Technical voice for micro-labels (`.lbl`, `.rem`, `.wd`, dock + weather
+  window titles) via `--gl-tech`; Oxanium stays for all numerals/titles.
+- ☐ L-bracket + micro-kicker on weather/delving windows — needs in-app visual
+  verification before landing (template/DOM touch).
 
 ### 9.2 Initiative (`--gluni-*`)
 

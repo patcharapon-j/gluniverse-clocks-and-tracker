@@ -51,7 +51,7 @@
 #glct-hud .bar-wx-scrim.off{opacity:0}
 #glct-hud .bar.wx-ominous .bar-wx-scrim{
   background:
-    linear-gradient(90deg, rgba(224,88,79,.34) 0, transparent 4px),
+    linear-gradient(90deg, color-mix(in srgb,var(--gl-hazard) 34%,transparent) 0, transparent 4px),
     linear-gradient(100deg, rgba(14,8,9,.64) 0%, rgba(14,8,9,.4) 17%, rgba(14,8,9,0) 40%)}
 
 /* Liquid-glass edge refraction — confined to the LEFT ~third of the bar, matching
@@ -147,10 +147,10 @@
 #glct-hud .date .wxmini-temp{font-size:7px;letter-spacing:.13em;text-transform:uppercase;color:#9aa3b6;font-weight:700;white-space:nowrap}
 #glct-hud .date .wxmini-temp:empty{display:none}
 #glct-hud .date .wxmini-haz{display:none;color:#ff7a6f;font-size:10px;
-  filter:drop-shadow(0 0 6px rgba(224,88,79,.8))}
+  filter:drop-shadow(0 0 6px color-mix(in srgb,var(--gl-hazard) 80%,transparent))}
 
 /* hazard / ominous weather: red dread accent on the readout */
-#glct-hud .date .wxmini.ominous .wxmini-ico{color:#ffb4ad;filter:drop-shadow(0 0 8px rgba(224,88,79,.7))}
+#glct-hud .date .wxmini.ominous .wxmini-ico{color:#ffb4ad;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--gl-hazard) 70%,transparent))}
 #glct-hud .date .wxmini.ominous .wxmini-label{background:none;-webkit-text-fill-color:#ffd9d4;color:#ffd9d4}
 #glct-hud .date .wxmini.ominous .wxmini-haz{display:inline-block}
 
@@ -180,12 +180,12 @@
   border-bottom:1px solid var(--hair);cursor:grab;user-select:none}
 #glct-weather-hud .dh-grip{display:flex;gap:3px}
 #glct-weather-hud .dh-grip i{width:3px;height:3px;border-radius:99px;background:rgba(255,255,255,.32)}
-#glct-weather-hud .dh-title{flex:1;font-size:8.5px;letter-spacing:.22em;text-transform:uppercase;color:#8b95a8;font-weight:700}
+#glct-weather-hud .dh-title{flex:1;font:700 8.5px/1.45 var(--gl-tech);letter-spacing:.22em;text-transform:uppercase;color:#8b95a8}
 #glct-weather-hud .wx-hbtn{width:18px;height:18px;border:none;border-radius:5px;cursor:pointer;display:grid;place-items:center;
   background:rgba(255,255,255,.06);color:#aab4c8;font-size:10px;line-height:1;transition:.15s}
 #glct-weather-hud .wx-hbtn:hover{background:rgba(255,255,255,.16);color:#fff}
 #glct-weather-hud .wx-hbtn.on{color:#9be15d;background:rgba(155,225,93,.14)}
-#glct-weather-hud .wx-hbtn.close:hover{background:rgba(224,88,79,.2);color:#ffd9d4}
+#glct-weather-hud .wx-hbtn.close:hover{background:color-mix(in srgb,var(--gl-hazard) 20%,transparent);color:#ffd9d4}
 
 /* current-condition hero */
 #glct-weather-hud .wx-current{--glct-weather-tint:#cfe8ff;--glct-weather-glow:#7fb4e6;
@@ -221,10 +221,10 @@
 #glct-weather-hud .wx-cur-note{font-size:10px;line-height:1.4;color:#e7c98a;margin-top:3px;
   padding:5px 8px;border-radius:7px;background:rgba(217,176,102,.1);border-left:2px solid rgba(217,176,102,.5)}
 #glct-weather-hud .wx-current.ominous .wx-cur-label{background:none;-webkit-text-fill-color:#ffd9d4;color:#ffd9d4}
-#glct-weather-hud .wx-current.ominous .wx-cur-ico{box-shadow:inset 0 0 0 1px rgba(224,88,79,.35),inset 0 -10px 18px rgba(0,0,0,.5),0 0 22px rgba(224,88,79,.45);
+#glct-weather-hud .wx-current.ominous .wx-cur-ico{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gl-hazard) 35%,transparent),inset 0 -10px 18px rgba(0,0,0,.5),0 0 22px color-mix(in srgb,var(--gl-hazard) 45%,transparent);
   animation:wx-chip-dread 3.2s ease-in-out infinite}
-@keyframes wx-chip-dread{0%,100%{box-shadow:inset 0 0 0 1px rgba(224,88,79,.35),inset 0 -10px 18px rgba(0,0,0,.5),0 0 22px rgba(224,88,79,.28)}
-  50%{box-shadow:inset 0 0 0 1px rgba(224,88,79,.45),inset 0 -10px 18px rgba(0,0,0,.5),0 0 34px rgba(224,88,79,.55)}}
+@keyframes wx-chip-dread{0%,100%{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gl-hazard) 35%,transparent),inset 0 -10px 18px rgba(0,0,0,.5),0 0 22px color-mix(in srgb,var(--gl-hazard) 28%,transparent)}
+  50%{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gl-hazard) 45%,transparent),inset 0 -10px 18px rgba(0,0,0,.5),0 0 34px color-mix(in srgb,var(--gl-hazard) 55%,transparent)}}
 
 /* the flower */
 #glct-weather-hud .wx-flower-wrap{display:grid;place-items:center;padding:6px 8px 10px}
@@ -299,7 +299,7 @@
 .wx-hex.ominous::before{background:linear-gradient(155deg,rgba(255,150,140,.5),rgba(255,255,255,.05) 40%,rgba(0,0,0,.46))}
 .wx-hex.ominous::after{background:
   radial-gradient(120% 80% at 50% 0%,rgba(255,160,150,.25),transparent 60%),
-  linear-gradient(180deg,rgba(224,88,79,.46),rgba(224,88,79,.12))}
+  linear-gradient(180deg,color-mix(in srgb,var(--gl-hazard) 46%,transparent),color-mix(in srgb,var(--gl-hazard) 12%,transparent))}
 .wx-hex.ominous > i{color:#ffb4ad}
 
 /* the marker — a glowing hex that rides over the current cell and walks on a step */
@@ -407,7 +407,7 @@
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 0 16px color-mix(in srgb,var(--glct-weather-glow) 26%,transparent)}
 .glct-wxeditor .wxe-preview .glct-wx-canvas{position:absolute;inset:0}
 .glct-wxeditor .wxe-preview > i{position:relative;z-index:2;font-size:18px;color:#fff;filter:drop-shadow(0 0 7px var(--glct-weather-glow))}
-.glct-wxeditor .wxe-fidx{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8b95a8;font-weight:700}
+.glct-wxeditor .wxe-fidx{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8b95a8}
 .glct-wxeditor .wxe-frow{display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:center}
 .glct-wxeditor .wxe-frow.checkbox{grid-template-columns:auto 1fr;gap:8px}
 .glct-wxeditor .wxe-flabel{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#98a2b6;font-weight:700}
@@ -456,7 +456,7 @@
 .glct-weathercard .glct-cc-title .n{font-size:13px;font-weight:780;
   background:linear-gradient(180deg,#fff,#cdd6e8);-webkit-background-clip:text;background-clip:text;color:transparent}
 .glct-weathercard .glct-cc-title .s{font-size:8.5px;color:#98a2b6;letter-spacing:.1em;text-transform:uppercase}
-.glct-weathercard .wc-haz{color:#ff7a6f;font-size:13px;filter:drop-shadow(0 0 6px rgba(224,88,79,.8))}
+.glct-weathercard .wc-haz{color:#ff7a6f;font-size:13px;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--gl-hazard) 80%,transparent))}
 .glct-weathercard .glct-cc-body{padding:9px 11px;display:flex;flex-direction:column;gap:6px}
 .glct-weathercard .wc-desc{font-size:11.5px;color:#c5cedd;line-height:1.45}
 .glct-weathercard .wc-note{font-size:10.5px;color:#e7c98a;padding:5px 8px;border-radius:6px;
@@ -494,16 +494,16 @@
   color:#dbe3f0;letter-spacing:.03em}
 .glct-weathercard .wc-move-dir i{margin-right:6px;font-size:10px;
   color:color-mix(in srgb,var(--wglow) 72%,#cdd6e6);transition:none}
-.glct-weathercard .wc-move-roll{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8b95a8;font-weight:700}
+.glct-weathercard .wc-move-roll{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8b95a8}
 /* ominous move: red destination + arrow glow */
-.glct-weathercard.ominous .wc-flower .hx.to{fill:rgba(224,88,79,.42);stroke:#ff9a90;
-  filter:drop-shadow(0 0 3px rgba(224,88,79,.7))}
+.glct-weathercard.ominous .wc-flower .hx.to{fill:color-mix(in srgb,var(--gl-hazard) 42%,transparent);stroke:#ff9a90;
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--gl-hazard) 70%,transparent))}
 .glct-weathercard.ominous .wc-flower .arr-line,
-.glct-weathercard.ominous .wc-flower .arr-head{filter:drop-shadow(0 0 2px rgba(224,88,79,.85))}
+.glct-weathercard.ominous .wc-flower .arr-head{filter:drop-shadow(0 0 2px color-mix(in srgb,var(--gl-hazard) 85%,transparent))}
 .glct-weathercard.ominous .wc-move-dir i{color:#ff9a90}
 /* ominous announcement: red dread accents */
-.glct-weathercard.ominous{background:linear-gradient(180deg,rgba(224,88,79,.16),transparent 60%),linear-gradient(160deg,#1c1014,#0a0e15)}
-.glct-weathercard.ominous .glct-cc-ico{box-shadow:inset 0 0 0 1px rgba(224,88,79,.3),0 0 14px rgba(224,88,79,.55)}
+.glct-weathercard.ominous{background:linear-gradient(180deg,color-mix(in srgb,var(--gl-hazard) 16%,transparent),transparent 60%),linear-gradient(160deg,#1c1014,#0a0e15)}
+.glct-weathercard.ominous .glct-cc-ico{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gl-hazard) 30%,transparent),0 0 14px color-mix(in srgb,var(--gl-hazard) 55%,transparent)}
 .glct-weathercard.ominous .glct-cc-title .n{background:none;-webkit-text-fill-color:#ffd9d4;color:#ffd9d4}
 
 /* let the weather card own the whole chat entry (mirror the pool-card treatment) */

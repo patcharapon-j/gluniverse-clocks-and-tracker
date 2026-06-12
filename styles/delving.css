@@ -39,7 +39,7 @@
 #glct-hud .bar-dx-scrim.off{ opacity:0; }
 #glct-hud .bar.dx-ominous .bar-dx-scrim{
   background:
-    linear-gradient(270deg, rgba(224,88,79,.3) 0, transparent 7px),
+    linear-gradient(270deg, color-mix(in srgb,var(--gl-hazard) 30%,transparent) 0, transparent 7px),
     linear-gradient(260deg, rgba(14,8,9,.54) 0%, rgba(14,8,9,.3) 12%, rgba(14,8,9,0) 30%);
 }
 
@@ -201,7 +201,7 @@
 }
 .glct-delve-ctx .ctx-item:hover{ background:rgba(255,255,255,.1); }
 .glct-delve-ctx .ctx-item i{ width:15px; text-align:center; opacity:.85; }
-.glct-delve-ctx .ctx-item.danger:hover{ background:rgba(220,70,70,.28); }
+.glct-delve-ctx .ctx-item.danger:hover{ background:color-mix(in srgb,var(--gl-hazard) 28%,transparent); }
 .glct-delve-ctx .ctx-sep{ height:1px; margin:4px 6px; background:rgba(255,255,255,.1); }
 
 /* ============================================================
@@ -261,7 +261,7 @@
 .glct-slot .reel.drop{ opacity:.5; filter:grayscale(.65) brightness(.72); transform:translateY(2px) scale(.9); }
 .glct-slot .reel::after{
   content:""; position:absolute; left:14%; right:14%; top:50%; height:2px; z-index:3;
-  background:#e0584f; box-shadow:0 0 6px #e0584f; border-radius:2px;
+  background:var(--gl-hazard); box-shadow:0 0 6px var(--gl-hazard); border-radius:2px;
   transform:translateY(-1px) scaleX(0); transform-origin:left center;
   transition:transform .3s ease .04s;
 }
@@ -321,8 +321,8 @@
 .glct-delveditor .dx-ed-icon{ width:120px; }
 .glct-delveditor .dx-ed-name{ flex:1; min-width:90px; font-weight:700; }
 .glct-delveditor .dx-ed-vis{ display:flex; align-items:center; gap:4px; font-size:11px; white-space:nowrap; }
-.glct-delveditor .dx-ed-del{ appearance:none; border:0; background:rgba(220,70,70,.15); color:#ff9a9a; width:26px; height:26px; border-radius:6px; cursor:pointer; }
-.glct-delveditor .dx-ed-del:hover:not(:disabled){ background:rgba(220,70,70,.4); }
+.glct-delveditor .dx-ed-del{ appearance:none; border:0; background:color-mix(in srgb,var(--gl-hazard) 15%,transparent); color:#ff9a9a; width:26px; height:26px; border-radius:6px; cursor:pointer; }
+.glct-delveditor .dx-ed-del:hover:not(:disabled){ background:color-mix(in srgb,var(--gl-hazard) 40%,transparent); }
 .glct-delveditor .dx-ed-del:disabled{ opacity:.3; cursor:default; }
 
 .glct-delveditor .dx-ed-stages{ display:flex; flex-direction:column; gap:5px; }
