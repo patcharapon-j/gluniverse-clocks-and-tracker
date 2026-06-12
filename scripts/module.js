@@ -2,6 +2,7 @@
 
 import { MODULE_ID, SETTINGS, STEPS, HOOKS } from "./const.js";
 import { registerSettings } from "./settings.js";
+import { Features } from "./features.js";
 import { applyCalendar } from "./calendar/calendar.js";
 import { TimeEngine } from "./engine.js";
 import { GlctHud } from "./apps/hud.js";
@@ -85,8 +86,8 @@ Hooks.once("ready", async () => {
   // this hook could leave a GM without the handler while their own HUD still
   // works — which would stop players' pool rolls from updating the shared count.
   TrackerStore.registerHandlers();
-  await GlctHud.open();
-  if (!setting(SETTINGS.trackerHudHidden, false)) await TrackerHud.open();
+  if (Features.on("timeHud")) await GlctHud.open();
+  if (Features.on("trackers.dock") && !setting(SETTINGS.trackerHudHidden, false)) await TrackerHud.open();
   applySceneTint(TimeEngine.getState());
 
   // Seed/sync the weather walk once on load (GM only; no-op when disabled).
@@ -179,20 +180,24 @@ for (const hook of ["combatStart", "deleteCombat", "combatRound", "combatTurn"])
 Hooks.on("getSceneControlButtons", controls => {
   const group = controls.tokens ?? controls.notes ?? Object.values(controls)[0];
   if (!group?.tools) return;
-  group.tools["glct-toggle"] = {
-    name: "glct-toggle",
-    title: "GLCT.keybindings.toggleHud",
-    icon: "fa-solid fa-hourglass-half",
-    button: true,
-    onChange: () => toggleHud()
-  };
-  group.tools["glct-tracker-toggle"] = {
-    name: "glct-tracker-toggle",
-    title: "GLCT.keybindings.toggleTracker",
-    icon: "fa-solid fa-list-check",
-    button: true,
-    onChange: () => toggleTrackerHud()
-  };
+  if (Features.on("timeHud")) {
+    group.tools["glct-toggle"] = {
+      name: "glct-toggle",
+      title: "GLCT.keybindings.toggleHud",
+      icon: "fa-solid fa-hourglass-half",
+      button: true,
+      onChange: () => toggleHud()
+    };
+  }
+  if (Features.on("trackers.dock")) {
+    group.tools["glct-tracker-toggle"] = {
+      name: "glct-tracker-toggle",
+      title: "GLCT.keybindings.toggleTracker",
+      icon: "fa-solid fa-list-check",
+      button: true,
+      onChange: () => toggleTrackerHud()
+    };
+  }
   if (WeatherStore.enabled) {
     group.tools["glct-weather-toggle"] = {
       name: "glct-weather-toggle",
@@ -226,28 +231,28 @@ function registerKeybindings() {
   game.keybindings.register(MODULE_ID, "toggleHud", {
     name: "GLCT.keybindings.toggleHud",
     editable: [{ key: "KeyT", modifiers: ["Alt"] }],
-    onDown: () => { toggleHud(); return true; },
+    onDown: () => { if (Features.on("timeHud")) toggleHud(); return true; },
     restricted: false
   });
 
   game.keybindings.register(MODULE_ID, "advanceStretch", {
     name: "GLCT.keybindings.advanceStretch",
     editable: [{ key: "BracketRight", modifiers: ["Alt"] }],
-    onDown: () => { if (game.user.isGM) TimeEngine.advanceStep("stretch"); return true; },
+    onDown: () => { if (game.user.isGM && Features.on("timeHud.gmControls")) TimeEngine.advanceStep("stretch"); return true; },
     restricted: true
   });
 
   game.keybindings.register(MODULE_ID, "openCalendar", {
     name: "GLCT.keybindings.openCalendar",
     editable: [{ key: "KeyC", modifiers: ["Alt"] }],
-    onDown: async () => { const { CalendarView } = await import("./apps/calendar-view.js"); CalendarView.show(); return true; },
+    onDown: async () => { if (!Features.on("timeHud.calendar")) return true; const { CalendarView } = await import("./apps/calendar-view.js"); CalendarView.show(); return true; },
     restricted: false
   });
 
   game.keybindings.register(MODULE_ID, "toggleTracker", {
     name: "GLCT.keybindings.toggleTracker",
     editable: [{ key: "KeyR", modifiers: ["Alt"] }],
-    onDown: () => { toggleTrackerHud(); return true; },
+    onDown: () => { if (Features.on("trackers.dock")) toggleTrackerHud(); return true; },
     restricted: false
   });
 
@@ -299,7 +304,7 @@ async function toggleSupportHud() {
 
 /** Subtle full-board tint matching the current watch (opt-in). */
 function applySceneTint(state) {
-  const enabled = setting(SETTINGS.sceneTint, false);
+  const enabled = Features.on("timeHud.sceneTint");
   let overlay = document.getElementById("glct-scene-tint");
   if (!enabled) { overlay?.remove(); return; }
   if (!overlay) {

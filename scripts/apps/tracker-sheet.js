@@ -14,7 +14,8 @@
  * client reflects automatically once Foundry re-renders the open sheet.
  */
 
-import { MODULE_ID, SETTINGS } from "../const.js";
+import { MODULE_ID } from "../const.js";
+import { Features } from "../features.js";
 import { ActorTrackerStore } from "../trackers/actor-trackers.js";
 import { TrackerRender } from "../trackers/tracker-render.js";
 
@@ -64,9 +65,9 @@ export class TrackerSheet {
     });
   }
 
-  /** Is the feature switched on for this world? */
+  /** Is the feature switched on for this world? Honours the Trackers parent toggle. */
   static get enabled() {
-    try { return !!game.settings.get(MODULE_ID, SETTINGS.sheetTrackersEnabled); } catch { return false; }
+    try { return Features.on("trackers.sheet"); } catch { return false; }
   }
 
   /** Re-render every open character sheet (used when the world toggle flips). */

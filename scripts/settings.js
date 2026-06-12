@@ -17,15 +17,54 @@ import { SupportHud } from "./apps/support-hud.js";
 import { makeDefaultSupports, SupportStore } from "./support/support-store.js";
 import { registerDelvingMenu } from "./apps/delving-editor.js";
 import { makeDefaultDelving } from "./delving/presets.js";
+import { registerModuleConfigMenu } from "./apps/module-config-editor.js";
+import { Features } from "./features.js";
+
+/**
+ * Reconcile the live HUDs with the moduleConfig blob after it changes: open or
+ * close the time HUD and the tracker dock to match their master toggles, rebuild
+ * the time HUD structure so sub-feature gates re-apply, and refresh the scene
+ * controls so per-feature buttons appear/disappear. Settings-backed feature
+ * toggles (weather/support/delving/scene-tint/…) run their own onChange, so this
+ * only has to handle the moduleConfig-backed master + sub toggles.
+ */
+async function applyModuleConfig() {
+  if (Features.on("timeHud")) {
+    if (!GlctHud.instance?.rendered) await GlctHud.open();
+    else await GlctHud.refreshStructure();
+  } else {
+    await GlctHud.instance?.close?.();
+  }
+
+  let dockHidden = false;
+  try { dockHidden = !!game.settings.get(MODULE_ID, SETTINGS.trackerHudHidden); } catch { /* ignore */ }
+  if (Features.on("trackers.dock")) {
+    if (!TrackerHud.instance?.rendered && !dockHidden) await TrackerHud.open();
+    else TrackerHud.refresh();
+  } else {
+    await TrackerHud.instance?.close?.();
+  }
+
+  try { ui.controls?.render?.(); } catch { /* ignore */ }
+}
 
 export function registerSettings() {
   const choices = Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.name]));
 
+  registerModuleConfigMenu();
   registerCalendarMenu();
   registerShiftNamesMenu();
   registerWeatherMenu();
   registerSupportMenu();
   registerDelvingMenu();
+
+  // Master enable/disable map for every module + sub-module (see features.js).
+  // Edited through the Module Configuration menu; this just persists the blob
+  // and reconciles the HUDs whenever it changes.
+  game.settings.register(MODULE_ID, SETTINGS.moduleConfig, {
+    scope: "world", config: false, type: Object, default: {},
+    onChange: () => applyModuleConfig()
+  });
 
   game.settings.register(MODULE_ID, SETTINGS.calendarId, {
     name: "GLCT.settings.calendar.name",
@@ -56,9 +95,11 @@ export function registerSettings() {
     onChange: () => GlctHud.refreshState()
   });
 
+  // Scene-tint glow — surfaced as the timeHud.sceneTint feature toggle in the
+  // Module Configuration menu (config:false here so it isn't listed twice).
   game.settings.register(MODULE_ID, SETTINGS.sceneTint, {
     name: "GLCT.settings.sceneLight.name", hint: "GLCT.settings.sceneLight.hint",
-    scope: "world", config: true, type: Boolean, default: false,
+    scope: "world", config: false, type: Boolean, default: false,
     onChange: () => GlctHud.refreshState()
   });
 
@@ -111,20 +152,23 @@ export function registerSettings() {
   // contents live in actor flags, private to the owner + GM. Shown in settings
   // only on PF2e worlds (it no-ops elsewhere). Flipping it re-renders open
   // character sheets so the tab appears/vanishes live.
+  // Surfaced as the trackers.sheet feature toggle in the Module Configuration
+  // menu (config:false so it isn't listed twice).
   game.settings.register(MODULE_ID, SETTINGS.sheetTrackersEnabled, {
     name: "GLCT.tracker.settings.sheetTab.name",
     hint: "GLCT.tracker.settings.sheetTab.hint",
-    scope: "world", config: game.system?.id === "pf2e", type: Boolean, default: false,
+    scope: "world", config: false, type: Boolean, default: false,
     onChange: () => TrackerSheet.refreshAll()
   });
 
   /* ---------------------------- Weather ---------------------------- */
 
   // Master opt-in (decision D1). Ships off so calendar-only worlds are untouched.
+  // Surfaced as the "weather" feature toggle in the Module Configuration menu.
   game.settings.register(MODULE_ID, SETTINGS.weatherEnabled, {
     name: "GLCT.weather.settings.enabled.name",
     hint: "GLCT.weather.settings.enabled.hint",
-    scope: "world", config: true, type: Boolean, default: false,
+    scope: "world", config: false, type: Boolean, default: false,
     onChange: () => {
       GlctHud.refreshWeather();
       WeatherHud.refresh();
@@ -197,10 +241,11 @@ export function registerSettings() {
   /* ---------------------------- Mission Support ---------------------------- */
 
   // Master opt-in. Ships off so worlds that don't use support NPCs are untouched.
+  // Surfaced as the "support" feature toggle in the Module Configuration menu.
   game.settings.register(MODULE_ID, SETTINGS.supportEnabled, {
     name: "GLCT.support.settings.enabled.name",
     hint: "GLCT.support.settings.enabled.hint",
-    scope: "world", config: true, type: Boolean, default: false,
+    scope: "world", config: false, type: Boolean, default: false,
     onChange: (on) => {
       if (on) SupportHud.open();
       else SupportHud.instance?.close?.({ animate: false });
@@ -230,10 +275,12 @@ export function registerSettings() {
 
   // Show the active support's passive Effect icon on party tokens. World-scope so
   // the choice is consistent for everyone; re-seats the aura live when toggled.
+  // Surfaced as the support.passiveTokenIcon feature toggle in the Module
+  // Configuration menu (config:false so it isn't listed twice).
   game.settings.register(MODULE_ID, SETTINGS.supportPassiveTokenIcon, {
     name: "GLCT.support.settings.passiveTokenIcon.name",
     hint: "GLCT.support.settings.passiveTokenIcon.hint",
-    scope: "world", config: true, type: Boolean, default: true,
+    scope: "world", config: false, type: Boolean, default: true,
     onChange: () => SupportStore.applyPassive()
   });
 
@@ -241,10 +288,11 @@ export function registerSettings() {
 
   // Master opt-in. Ships off so worlds that don't delve are untouched. Toggling
   // it re-renders the HUD structure so the GM's delving dock controls appear/vanish.
+  // Surfaced as the "delving" feature toggle in the Module Configuration menu.
   game.settings.register(MODULE_ID, SETTINGS.delvingEnabled, {
     name: "GLCT.delving.settings.enabled.name",
     hint: "GLCT.delving.settings.enabled.hint",
-    scope: "world", config: true, type: Boolean, default: false,
+    scope: "world", config: false, type: Boolean, default: false,
     onChange: () => { GlctHud.refreshStructure(); GlctHud.refreshDelving(); }
   });
 
