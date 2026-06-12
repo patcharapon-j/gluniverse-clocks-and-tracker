@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GL Universe — BASALT·PRIME · Refinement R03</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@200..800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink0:#02070b; --text:#eef1f7; --dim:#98a2b6; --faint:rgba(243,251,255,.38);
+  --hair:rgba(255,255,255,.08); --strong:rgba(244,252,255,.55);
+  --amber:#ffd24a; --amber-deep:#b96f24; --amber-hot:#ffe9b0; --hazard:#ff4a52;
+  --disp:"Oxanium","Segoe UI",system-ui,sans-serif;
+  --tech:"Bahnschrift","JetBrains Mono","Share Tech Mono",Consolas,monospace;
+  --ease:cubic-bezier(.16,1,.3,1); --snap:cubic-bezier(.2,1.35,.22,1);
+  --heavy:cubic-bezier(.2,.9,.2,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font:14px/1.5 var(--disp);color:var(--text);-webkit-font-smoothing:antialiased;
+  background:
+   radial-gradient(1000px 600px at 50% -5%, #11131e, transparent 55%),
+   radial-gradient(800px 460px at 90% 115%, #170f0a, transparent 60%), #04060a;
+  padding:36px 18px 130px}
+.wrap{max-width:1180px;margin:0 auto}
+.kicker{font:800 9px/1 var(--tech);letter-spacing:.45em;text-transform:uppercase;color:var(--faint);display:flex;align-items:center;gap:9px}
+.kicker::before{content:"";width:14px;height:1px;background:var(--amber);box-shadow:0 0 8px rgba(255,210,74,.7)}
+h1{font:760 30px/1.1 var(--disp);margin:10px 0 4px;
+  background:linear-gradient(180deg,#fff,#d8cdb8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--dim);font-size:13px;max-width:800px}
+.sub b{color:#e3d9c4}
+.micro{font:800 7.5px var(--tech);letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
+section{margin-top:58px}
+.shead{display:flex;align-items:baseline;gap:14px;border-bottom:1px solid var(--hair);padding-bottom:9px;margin-bottom:20px}
+.shead .no{font:800 11px var(--tech);color:var(--amber);letter-spacing:.1em}
+.shead h2{font:740 16px/1 var(--disp);margin:0;letter-spacing:.02em}
+.shead .note{margin-left:auto;font:700 8px var(--tech);letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.stage{position:relative;border-radius:14px;border:1px dashed rgba(255,255,255,.08);overflow:hidden;
+  padding:56px 30px 62px;cursor:pointer;
+  background:radial-gradient(800px 340px at 50% 130%, #100c08, transparent 70%), #05060a}
+.stage .hint{position:absolute;bottom:9px;right:13px;font:700 8px var(--tech);letter-spacing:.2em;text-transform:uppercase;color:#3b4254;pointer-events:none}
+.cap{color:var(--dim);font-size:12px;margin:14px 2px 0;max-width:900px}
+.cap b{color:#e3d9c4}
+
+/* ================= the monolith ================= */
+.m1wrap{position:relative;width:min(940px,100%);margin:0 auto}
+.m1{position:relative;height:80px;transform:skewX(-10deg);overflow:hidden;isolation:isolate;
+  background:
+   linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,0) 22%),
+   radial-gradient(70% 220% at 50% -70%, rgba(255,170,70,.09), transparent 60%),
+   linear-gradient(170deg,#12151e 0%,#0a0c12 55%,#06070c 100%);
+  border:1px solid #262b38;
+  box-shadow:
+   inset 0 2px 0 rgba(255,255,255,.22), inset 0 3px 0 rgba(0,0,0,.5),
+   inset 0 -3px 0 rgba(0,0,0,.9), inset 0 -4px 0 rgba(255,255,255,.05),
+   inset 0 -16px 32px rgba(0,0,0,.55),
+   0 36px 70px rgba(0,0,0,.8), 0 3px 0 #000}
+.m1 .notch{position:absolute;top:0;width:14px;height:3px;background:rgba(0,0,0,.65);box-shadow:inset 0 -1px 0 rgba(255,255,255,.14)}
+.m1 .notch:nth-child(1){left:18%}.m1 .notch:nth-child(2){left:calc(18% + 20px)}.m1 .notch:nth-child(3){right:22%}
+.m1 .serial{position:absolute;right:14px;top:6px;z-index:3;transform:skewX(10deg);
+  font:800 6px var(--tech);letter-spacing:.3em;color:rgba(255,255,255,.16)}
+.m1 .capline{position:absolute;left:10px;top:16%;bottom:16%;width:2px;z-index:3;
+  background:linear-gradient(180deg,transparent,var(--amber),transparent);box-shadow:0 0 10px rgba(255,180,60,.55)}
+.m1 .deep{position:absolute;inset:0;z-index:0;display:flex;align-items:center;justify-content:space-around;
+  font:800 46px var(--disp);color:rgba(150,170,220,.05);filter:blur(1.4px);letter-spacing:.1em;will-change:transform}
+.m1 .content{position:relative;z-index:2;height:100%;display:flex;align-items:center;transform:skewX(10deg);
+  padding:0 40px 8px;gap:34px;will-change:transform}
+.spec{position:absolute;top:-20%;bottom:-20%;width:150px;z-index:4;pointer-events:none;opacity:.8;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.07) 45%,rgba(255,255,255,.12) 50%,rgba(255,255,255,.07) 55%,transparent);
+  filter:blur(2px);left:30%;transition:left .22s ease-out}
+.bloom1{position:absolute;inset:-40% -10%;z-index:1;pointer-events:none;opacity:0;
+  background:radial-gradient(46% 90% at 50% 62%,rgba(255,170,60,.30),transparent 70%)}
+.ignite .bloom1{animation:bloom 1.1s var(--ease)}
+@keyframes bloom{0%{opacity:0;transform:scaleX(.2)}25%{opacity:1}100%{opacity:0;transform:scaleX(1.25)}}
+.refl{width:min(940px,100%);margin:6px auto 0;height:30px;transform:skewX(-10deg) scaleY(-1);opacity:.15;filter:blur(3px);
+  background:linear-gradient(170deg,#12151e,#06070c 70%);
+  -webkit-mask-image:linear-gradient(180deg,transparent 30%,#000);mask-image:linear-gradient(180deg,transparent 30%,#000)}
+
+/* sections & engraved labels (FORGE light-up) */
+.mc{display:flex;flex-direction:column;gap:3px;position:relative;z-index:3}
+.mc .lbl{font:800 6.5px var(--tech);letter-spacing:.26em;text-transform:uppercase;color:#5d6376;
+  text-shadow:0 1px 0 rgba(255,255,255,.04),0 -1px 0 rgba(0,0,0,.9);
+  transition:color .45s ease,text-shadow .45s ease}
+.mc.lit .lbl{color:rgba(255,214,120,.95);text-shadow:0 0 9px rgba(255,180,60,.65),0 -1px 0 rgba(0,0,0,.9)}
+.mc .val{font:740 15.5px/1.1 var(--disp);white-space:nowrap;color:#e9edf6;
+  text-shadow:0 1px 0 rgba(0,0,0,.8),0 -1px 0 rgba(255,255,255,.07)}
+/* WHITE hero clock */
+.mc.hero .val{font:800 34px/1 var(--disp);font-variant-numeric:tabular-nums;color:#ffffff;
+  text-shadow:0 0 16px rgba(170,200,255,.30),0 0 2px rgba(255,255,255,.6),0 2px 3px rgba(0,0,0,.85)}
+.mc.amber .val{color:#ffd9a0;text-shadow:0 0 16px rgba(255,170,60,.45),0 1px 0 rgba(0,0,0,.8)}
+.cfade{display:inline-block}
+.cfade.go{animation:deepin .6s var(--heavy)}
+@keyframes deepin{0%{opacity:.2;transform:translateY(5px) scale(.97);filter:blur(3px)}100%{opacity:1;transform:none;filter:none}}
+
+/* ---------- BOXES: countable cells everywhere ---------- */
+/* watch boxes (4 per day) */
+.boxes{display:flex;gap:4px;align-items:center}
+.bx{width:13px;height:9px;position:relative;
+  background:rgba(0,0,0,.72);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.95),0 1px 0 rgba(255,255,255,.06)}
+.bx.f{background:linear-gradient(180deg,var(--amber),#c9892e);
+  box-shadow:0 0 7px rgba(255,180,60,.5),inset 0 1px 0 rgba(255,255,255,.4)}
+.bx.cur{background:linear-gradient(180deg,#ffffff,var(--amber-hot) 70%);
+  box-shadow:0 0 11px rgba(255,225,150,.95),inset 0 1px 0 #fff;animation:curpulse 2.2s ease-in-out infinite}
+@keyframes curpulse{0%,100%{box-shadow:0 0 7px rgba(255,225,150,.65),inset 0 1px 0 #fff}
+ 50%{box-shadow:0 0 15px rgba(255,235,170,1),inset 0 1px 0 #fff}}
+/* stretch boxes under the clock — slightly bigger, the "at a glance" hero row */
+.boxes.stretch .bx{width:15px;height:7px}
+/* day conduit: 24 hour-cells in 4 watch groups */
+.conduit{position:absolute;left:3.2%;right:3.2%;bottom:7px;z-index:3;display:flex;gap:7px;align-items:center}
+.cgrp{flex:1;display:flex;gap:2.5px}
+.cgrp + .cgrp::before{content:"";width:1px;align-self:stretch;background:rgba(255,255,255,.10);margin-right:4.5px}
+.ccell{flex:1;height:5px;background:rgba(0,0,0,.62);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.95),0 1px 0 rgba(255,255,255,.04);
+  transition:background .4s ease,box-shadow .4s ease}
+.ccell.f{background:linear-gradient(180deg,rgba(255,180,70,.42),rgba(150,98,38,.42));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.ccell.cur{background:linear-gradient(180deg,#fff,var(--amber-hot) 75%);
+  box-shadow:0 0 10px rgba(255,230,160,.9),inset 0 1px 0 #fff;animation:curpulse 2.2s ease-in-out infinite}
+.ccell.pop{animation:cellpop .5s var(--snap)}
+@keyframes cellpop{0%{transform:scaleY(.4)}55%{transform:scaleY(1.5)}100%{transform:scaleY(1)}}
+
+/* ================= hazard variant ================= */
+.m1.doom{background:
+   linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 22%),
+   radial-gradient(70% 220% at 50% -70%, rgba(255,80,70,.12), transparent 60%),
+   linear-gradient(170deg,#171015 0%,#0c090d 55%,#070509 100%);
+  animation:dread 3.2s ease-in-out infinite}
+@keyframes dread{0%,100%{filter:brightness(.93)}50%{filter:brightness(1.12)}}
+.m1.doom .capline{background:linear-gradient(180deg,transparent,var(--hazard),transparent);box-shadow:0 0 10px rgba(255,80,70,.6)}
+.m1.doom .bx.f{background:linear-gradient(180deg,#ff7a72,#b3362f);box-shadow:0 0 7px rgba(255,90,80,.55),inset 0 1px 0 rgba(255,255,255,.35)}
+.m1.doom .ccell.f{background:linear-gradient(180deg,rgba(255,110,100,.40),rgba(150,45,38,.40));box-shadow:inset 0 1px 0 rgba(255,255,255,.10)}
+.m1.doom .bx.cur,.m1.doom .ccell.cur{background:linear-gradient(180deg,#fff,#ffb6ae 70%);box-shadow:0 0 12px rgba(255,140,120,.95),inset 0 1px 0 #fff;
+  animation:curpulse-r 1.6s ease-in-out infinite}
+@keyframes curpulse-r{0%,100%{box-shadow:0 0 7px rgba(255,140,120,.6)}50%{box-shadow:0 0 16px rgba(255,160,140,1)}}
+.m1.doom .mc.amber .val{color:#ffb3ac;text-shadow:0 0 16px rgba(255,90,80,.55),0 1px 0 rgba(0,0,0,.8)}
+.skull{filter:drop-shadow(0 0 6px rgba(255,90,80,.8))}
+
+/* ================= device specimens ================= */
+.devrow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+@media(max-width:860px){.devrow{grid-template-columns:1fr}}
+.dev{position:relative;min-height:118px;padding:18px;background:linear-gradient(170deg,#0c0f17,#07090f);
+  box-shadow:inset 0 0 0 1px var(--hair);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.dev .micro{position:absolute;top:9px;left:12px}
+.c-btn{position:relative;border:none;cursor:pointer;padding:11px 24px;transform:skewX(-10deg);
+  font:800 9px var(--tech);letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.22);
+  text-shadow:0 1px 0 rgba(255,255,255,.05),0 -1px 0 rgba(0,0,0,.95);
+  background:linear-gradient(180deg,rgba(255,255,255,.09),transparent 30%),linear-gradient(170deg,#141722,#0a0c12);
+  border:1px solid #2a2f3c;box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.8),0 8px 18px rgba(0,0,0,.6);
+  transition:color .3s,text-shadow .3s}
+.c-btn span{display:inline-block;transform:skewX(10deg)}
+.c-btn::after{content:"";position:absolute;left:8%;right:8%;bottom:4px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--amber),transparent);box-shadow:0 0 8px rgba(255,180,60,.6)}
+.c-btn:hover{color:rgba(255,224,150,.95);text-shadow:0 0 10px rgba(255,180,60,.7),0 -1px 0 rgba(0,0,0,.95)}
+.trackrow{position:relative;width:300px;transform:skewX(-10deg);overflow:hidden;padding:10px 18px 12px;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),transparent 30%),linear-gradient(170deg,#10131c,#080a0f);
+  border:1px solid #232834;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.8)}
+.trackrow .in{display:flex;align-items:center;gap:12px;transform:skewX(10deg)}
+.trackrow .mc{gap:4px}
+.trackrow .nm{font:800 8px var(--tech);letter-spacing:.2em;text-transform:uppercase;color:#5d6376;
+  text-shadow:0 1px 0 rgba(255,255,255,.04),0 -1px 0 rgba(0,0,0,.9);transition:color .45s,text-shadow .45s}
+.trackrow.lit .nm{color:rgba(255,214,120,.95);text-shadow:0 0 9px rgba(255,180,60,.65)}
+.trackrow .num{font:800 22px var(--disp);margin-left:auto;color:#fff;
+  text-shadow:0 0 12px rgba(170,200,255,.3),0 2px 3px rgba(0,0,0,.85)}
+.trackrow .num small{font:800 10px var(--disp);color:var(--faint)}
+
+footer{margin-top:80px;display:flex;align-items:center;gap:12px;color:#3f4761;font:700 9px var(--tech);letter-spacing:.22em;text-transform:uppercase}
+footer .line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,210,74,.25),transparent)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">GL Universe · Overhaul · Refinement R03</div>
+  <h1>BASALT·PRIME — Refined</h1>
+  <p class="sub">Locked direction, three adjustments in: <b>① countable boxes</b> replace every smooth fill — watch boxes, stretch
+  boxes, and the day conduit is now <b>24 hour-cells in 4 watch groups</b> you can count at a glance; <b>② pure white clock</b>
+  with a cool halo — the brightest thing on the slab, always; <b>③ FORGE's engraved light-up</b> — every section label is
+  engraved dark and <b>flares with luminous amber ink when its value changes</b>, then fades back. <b>Click the bar to advance a
+  stretch</b> — roll an hour over and watch the cell pop, the watch label ignite.</p>
+
+  <!-- ════════ 01 · the refined bar ════════ -->
+  <section>
+    <div class="shead"><span class="no">01</span><h2>The instrument</h2><span class="note">hover · parallax — click · advance one stretch</span></div>
+    <div class="stage" id="st1">
+      <div class="m1wrap">
+        <div class="m1" id="bar1">
+          <span class="notch"></span><span class="notch"></span><span class="notch"></span>
+          <div class="deep" id="deep1"><span>XVII</span><span>◆</span><span>DUSK</span><span>◆</span><span>0042</span></div>
+          <div class="bloom1"></div>
+          <div class="spec" id="spec1"></div>
+          <span class="capline"></span>
+          <span class="serial">BSLT·01 // GLU·TIME</span>
+          <div class="content" id="main1">
+            <div class="mc" id="sWx"><span class="lbl">Weather</span><span class="val">🌧 Cold Rain · 8°</span></div>
+            <div class="mc" id="sDate"><span class="lbl">Erastus 14 · 4724</span><span class="val">Fireday</span></div>
+            <div class="mc" id="sWatch"><span class="lbl" id="watchLbl">Watch 3 / 4</span><span class="val" id="watchName">Dusk Watch</span>
+              <span class="boxes" id="watchBoxes"><span class="bx f"></span><span class="bx f"></span><span class="bx cur"></span><span class="bx"></span></span></div>
+            <div class="mc hero" id="sClock"><span class="lbl" id="stretchLbl">Stretch 4 / 6</span>
+              <span class="val cfade" id="clock1">17:40</span>
+              <span class="boxes stretch" id="stretchBoxes"></span></div>
+            <div class="mc amber" id="sMission" style="margin-left:auto"><span class="lbl">Mission · Reach the gate</span><span class="val">14 TO GO</span></div>
+          </div>
+          <div class="conduit" id="conduit1"></div>
+        </div>
+        <div class="refl"></div>
+      </div>
+      <span class="hint">Click · stretch +1 → labels ignite → hour cells pop on rollover</span>
+    </div>
+    <p class="cap"><b>Boxes everywhere a count matters:</b> 4 watch boxes (which quarter of the day), 6 stretch boxes (how deep into
+    the hour), 24 conduit cells grouped by watch (how much day is left — count the dark cells). Filled = amber, current = white-hot
+    and pulsing, future = dark sockets. The white clock now owns the bar; amber is reserved for time-passed and the mission.</p>
+  </section>
+
+  <!-- ════════ 02 · hazard / doom state ════════ -->
+  <section>
+    <div class="shead"><span class="no">02</span><h2>State grammar — doom variant</h2><span class="note">same instrument, hazard register</span></div>
+    <div class="stage" style="cursor:default;padding:46px 30px 52px">
+      <div class="m1wrap">
+        <div class="m1 doom">
+          <span class="notch"></span><span class="notch"></span><span class="notch"></span>
+          <div class="deep"><span>☠</span><span>◆</span><span>DELVE</span><span>◆</span><span>VII</span></div>
+          <span class="capline"></span>
+          <span class="serial">BSLT·01 // DELVING</span>
+          <div class="content" style="transform:skewX(10deg)">
+            <div class="mc"><span class="lbl">Turn</span><span class="val" style="color:#fff;font-weight:800">TURN 12</span></div>
+            <div class="mc"><span class="lbl">Featured · Torches</span><span class="val">Guttering</span>
+              <span class="boxes"><span class="bx f"></span><span class="bx f"></span><span class="bx cur"></span><span class="bx"></span><span class="bx"></span><span class="bx"></span></span></div>
+            <div class="mc hero"><span class="lbl">Pool · d6 × 3</span><span class="val">3 <small style="font-size:13px;color:var(--faint)">DICE</small></span></div>
+            <div class="mc amber" style="margin-left:auto"><span class="lbl">Corruption · Stage 3/4</span><span class="val"><span class="skull">☠</span> SPREADING</span></div>
+          </div>
+          <div class="conduit">
+            <div class="cgrp"><span class="ccell f"></span><span class="ccell f"></span><span class="ccell f"></span><span class="ccell f"></span><span class="ccell f"></span><span class="ccell f"></span></div>
+            <div class="cgrp"><span class="ccell f"></span><span class="ccell f"></span><span class="ccell f"></span><span class="ccell f"></span><span class="ccell f"></span><span class="ccell f"></span></div>
+            <div class="cgrp"><span class="ccell f"></span><span class="ccell f"></span><span class="ccell f"></span><span class="ccell f"></span><span class="ccell f"></span><span class="ccell cur"></span></div>
+            <div class="cgrp"><span class="ccell"></span><span class="ccell"></span><span class="ccell"></span><span class="ccell"></span><span class="ccell"></span><span class="ccell"></span></div>
+          </div>
+        </div>
+        <div class="refl"></div>
+      </div>
+    </div>
+    <p class="cap"><b>One instrument, two registers.</b> Doom keeps the geometry and the box grammar — only the register changes:
+    cells and cap-line turn hazard-red, the slab warms toward ember and breathes a 3.2s dread pulse. Players read it instantly
+    because the shapes never changed.</p>
+  </section>
+
+  <!-- ════════ 03 · the grammar extends ════════ -->
+  <section>
+    <div class="shead"><span class="no">03</span><h2>The grammar extends</h2><span class="note">buttons + tracker rows · engraved ink everywhere</span></div>
+    <div class="devrow">
+      <div class="dev"><span class="micro">Button · engraved, ink fills on hover</span><button class="c-btn"><span>Pass Turn</span></button></div>
+      <div class="dev"><span class="micro">Task tracker · boxes, name ignites on change</span>
+        <div class="trackrow" id="tr1"><div class="in">
+          <div class="mc"><span class="nm">Ritual Progress</span>
+            <span class="boxes"><span class="bx f"></span><span class="bx f"></span><span class="bx f"></span><span class="bx f"></span><span class="bx cur"></span><span class="bx"></span><span class="bx"></span><span class="bx"></span></span></div>
+          <span class="num">5<small>/8</small></span></div></div></div>
+      <div class="dev"><span class="micro">Resource pool · white hero count</span>
+        <div class="trackrow"><div class="in">
+          <div class="mc"><span class="nm">Party Luck</span>
+            <span class="boxes"><span class="bx f"></span><span class="bx f"></span><span class="bx f"></span><span class="bx"></span><span class="bx"></span><span class="bx"></span></span></div>
+          <span class="num">3<small>d6</small></span></div></div></div>
+    </div>
+    <p class="cap">Every count in the family becomes boxes; every number that must be read is white; every label is engraved
+    and ignites on its own change — the FORGE behaviour adopted family-wide. Click the task tracker to see its name flare.</p>
+  </section>
+
+  <footer><span>GL Universe · BASALT·PRIME R03</span><span class="line"></span><span>boxes · white clock · engraved ignition</span></footer>
+</div>
+
+<script>
+/* ---------- build conduit: 4 groups × 6 hour cells ---------- */
+const conduit = document.getElementById('conduit1');
+const DAY = []; // cell elements in order
+for (let g = 0; g < 4; g++) {
+  const grp = document.createElement('div'); grp.className = 'cgrp';
+  for (let i = 0; i < 6; i++) { const c = document.createElement('span'); c.className = 'ccell'; grp.appendChild(c); DAY.push(c); }
+  conduit.appendChild(grp);
+}
+/* ---------- state: 17:40 → hour 17 (0-based), stretch 4/6, watch 3 ---------- */
+let hour = 17, stretch = 5;   // stretch 1..6, hour 0..23 → renders 17:40
+const watchBoxes = document.getElementById('watchBoxes').children;
+const stretchBoxes = document.getElementById('stretchBoxes');
+for (let i = 0; i < 6; i++) { const b = document.createElement('span'); b.className = 'bx'; stretchBoxes.appendChild(b); }
+const clockEl = document.getElementById('clock1'), stretchLbl = document.getElementById('stretchLbl');
+const watchName = document.getElementById('watchName');
+const WATCHES = ['Night Watch','Dawn Watch','Day Watch','Dusk Watch'];
+
+function render(popCell) {
+  DAY.forEach((c,i) => c.className = 'ccell' + (i < hour ? ' f' : i === hour ? ' cur' : ''));
+  if (popCell != null) { DAY[popCell].classList.add('pop'); }
+  const w = Math.floor(hour / 6);
+  for (let i = 0; i < 4; i++) watchBoxes[i].className = 'bx' + (i < w ? ' f' : i === w ? ' cur' : '');
+  for (let i = 0; i < 6; i++) stretchBoxes.children[i].className = 'bx' + (i < stretch-1 ? ' f' : i === stretch-1 ? ' cur' : '');
+  stretchLbl.textContent = `Stretch ${stretch} / 6`;
+  document.getElementById('watchLbl').textContent = `Watch ${w+1} / 4`;
+  watchName.textContent = WATCHES[w];
+  clockEl.textContent = String(hour).padStart(2,'0') + ':' + String((stretch-1)*10).padStart(2,'0');
+}
+render();
+
+const flash = el => { el.classList.add('lit'); setTimeout(() => el.classList.remove('lit'), 1100); };
+
+/* ---------- parallax ---------- */
+const st1 = document.getElementById('st1');
+st1.addEventListener('mousemove', e => {
+  const r = st1.getBoundingClientRect(), dx = (e.clientX - r.left)/r.width - .5;
+  document.getElementById('deep1').style.transform = `translateX(${dx*-16}px)`;
+  document.getElementById('main1').style.transform = `skewX(10deg) translateX(${dx*7}px)`;
+  document.getElementById('spec1').style.left = `${10 + (dx+.5)*70}%`;
+});
+
+/* ---------- advance one stretch per click ---------- */
+st1.addEventListener('click', () => {
+  const bar = document.getElementById('bar1');
+  bar.classList.remove('ignite'); void bar.offsetWidth; bar.classList.add('ignite');
+  let popCell = null;
+  const prevWatch = Math.floor(hour / 6);
+  stretch++;
+  if (stretch > 6) {            // hour rolls over
+    stretch = 1; popCell = hour; hour = (hour + 1) % 24;
+    if (hour === 0) DAY.forEach(c => c.className = 'ccell');
+  }
+  setTimeout(() => {
+    render(popCell);
+    clockEl.classList.remove('go'); void clockEl.offsetWidth; clockEl.classList.add('go');
+    flash(document.getElementById('sClock'));
+    if (popCell != null) flash(document.getElementById('sWatch'));
+    if (Math.floor(hour / 6) !== prevWatch) flash(document.getElementById('sDate'));
+  }, 240);
+});
+
+/* task tracker ignite demo */
+document.getElementById('tr1').addEventListener('click', e => {
+  const t = e.currentTarget;
+  t.classList.add('lit'); setTimeout(() => t.classList.remove('lit'), 1100);
+});
+</script>
+</body>
+</html>
