@@ -22,6 +22,7 @@ export const HOOKS = {
 
 /** World-setting keys. */
 export const SETTINGS = {
+  moduleConfig: "moduleConfig",    // Object (world): enable/disable map for every module + sub-module (see features.js)
   calendarId: "calendarId",        // String: which preset/custom calendar is active
   calendarConfig: "calendarConfig",// Object: the stored CalendarConfig (custom edits)
   events: "events",                // Array: events & holidays

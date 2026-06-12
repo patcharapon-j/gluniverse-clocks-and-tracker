@@ -9,6 +9,7 @@
  */
 
 import { MODULE_ID, SETTINGS } from "../const.js";
+import { Features } from "../features.js";
 import { TimeEngine } from "../engine.js";
 import {
   STRETCHES_PER_SHIFT, STRETCHES_PER_HOUR, HOURS_PER_SHIFT, SHIFTS_PER_DAY
@@ -127,6 +128,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** World-wide shift-level (watch) display mode. */
   get shiftMode() {
+    if (!Features.on("timeHud.shiftMode")) return false;   // capability disabled → always stretch view
     try { return game.settings.get(MODULE_ID, SETTINGS.shiftLevelMode); } catch { return false; }
   }
 
@@ -149,6 +151,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this._prevTurn = null;
     clearTimeout(this._rollSafety); this._rollSafety = null; this._rollSafetySeq = null;
     this._buildDynamic();
+    this._applyFeatureGates();
     this._applyPosition();
     this._wireViewportClamp();
     this._activateInteractions();
@@ -156,6 +159,36 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     this.update();
     this._paintWeather();
     this._paintDelving();
+  }
+
+  /**
+   * Hide the HUD pieces whose sub-feature is switched off in the Module
+   * Configuration. Applied once per render via a sticky class (`feat-off`,
+   * display:none !important) that update()'s class-toggling never clears — so a
+   * disabled control stays gone without touching the live-painting code paths.
+   */
+  _applyFeatureGates() {
+    const root = this.element;
+    if (!root) return;
+    const gate = (on, ...sels) => {
+      for (const sel of sels) root.querySelectorAll(sel).forEach(el => el?.classList.toggle("feat-off", !on));
+    };
+
+    // Calendar access: the date stays visible but stops being a button, and the
+    // event badge / chip is hidden. Events nest under calendar.
+    const calendar = Features.on("timeHud.calendar");
+    gate(Features.on("timeHud.events"), ".event-badge");
+    root.querySelector(".cell.date")?.classList.toggle("feat-noclick", !calendar);
+
+    // Mission countdown: drop the dock button and the meter's countdown line.
+    gate(Features.on("timeHud.mission"), "[data-missionbtn]", "[data-missline]");
+
+    // Watch/stretch view toggle.
+    gate(Features.on("timeHud.shiftMode"), "[data-modebtn]");
+
+    // GM time controls: the advance / next-shift / set-time buttons.
+    gate(Features.on("timeHud.gmControls"),
+      '.c[data-action="advance"]', '[data-action="nextShift"]', '[data-action="setTime"]');
   }
 
   async _onClose(options) {
@@ -193,7 +226,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     // Weather and delving coexist: weather washes the LEFT edge (behind the date
     // stack), delving the RIGHT (behind the turn/resource cell). They carry
     // separate bar tint vars so neither overwrites the other.
-    const enabled = WeatherStore.enabled && WeatherStore.configured;
+    const enabled = WeatherStore.enabled && WeatherStore.configured && Features.on("weather.hudChip");
     if (!enabled) {
       cell?.classList.add("hidden");
       host?.classList.add("off");
@@ -1249,12 +1282,12 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     SetTimeDialog.show();
   }
   async _onOpenMission() {
-    if (!game.user.isGM) return;
+    if (!game.user.isGM || !Features.on("timeHud.mission")) return;
     const { MissionDialog } = await import("./mission-dialog.js");
     MissionDialog.show();
   }
   async _onToggleShiftMode() {
-    if (!game.user.isGM) return;
+    if (!game.user.isGM || !Features.on("timeHud.shiftMode")) return;
     try { await game.settings.set(MODULE_ID, SETTINGS.shiftLevelMode, !this.shiftMode); } catch { /* ignore */ }
   }
 
@@ -1297,6 +1330,7 @@ export class GlctHud extends HandlebarsApplicationMixin(ApplicationV2) {
     setTimeout(() => this._wx?.resize(), 460);
   }
   async _onOpenCalendar() {
+    if (!Features.on("timeHud.calendar")) return;
     const { CalendarView } = await import("./calendar-view.js");
     CalendarView.show();
   }
