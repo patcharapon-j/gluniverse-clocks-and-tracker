@@ -391,8 +391,10 @@
    sweeping pointer, and (in shift mode) hide the collapsed-pill squares + clock. */
 #glct-hud .sdial .pie{transform-box:view-box;transform-origin:20px 20px}
 #glct-hud .ring .pie.done{fill:rgba(255,255,255,.20)}
-#glct-hud .ring .pie.lit{animation:glct-quadpop .95s var(--gl-ease-out)}
-@keyframes glct-quadpop{0%{fill:#fff;filter:drop-shadow(0 0 22px #fff) drop-shadow(0 0 9px #fff)}100%{}}
+#glct-hud .ring .pie.lit{animation:glct-quadpop .78s var(--gl-ease-out)}
+@keyframes glct-quadpop{
+  0%{fill:#fff;filter:drop-shadow(0 0 15px #fff) drop-shadow(0 0 6px #fff)}
+  100%{fill:var(--tint);filter:drop-shadow(0 0 3px var(--glow)) drop-shadow(0 0 0 transparent)}}
 #glct-hud .ring .marker{fill:#fff;filter:drop-shadow(0 0 3px #fff)}
 #glct-hud .dialptr{transition:transform .6s cubic-bezier(.34,1.3,.4,1)}
 #glct-hud .hud-root.shift-mode .ring .sq{display:none}
@@ -715,8 +717,13 @@
 .glct-trk-skin .t-clock svg.pie{display:block}
 .glct-trk-skin .t-clock .pie .seg{fill:rgba(255,255,255,.06);stroke:#0a0e15;stroke-width:1.6;transition:fill .4s ease,filter .4s ease}
 .glct-trk-skin .t-clock .pie .seg.fill{fill:var(--tint);filter:drop-shadow(0 0 3px var(--glow))}
-.glct-trk-skin .t-clock .pie .seg.justfilled{animation:glct-segpop .95s var(--gl-ease-out)}
-@keyframes glct-segpop{0%{fill:#fff;filter:drop-shadow(0 0 22px #fff) drop-shadow(0 0 9px #fff)}100%{}}
+/* The clock pie is tiny (26px): keep the fill's bloom contained, or a big white
+   halo flares the whole pie and swallows the very segment-fill it should show.
+   Explicit, matched endpoints so the white -> tint fill always reads cleanly. */
+.glct-trk-skin .t-clock .pie .seg.justfilled{animation:glct-segpop .7s var(--gl-ease-out)}
+@keyframes glct-segpop{
+  0%{fill:#fff;filter:drop-shadow(0 0 11px #fff) drop-shadow(0 0 4px #fff)}
+  100%{fill:var(--tint);filter:drop-shadow(0 0 3px var(--glow)) drop-shadow(0 0 0 transparent)}}
 .glct-trk-skin .t-clock .pie .ring{fill:none;stroke:rgba(255,255,255,.18);stroke-width:1.6}
 .glct-trk-skin .t-clock .nm{flex:1}
 .glct-trk-skin .t-clock .frac{font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:12px;font-weight:700;color:#dfe6f3;flex:none}
