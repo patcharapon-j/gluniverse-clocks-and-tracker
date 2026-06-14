@@ -27,6 +27,20 @@
   --gl-hazard:#ff4a52;        /* unified danger — doom, hazard, ominous       */
   --gl-cyan:#5eeaff; --gl-good:#5fdb92; --gl-violet:#b497ff;
   --gl-tech:"Bahnschrift","JetBrains Mono","Share Tech Mono",Consolas,monospace;
+  /* ---- Motion language: "impact then ease-out" (docs/design-language.md) ----
+     Every transient piece of feedback in the module — a box filling, a pip
+     popping, a number ticking, a marker landing, a reel settling — shares one
+     feel: a fast, big-impact attack on the very first frame (bloom + overshoot),
+     then a long, satisfying glide to rest. These curves encode that, so the whole
+     family moves with one voice. (Ambient loops keep their own ease-in-out.)
+       · out    — expo-out: instant attack, long flat settle. The house default
+                  for flash-decays, reel landings and travel.
+       · spring — tactile overshoot for state toggles that should feel springy
+                  (pip widths, dial squares, hex hover).
+       · snap   — a quick, small overshoot for menus / entrances. */
+  --gl-ease-out:cubic-bezier(.16,1,.3,1);
+  --gl-ease-spring:cubic-bezier(.34,1.56,.5,1);
+  --gl-ease-snap:cubic-bezier(.3,1.3,.5,1);
 }
 
 /* ---- frameless ApplicationV2 reset + top-center anchoring ---- */
@@ -159,7 +173,7 @@
 #glct-hud .reelclock{display:inline-flex;align-items:center;height:1.18em;line-height:1.18em;font-variant-numeric:tabular-nums}
 #glct-hud .reelclock .reel{display:inline-block;height:1.18em;width:.62em;overflow:hidden;text-align:center}
 #glct-hud .reelclock .reel .strip{display:flex;flex-direction:column;will-change:transform;
-  transition:transform .52s cubic-bezier(.2,.85,.22,1);transition-delay:var(--rd,0s)}
+  transition:transform .56s var(--gl-ease-out);transition-delay:var(--rd,0s)}
 #glct-hud .reelclock .reel .strip span{height:1.18em;line-height:1.18em}
 #glct-hud .reelclock .colon{width:.3em;text-align:center;opacity:.7}
 #glct-hud .clock .pulse{width:6px;height:6px;border-radius:99px;background:var(--tint);box-shadow:0 0 9px var(--glow);animation:glct-bp 2.6s ease-in-out infinite;flex:none}
@@ -184,8 +198,8 @@
 #glct-hud .hourgrp:not(.curr) .pip:first-child{width:8px;opacity:1}
 #glct-hud .pip.fill{background:var(--tint);box-shadow:0 0 5px var(--glowsoft)}
 #glct-hud .pip.head{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.9)}
-#glct-hud .pip.pop{animation:glct-pop .5s cubic-bezier(.34,1.56,.5,1)}
-@keyframes glct-pop{0%{transform:scaleY(.5);opacity:.4}45%{transform:scaleY(1.32);opacity:1;box-shadow:0 0 20px #fff}100%{transform:scaleY(1)}}
+#glct-hud .pip.pop{animation:glct-pop .62s var(--gl-ease-out)}
+@keyframes glct-pop{0%{transform:scaleY(1.5);opacity:1;box-shadow:0 0 22px #fff,0 0 8px #fff}100%{transform:scaleY(1)}}
 
 /* ===== mission countdown mode (polished-subtle) =====
    The GM pins a target (a time, or N stretches from now). Inactive hours stop
@@ -237,7 +251,7 @@
   line-height:1;color:#fff;font-variant-numeric:tabular-nums}
 #glct-hud .missline .mreel{display:inline-block;height:1em;overflow:hidden;width:.6em;text-align:center;transition:width .3s ease}
 #glct-hud .missline .mreel.hide{width:0}
-#glct-hud .missline .mstrip{display:flex;flex-direction:column;transition:transform .5s cubic-bezier(.2,.85,.22,1)}
+#glct-hud .missline .mstrip{display:flex;flex-direction:column;transition:transform .56s var(--gl-ease-out)}
 #glct-hud .missline .mstrip span{height:1em;line-height:1em}
 #glct-hud .missline .mc-unit{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#8a93a6;font-weight:800;align-self:flex-end;padding-bottom:3px}
 /* objective name: just the small flag glyph + tinted text, no pill chrome */
@@ -377,8 +391,8 @@
    sweeping pointer, and (in shift mode) hide the collapsed-pill squares + clock. */
 #glct-hud .sdial .pie{transform-box:view-box;transform-origin:20px 20px}
 #glct-hud .ring .pie.done{fill:rgba(255,255,255,.20)}
-#glct-hud .ring .pie.lit{animation:glct-quadpop .55s cubic-bezier(.34,1.5,.5,1)}
-@keyframes glct-quadpop{0%{fill:#fff;filter:drop-shadow(0 0 9px #fff)}100%{}}
+#glct-hud .ring .pie.lit{animation:glct-quadpop .72s var(--gl-ease-out)}
+@keyframes glct-quadpop{0%{fill:#fff;filter:drop-shadow(0 0 14px #fff) drop-shadow(0 0 5px #fff)}100%{}}
 #glct-hud .ring .marker{fill:#fff;filter:drop-shadow(0 0 3px #fff)}
 #glct-hud .dialptr{transition:transform .6s cubic-bezier(.34,1.3,.4,1)}
 #glct-hud .hud-root.shift-mode .ring .sq{display:none}
@@ -390,12 +404,12 @@
 
 /* Mode-swap entrance: the appearing side eases in; a bar sweep (triggered in
    JS) masks the layout change. Added transiently as .mode-swap on .hud-root. */
-#glct-hud .hud-root.mode-swap.shift-mode .shift-hero{animation:glct-heroIn .55s cubic-bezier(.34,1.4,.4,1)}
+#glct-hud .hud-root.mode-swap.shift-mode .shift-hero{animation:glct-heroIn .6s var(--gl-ease-out)}
 #glct-hud .hud-root.mode-swap:not(.shift-mode) .clock-cell,
-#glct-hud .hud-root.mode-swap:not(.shift-mode) .meter{animation:glct-heroIn .55s cubic-bezier(.34,1.4,.4,1)}
+#glct-hud .hud-root.mode-swap:not(.shift-mode) .meter{animation:glct-heroIn .6s var(--gl-ease-out)}
 @keyframes glct-heroIn{0%{opacity:0;transform:translateY(5px) scale(.95)}100%{opacity:1;transform:none}}
 /* the four quadrants draw in, staggered, when watch mode appears */
-#glct-hud .hud-root.mode-swap.shift-mode .sdial .pie{animation:glct-dialIn .5s both cubic-bezier(.34,1.4,.4,1)}
+#glct-hud .hud-root.mode-swap.shift-mode .sdial .pie{animation:glct-dialIn .55s both var(--gl-ease-out)}
 #glct-hud .hud-root.mode-swap.shift-mode .sdial .pie:nth-child(1){animation-delay:.02s}
 #glct-hud .hud-root.mode-swap.shift-mode .sdial .pie:nth-child(2){animation-delay:.08s}
 #glct-hud .hud-root.mode-swap.shift-mode .sdial .pie:nth-child(3){animation-delay:.14s}
@@ -625,7 +639,7 @@
   box-shadow:0 18px 44px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.12);
   backdrop-filter:blur(16px) saturate(1.15);
   opacity:0;transform:translateY(-4px) scale(.97);transform-origin:top left;
-  transition:opacity .13s ease,transform .13s cubic-bezier(.34,1.4,.5,1)}
+  transition:opacity .14s ease,transform .2s var(--gl-ease-snap)}
 .glct-trk-skin .trk-ctx.show{opacity:1;transform:none}
 .glct-trk-skin .trk-ctx .ctx-item{display:flex;align-items:center;gap:9px;width:100%;
   padding:5px 10px 5px 8px;border:none;border-radius:6px;cursor:pointer;background:none;
@@ -648,12 +662,12 @@
 .glct-trk-skin .rovl.empty .ot{color:#ff7a6f;text-shadow:0 0 16px color-mix(in srgb,var(--gl-hazard) 90%,transparent)}
 .glct-trk-skin .rovl.done{background:linear-gradient(90deg,rgba(6,26,17,.7),rgba(8,22,15,.55))}
 .glct-trk-skin .rovl.done .ot{color:#8af0bd;text-shadow:0 0 16px rgba(103,211,155,.9)}
-.glct-trk-skin .rovl.done.show .ot{animation:glct-stamp .55s cubic-bezier(.34,1.6,.5,1)}
+.glct-trk-skin .rovl.done.show .ot{animation:glct-stamp .62s var(--gl-ease-out)}
 /* A completed bad clock stamps red "doom" rather than green "filled". */
 .glct-trk-skin .rovl.doom{background:linear-gradient(90deg,rgba(28,8,8,.74),rgba(20,6,6,.56))}
 .glct-trk-skin .rovl.doom .ot{color:#ff7a6f;text-shadow:0 0 16px color-mix(in srgb,var(--gl-hazard) 90%,transparent)}
-.glct-trk-skin .rovl.doom.show .ot{animation:glct-stamp .55s cubic-bezier(.34,1.6,.5,1)}
-@keyframes glct-stamp{0%{transform:scale(1.5);opacity:0}55%{transform:scale(.92)}100%{transform:scale(1);opacity:1}}
+.glct-trk-skin .rovl.doom.show .ot{animation:glct-stamp .62s var(--gl-ease-out)}
+@keyframes glct-stamp{0%{transform:scale(1.6);opacity:0}24%{transform:scale(.94);opacity:1}46%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
 
 /* POINT + POOL — both read as a hero number with a faint cap. The pool shows
    the count of dice remaining the same way a point shows its value, with a
@@ -665,11 +679,11 @@
 .glct-trk-skin .t-point .chev,
 .glct-trk-skin .t-pool .chev{font-size:9px;width:9px;opacity:0;font-weight:700;flex:none}
 .glct-trk-skin .t-point .chev.up,
-.glct-trk-skin .t-pool .chev.up{color:var(--good);animation:glct-floatUp .6s ease}
+.glct-trk-skin .t-pool .chev.up{color:var(--good);animation:glct-floatUp .72s var(--gl-ease-out)}
 .glct-trk-skin .t-point .chev.down,
-.glct-trk-skin .t-pool .chev.down{color:#ff8a7e;animation:glct-floatDown .6s ease}
-@keyframes glct-floatUp{0%{opacity:0;transform:translateY(3px)}30%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
-@keyframes glct-floatDown{0%{opacity:0;transform:translateY(-3px)}30%{opacity:1}100%{opacity:0;transform:translateY(6px)}}
+.glct-trk-skin .t-pool .chev.down{color:#ff8a7e;animation:glct-floatDown .72s var(--gl-ease-out)}
+@keyframes glct-floatUp{0%{opacity:0;transform:translateY(4px) scale(.8)}16%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-9px)}}
+@keyframes glct-floatDown{0%{opacity:0;transform:translateY(-4px) scale(.8)}16%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(9px)}}
 /* Glow lives here (no overflow:hidden) as a drop-shadow, not as a text-shadow on
    the clipped .reeldig — otherwise the coloured halo is clipped to the reel's
    box and reads as a square behind the number. drop-shadow follows the glyphs. */
@@ -691,7 +705,7 @@
 .glct-trk-skin .t-point .pval.at-min,
 .glct-trk-skin .t-pool .pval.at-min{filter:drop-shadow(0 0 10px color-mix(in srgb,var(--gl-hazard) 55%,transparent))}
 .glct-trk-skin .reeldig .reel{display:inline-block;height:1.05em;width:.62em;overflow:hidden;text-align:center}
-.glct-trk-skin .reeldig .strip{display:flex;flex-direction:column;transition:transform .5s cubic-bezier(.2,.85,.22,1)}
+.glct-trk-skin .reeldig .strip{display:flex;flex-direction:column;transition:transform .56s var(--gl-ease-out)}
 .glct-trk-skin .reeldig .strip span{height:1.05em;line-height:1.05em}
 .glct-trk-skin .reeldig .sign{padding-right:.04em}
 
@@ -701,8 +715,8 @@
 .glct-trk-skin .t-clock svg.pie{display:block}
 .glct-trk-skin .t-clock .pie .seg{fill:rgba(255,255,255,.06);stroke:#0a0e15;stroke-width:1.6;transition:fill .4s ease,filter .4s ease}
 .glct-trk-skin .t-clock .pie .seg.fill{fill:var(--tint);filter:drop-shadow(0 0 3px var(--glow))}
-.glct-trk-skin .t-clock .pie .seg.justfilled{animation:glct-segpop .55s ease}
-@keyframes glct-segpop{0%{fill:#fff;filter:drop-shadow(0 0 9px #fff)}100%{}}
+.glct-trk-skin .t-clock .pie .seg.justfilled{animation:glct-segpop .72s var(--gl-ease-out)}
+@keyframes glct-segpop{0%{fill:#fff;filter:drop-shadow(0 0 14px #fff) drop-shadow(0 0 5px #fff)}100%{}}
 .glct-trk-skin .t-clock .pie .ring{fill:none;stroke:rgba(255,255,255,.18);stroke-width:1.6}
 .glct-trk-skin .t-clock .nm{flex:1}
 .glct-trk-skin .t-clock .frac{font-family:var(--clock-font);font-variant-numeric:tabular-nums;font-size:12px;font-weight:700;color:#dfe6f3;flex:none}
@@ -725,8 +739,11 @@
   position:relative;transition:border-color .35s,background .35s,box-shadow .35s}
 .glct-trk-skin .box.fill{border-color:transparent;background:linear-gradient(180deg,#fff,var(--tint));
   box-shadow:0 0 7px var(--glow),inset 0 1px 0 rgba(255,255,255,.5)}
-.glct-trk-skin .box.justfill{animation:glct-boxpop .42s cubic-bezier(.34,1.5,.5,1)}
-@keyframes glct-boxpop{0%{transform:scale(.5);box-shadow:0 0 16px #fff}55%{transform:scale(1.22)}100%{transform:scale(1)}}
+/* The headline fill: the box lands ALREADY full, punched large with a white-hot
+   bloom on the first frame (big impact), then the bloom recedes and the scale
+   glides home along the house expo-out curve — a satisfying settle, not a wind-up. */
+.glct-trk-skin .box.justfill{animation:glct-boxpop .66s var(--gl-ease-out)}
+@keyframes glct-boxpop{0%{transform:scale(1.36);box-shadow:0 0 24px #fff,0 0 10px #fff;filter:brightness(1.55)}100%{transform:scale(1);filter:brightness(1)}}
 
 /* HAZARD overrides — red, persistent dread */
 .glct-trk-skin .trow.hazard{--tint:var(--danger);--glow:var(--dangerglow);--glowsoft:var(--dangersoft);animation:glct-dread 3.2s ease-in-out infinite}

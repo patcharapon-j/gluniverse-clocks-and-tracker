@@ -114,8 +114,9 @@
   font-size:23px; font-weight:800; color:#fff; letter-spacing:.5px; line-height:1;
   text-shadow:0 0 10px color-mix(in srgb, var(--dxglow) 60%, transparent), 0 1px 2px rgba(0,0,0,.7);
 }
-#glct-hud .dx-turn-num.tick{ animation:dx-tick .42s cubic-bezier(.34,1.56,.64,1); }
-@keyframes dx-tick{ 0%{ transform:translateY(.32em) scale(.7); opacity:.2; } 100%{ transform:none; opacity:1; } }
+#glct-hud .dx-turn-num.tick{ animation:dx-tick .56s var(--gl-ease-out); }
+@keyframes dx-tick{ 0%{ transform:translateY(.42em) scale(.58); opacity:0;
+    text-shadow:0 0 18px var(--dxglow), 0 0 6px #fff, 0 1px 2px rgba(0,0,0,.7); } 100%{ transform:none; opacity:1; } }
 #glct-hud .dx-turn-lbl{ font-size:8.5px; text-transform:uppercase; letter-spacing:.12em; opacity:.8; margin-top:2px; text-shadow:0 1px 2px rgba(0,0,0,.7); }
 
 /* featured resource block */
@@ -263,7 +264,7 @@
   content:""; position:absolute; left:14%; right:14%; top:50%; height:2px; z-index:3;
   background:var(--gl-hazard); box-shadow:0 0 6px var(--gl-hazard); border-radius:2px;
   transform:translateY(-1px) scaleX(0); transform-origin:left center;
-  transition:transform .3s ease .04s;
+  transition:transform .34s var(--gl-ease-out) .04s;
 }
 .glct-slot .reel.drop::after{ transform:translateY(-1px) scaleX(1); }
 
