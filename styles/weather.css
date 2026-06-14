@@ -309,15 +309,15 @@
     color-mix(in srgb,var(--glct-weather-glow) 60%,transparent) 76%,
     color-mix(in srgb,var(--glct-weather-glow) 24%,transparent) 100%);
   filter:drop-shadow(0 0 5px var(--glct-weather-glow)) drop-shadow(0 0 12px var(--glct-weather-glow));
-  transition:left .55s var(--gl-ease-out),top .55s var(--gl-ease-out);
+  transition:left .6s var(--gl-ease-out),top .6s var(--gl-ease-out);
   animation:wx-pulse 2.6s ease-in-out infinite}
 @keyframes wx-pulse{0%,100%{opacity:.78}50%{opacity:1}}
-/* Arrival: the marker slams onto the new cell already large, with a doubled glow
-   bloom on the first frame, then settles through a hair of overshoot as the bloom
-   recedes to its resting pulse. */
-.wx-marker.arrive{animation:wx-arrive .66s var(--gl-ease-out),wx-pulse 2.6s ease-in-out infinite}
-@keyframes wx-arrive{0%{transform:translate(-50%,-50%) scale(1.55);
-    filter:drop-shadow(0 0 8px var(--glct-weather-glow)) drop-shadow(0 0 26px var(--glct-weather-glow))}
+/* Arrival: the marker slams onto the new cell already large, with a big glow bloom
+   on the first frame, then settles through a hair of overshoot as the bloom recedes
+   to its resting pulse. */
+.wx-marker.arrive{animation:wx-arrive .9s var(--gl-ease-out),wx-pulse 2.6s ease-in-out infinite}
+@keyframes wx-arrive{0%{transform:translate(-50%,-50%) scale(1.62);
+    filter:drop-shadow(0 0 11px var(--glct-weather-glow)) drop-shadow(0 0 36px var(--glct-weather-glow))}
   50%{transform:translate(-50%,-50%) scale(.95)}100%{transform:translate(-50%,-50%) scale(1)}}
 .wx-marker.ominous{--glct-weather-glow:#ff6a60}
 

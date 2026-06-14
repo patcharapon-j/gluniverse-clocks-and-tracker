@@ -114,9 +114,9 @@
   font-size:23px; font-weight:800; color:#fff; letter-spacing:.5px; line-height:1;
   text-shadow:0 0 10px color-mix(in srgb, var(--dxglow) 60%, transparent), 0 1px 2px rgba(0,0,0,.7);
 }
-#glct-hud .dx-turn-num.tick{ animation:dx-tick .56s var(--gl-ease-out); }
-@keyframes dx-tick{ 0%{ transform:translateY(.42em) scale(.58); opacity:0;
-    text-shadow:0 0 18px var(--dxglow), 0 0 6px #fff, 0 1px 2px rgba(0,0,0,.7); } 100%{ transform:none; opacity:1; } }
+#glct-hud .dx-turn-num.tick{ animation:dx-tick .8s var(--gl-ease-out); }
+@keyframes dx-tick{ 0%{ transform:translateY(.46em) scale(.54); opacity:0;
+    text-shadow:0 0 28px var(--dxglow), 0 0 11px #fff, 0 1px 2px rgba(0,0,0,.7); } 100%{ transform:none; opacity:1; } }
 #glct-hud .dx-turn-lbl{ font-size:8.5px; text-transform:uppercase; letter-spacing:.12em; opacity:.8; margin-top:2px; text-shadow:0 1px 2px rgba(0,0,0,.7); }
 
 /* featured resource block */
