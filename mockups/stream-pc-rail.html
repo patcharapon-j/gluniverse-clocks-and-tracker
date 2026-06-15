@@ -2,22 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>GLU Stream — PC Party Rail (Etched Glass)</title>
+<title>GLU Stream — PC Party Rail (Compact / Etched Glass)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@200..800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   GL UNIVERSE — STREAM OVERLAY  ·  PC PARTY RAIL
-   Mockup specimen (fake PF2e data + simulated live updates).
-   Faithful to docs/design-language.md (Etched Glass).
-   This is the OBS browser-source view: transparent <body>,
-   the rail is one placeable group of cards.
+   GL UNIVERSE — STREAM OVERLAY · PC PARTY (compact horizontal)
+   Direction: big character art + a compact horizontal stat plate
+   anchored to it (class tab, name pill, HP/AC/abilities band,
+   spell strip, player token). Etched Glass material throughout.
+   Mockup: fake PF2e data + simulated live updates.
    ============================================================ */
-
-/* ---- shared GL tokens (§2, §6.1) ---- */
 :root{
   --gl-ink-0:#02070b; --gl-ink-1:#080b11; --gl-ink-2:#0b0f17; --gl-ink-3:#161d2c;
-  --gl-text:#eef1f7; --gl-text-bright:#f3fbff; --gl-text-dim:#98a2b6; --gl-text-faint:rgba(243,251,255,.38);
+  --gl-text:#eef1f7; --gl-text-bright:#f3fbff; --gl-text-dim:#98a2b6; --gl-text-faint:rgba(243,251,255,.42);
   --gl-hair:rgba(255,255,255,.08); --gl-edge:rgba(255,255,255,.13); --gl-line-strong:rgba(244,252,255,.55);
   --gl-signal:#ffd24a; --gl-signal-hot:#ffe070; --gl-cyan:#5eeaff; --gl-hazard:#ff4a52;
   --gl-good:#5fdb92; --gl-violet:#b497ff; --gl-mission:#37d99a;
@@ -26,439 +24,300 @@
   --gl-ease:cubic-bezier(.16,1,.3,1); --gl-snap:cubic-bezier(.2,1.35,.22,1);
   --gl-pop:cubic-bezier(.34,1.56,.5,1); --gl-exit:cubic-bezier(.55,0,.84,0);
 }
-
-/* OBS browser source = transparent. The checkered/scenic backdrop here is ONLY
-   the mockup harness so the frosted glass has something to refract. Toggle it. */
 html,body{height:100%;margin:0}
-body{
-  font-family:var(--gl-display); color:var(--gl-text);
+body{font-family:var(--gl-display);color:var(--gl-text);-webkit-font-smoothing:antialiased;overflow:hidden;
   background:
-    radial-gradient(900px 500px at 22% 16%, #243a5e, transparent 60%),
-    radial-gradient(800px 520px at 80% 78%, #46264f, transparent 62%),
+    radial-gradient(1000px 560px at 24% 14%, #243a5e, transparent 60%),
+    radial-gradient(900px 560px at 82% 82%, #41204c, transparent 62%),
     linear-gradient(160deg,#0c1018,#05080d);
-  -webkit-font-smoothing:antialiased;
-  display:flex; align-items:flex-end; justify-content:center;
-  overflow:hidden;
-}
-body.is-transparent{background:
-  conic-gradient(#1b1f27 25%, #20242d 0 50%, #1b1f27 0 75%, #20242d 0) 0 0/40px 40px;}
+  display:flex;align-items:flex-end;justify-content:center}
+body.is-transparent{background:conic-gradient(#1b1f27 25%,#20242d 0 50%,#1b1f27 0 75%,#20242d 0) 0 0/40px 40px}
 
-/* ============================================================
-   PARTY RAIL  — the placeable group
-   ============================================================ */
-.rail{
-  display:flex; gap:18px; align-items:flex-end;
-  padding:0 34px 40px; margin:0 auto;
-  perspective:1400px;
-}
+/* ===== party rail — the placeable group ===== */
+.rail{display:flex;gap:10px;align-items:flex-end;padding:0 26px 30px;margin:0 auto}
 
-/* ============================================================
-   PC CARD — large glass slab, chamfered top-right, art overflows top
-   ============================================================ */
-.card{
-  --gl-accent:#6fb8d8;                 /* per-card context tint */
-  position:relative; width:246px;
-  /* leave headroom above the glass for the diorama art to overflow into */
-  padding-top:104px;
-  font-variant-numeric:tabular-nums;
-  transition:transform .5s var(--gl-ease), filter .5s var(--gl-ease), opacity .45s var(--gl-ease);
-  animation:cardIn .6s var(--gl-ease) backwards;
-}
-@keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+/* ===== one PC unit: art behind + compact plate ===== */
+.unit{position:relative;width:432px;padding-top:150px;animation:unitIn .6s var(--gl-ease) backwards}
+@keyframes unitIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+.unit{--gl-accent:#6fb8d8}
 
-/* ---- the glass body (§3.1 glass-panel + §4.1 chamfer) ---- */
-.glass{
-  position:relative; border-radius:15px;
-  clip-path:polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 34%),
-    linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.20)),
-    linear-gradient(98deg, color-mix(in srgb, var(--gl-accent) 14%, var(--gl-ink-1)), var(--gl-ink-1) 64%);
-  border:1px solid var(--gl-edge);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), inset 0 -12px 28px rgba(0,0,0,.38);
-  /* outer drop+bloom must be filter (clip-path eats box-shadows) */
-  filter:drop-shadow(0 22px 44px rgba(0,0,0,.6))
-         drop-shadow(0 0 30px color-mix(in srgb, var(--gl-accent) 18%, transparent));
-  backdrop-filter:blur(16px) saturate(1.15);
-  padding:42px 13px 13px;             /* top padding clears the name plate over the art base */
-}
-/* inner radial light catch (§3.1 ::before) */
-.glass::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;z-index:0;
-  background:radial-gradient(70% 130% at 50% -30%, color-mix(in srgb,var(--gl-accent) 50%,transparent), transparent 64%);
-  opacity:.22}
-/* 1px accent hairline tracing the chamfer cut (§4.1) */
-.glass::after{content:"";position:absolute;top:-1px;right:-1px;width:22px;height:1px;z-index:6;
-  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--gl-accent) 88%,#fff));
-  transform-origin:100% 0; transform:rotate(45deg) translateX(1.5px);
-  box-shadow:0 0 8px color-mix(in srgb,var(--gl-accent) 70%,transparent); opacity:.9}
+/* --- diorama art: big, bleeds up behind the plate --- */
+.art{position:absolute;left:18px;right:18px;top:0;height:300px;z-index:1;overflow:hidden;border-radius:14px;pointer-events:none;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 14%,#000 52%,transparent 88%);
+          mask-image:linear-gradient(180deg,transparent 0,#000 14%,#000 52%,transparent 88%)}
+.art .scene{position:absolute;inset:0;background:radial-gradient(120% 86% at 50% 16%,color-mix(in srgb,var(--gl-accent) 42%,#10151f),#0a0e15 72%)}
+.art .bust{position:absolute;left:50%;top:8px;transform:translateX(-50%);font-size:118px;line-height:1;filter:drop-shadow(0 8px 22px rgba(0,0,0,.65))}
+.art .scrim{position:absolute;inset:0;background:linear-gradient(0deg,rgba(2,5,8,.96),rgba(2,5,8,.2) 44%,transparent 66%)}
 
-/* ---- L-bracket registration mark (§4.2), brightens when card is "active" ---- */
-.card .lbr{position:absolute;left:7px;top:101px;width:8px;height:8px;z-index:7;
-  border-top:1px solid var(--gl-line-strong);border-left:1px solid var(--gl-line-strong);
-  opacity:.5;transition:.4s}
-.card.active .lbr{border-color:var(--gl-accent);opacity:1;box-shadow:-1px -1px 6px color-mix(in srgb,var(--gl-accent) 60%,transparent)}
+/* ===== the plate (compact info) ===== */
+.plate{position:relative;z-index:3}
 
-/* ============================================================
-   DIORAMA ART — overflows the top, blends into the plate
-   ============================================================ */
-.art{position:absolute;left:0;right:0;top:0;height:176px;z-index:1;border-radius:15px 15px 0 0;overflow:hidden;
-  pointer-events:none;
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 58%,transparent 96%);
-          mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 58%,transparent 96%);}
-.art .scene{position:absolute;inset:0;
-  background:radial-gradient(120% 90% at 50% 18%, color-mix(in srgb,var(--gl-accent) 40%,#10151f), #0a0e15 72%);}
-/* stand-in "portrait" — a big glyph bust; real build swaps in actor.img */
-.art .bust{position:absolute;left:50%;top:6px;transform:translateX(-50%);font-size:92px;line-height:1;
-  filter:drop-shadow(0 6px 18px rgba(0,0,0,.6));}
-/* directional legibility scrim (§3.5) at the base where the name sits */
-.art .scrim{position:absolute;inset:0;background:linear-gradient(0deg,rgba(2,5,8,.96),rgba(2,5,8,.25) 46%,transparent 70%)}
+/* --- class tab (angled, two-tone) --- */
+.tab{display:inline-flex;align-items:stretch;height:17px;margin-left:14px;font-family:var(--gl-tech);
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.5))}
+.tab .cls{display:flex;align-items:center;gap:5px;padding:0 7px 0 9px;background:linear-gradient(180deg,#e7ddc4,#c9bd9c);
+  color:#241d12;font-weight:800;font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  clip-path:polygon(0 0,100% 0,calc(100% - 7px) 100%,0 100%)}
+.tab .cls .lv{font-family:var(--gl-display);font-weight:800;font-size:12px;font-style:italic;line-height:1;
+  color:#1a1206;transform:skewX(-8deg)}
+.tab .anc{display:flex;align-items:center;padding:0 9px 0 11px;margin-left:-6px;background:linear-gradient(180deg,#1a2230,#0c1119);
+  color:var(--gl-text-dim);font-weight:700;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
+  clip-path:polygon(7px 0,100% 0,100% 100%,0 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 
-/* ============================================================
-   IDENTITY — name plate sitting at the art/glass seam
-   ============================================================ */
-.ident{position:relative;z-index:3;margin-top:-2px;margin-bottom:9px}
-.ident .name{font-weight:800;font-size:19px;line-height:1;letter-spacing:.2px;
-  background:linear-gradient(180deg,#fff,#cdd6e8);-webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ident .player{font-family:var(--gl-tech);font-weight:700;font-size:8px;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--gl-text-dim);margin-top:3px}
-.ident .meta{font-family:var(--gl-tech);font-weight:700;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--gl-text-faint);margin-top:2px}
-.ident .meta b{color:color-mix(in srgb,var(--gl-accent) 70%,#fff);font-weight:800}
+/* --- name pill (black, prominent) + hero pips + conditions --- */
+.namebar{display:flex;align-items:center;gap:9px;margin:-2px 0 5px}
+.name{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 14px 0 11px;border-radius:8px;
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 100%,0 100%);
+  background:linear-gradient(180deg,rgba(8,11,17,.94),rgba(2,4,7,.96));
+  box-shadow:0 6px 16px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08),inset 0 0 0 1px var(--gl-hair);
+  backdrop-filter:blur(8px)}
+.name .bullet{color:var(--gl-accent);font-size:9px;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--gl-accent) 70%,transparent))}
+.name .nm{font-weight:800;font-size:18px;line-height:1;letter-spacing:.2px;color:#fff;white-space:nowrap;
+  text-shadow:0 1px 2px rgba(0,0,0,.7)}
 
-/* precision divider (§4.3 static rule) */
-.rule{height:1px;margin:9px 0;background:linear-gradient(90deg,transparent,var(--gl-hair) 18%,var(--gl-hair) 82%,transparent)}
-.rule.lit{background:linear-gradient(90deg,transparent,var(--gl-accent) 24%,var(--gl-accent) 76%,transparent);
-  box-shadow:0 0 14px color-mix(in srgb,var(--gl-accent) 70%,transparent)}
-
-.kick{font-family:var(--gl-tech);font-weight:700;font-size:7px;letter-spacing:.22em;text-transform:uppercase;
-  color:var(--gl-text-faint);margin:0 0 5px}
-
-/* ============================================================
-   VITALS — HP (number + bar) hero, AC + shield chips
-   ============================================================ */
-.vitals{display:flex;gap:8px;align-items:flex-end;position:relative;z-index:3}
-.hp{flex:1;min-width:0}
-.hp .hpnum{display:flex;align-items:baseline;gap:3px;font-weight:800;line-height:1}
-.hp .hpcur{font-size:22px;color:var(--gl-text-bright);text-shadow:0 0 14px color-mix(in srgb,var(--gl-good) 40%,transparent)}
-.hp .hpmax{font-size:11px;color:var(--gl-text-dim)}
-.hp .hpmax::before{content:"/";margin-right:1px;color:var(--gl-text-faint)}
-.hp .hplbl{font-family:var(--gl-tech);font-weight:700;font-size:7px;letter-spacing:.2em;color:var(--gl-text-faint);margin-left:auto}
-.hp .hpnum .hplbl{align-self:center}
-.bar{position:relative;height:7px;margin-top:4px;border-radius:99px;overflow:hidden;
-  background:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.28));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),inset 0 0 0 1px rgba(255,255,255,.05)}
-.bar .fill{position:absolute;inset:0;width:72%;border-radius:99px;
-  background:linear-gradient(90deg,color-mix(in srgb,var(--gl-good) 75%,#0a0),var(--gl-good));
-  box-shadow:0 0 10px color-mix(in srgb,var(--gl-good) 55%,transparent);
-  transition:width .6s var(--gl-pop), background .6s var(--gl-ease), box-shadow .6s var(--gl-ease)}
-.bar .fill.warn{background:linear-gradient(90deg,#caa23a,var(--gl-signal));box-shadow:0 0 10px color-mix(in srgb,var(--gl-signal) 55%,transparent)}
-.bar .fill.crit{background:linear-gradient(90deg,#b3343a,var(--gl-hazard));box-shadow:0 0 12px color-mix(in srgb,var(--gl-hazard) 60%,transparent)}
-
-.ac{position:relative;width:38px;height:42px;flex:none;display:grid;place-items:center;text-align:center}
-.ac .shieldbg{position:absolute;inset:0;color:color-mix(in srgb,var(--gl-accent) 22%,transparent);font-size:42px;line-height:42px}
-.ac .acval{position:relative;font-weight:800;font-size:18px;line-height:1;color:var(--gl-text-bright);text-shadow:0 1px 2px #000}
-.ac .aclbl{position:relative;font-family:var(--gl-tech);font-weight:800;font-size:6.5px;letter-spacing:.16em;color:var(--gl-text-dim);margin-top:1px}
-
-/* raised-shield chip (defenses bundle) */
-.shieldchip{display:none;align-items:center;gap:4px;margin-top:7px;padding:3px 7px;border-radius:7px;
-  width:max-content;font-family:var(--gl-tech);font-weight:700;font-size:8px;letter-spacing:.08em;
-  color:var(--gl-cyan);
-  background:linear-gradient(180deg,color-mix(in srgb,var(--gl-cyan) 16%,transparent),color-mix(in srgb,var(--gl-cyan) 5%,transparent));
-  border:1px solid color-mix(in srgb,var(--gl-cyan) 32%,transparent)}
-.card.raised .shieldchip{display:inline-flex}
-.shieldchip .shp{color:var(--gl-text);opacity:.8}
-
-/* ============================================================
-   HERO POINTS (the "lights") + dying / wounded pips
-   ============================================================ */
-.statusline{display:flex;align-items:center;gap:10px;margin-top:9px;position:relative;z-index:3}
 .hero{display:flex;align-items:center;gap:4px}
-.hero .hlbl{font-family:var(--gl-tech);font-weight:700;font-size:7px;letter-spacing:.18em;color:var(--gl-text-faint);margin-right:1px;text-transform:uppercase}
-.hero .pip{width:11px;height:11px;border-radius:50%;position:relative;
-  background:radial-gradient(circle at 38% 34%, rgba(255,255,255,.14), rgba(0,0,0,.4));
+.hero .pip{width:10px;height:10px;border-radius:50%;
+  background:radial-gradient(circle at 38% 34%,rgba(255,255,255,.12),rgba(0,0,0,.4));
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transition:.4s var(--gl-pop)}
-.hero .pip.on{background:radial-gradient(circle at 38% 34%, var(--gl-signal-hot), color-mix(in srgb,var(--gl-signal) 60%,#7a5400));
-  box-shadow:0 0 10px color-mix(in srgb,var(--gl-signal) 75%,transparent), inset 0 0 0 1px color-mix(in srgb,var(--gl-signal-hot) 80%,transparent)}
+.hero .pip.on{background:radial-gradient(circle at 38% 34%,var(--gl-signal-hot),color-mix(in srgb,var(--gl-signal) 60%,#7a5400));
+  box-shadow:0 0 9px color-mix(in srgb,var(--gl-signal) 75%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--gl-signal-hot) 80%,transparent)}
 .hero .pip.flare{animation:pipflare .6s var(--gl-pop)}
-@keyframes pipflare{0%{transform:scale(.4)}55%{transform:scale(1.35);filter:brightness(1.7)}100%{transform:none}}
+@keyframes pipflare{0%{transform:scale(.4)}55%{transform:scale(1.4);filter:brightness(1.8)}100%{transform:none}}
 
-.dying{display:none;align-items:center;gap:3px;margin-left:auto}
-.card.is-dying .dying{display:inline-flex}
-.dying .dlbl{font-family:var(--gl-tech);font-weight:800;font-size:7px;letter-spacing:.16em;color:var(--gl-hazard);text-transform:uppercase}
-.dying .skull{font-size:11px;line-height:1;opacity:.3;filter:grayscale(1)}
-.dying .skull.on{opacity:1;filter:none;text-shadow:0 0 8px color-mix(in srgb,var(--gl-hazard) 80%,transparent)}
+.dying{display:none;align-items:center;gap:3px}
+.unit.is-dying .dying{display:inline-flex}.unit.is-dying .hero{display:none}
+.dying .dlbl{font-family:var(--gl-tech);font-weight:800;font-size:7.5px;letter-spacing:.16em;color:var(--gl-hazard);text-transform:uppercase}
+.dying .sk{font-size:10px;line-height:1;opacity:.3;filter:grayscale(1)}
+.dying .sk.on{opacity:1;filter:none;text-shadow:0 0 8px color-mix(in srgb,var(--gl-hazard) 80%,transparent)}
 
-/* ============================================================
-   ABILITY SCORES — six, mono labels + modifier
-   ============================================================ */
-.abil{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:11px;position:relative;z-index:3}
-.abil .ab{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 0 4px;border-radius:6px;
-  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(0,0,0,.18));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
-.abil .ab .k{font-family:var(--gl-tech);font-weight:800;font-size:6.5px;letter-spacing:.06em;color:var(--gl-text-faint)}
-.abil .ab .v{font-weight:800;font-size:12px;line-height:1;color:var(--gl-text)}
-.abil .ab .s{font-family:var(--gl-tech);font-weight:700;font-size:6px;color:var(--gl-text-faint)}
-
-/* ============================================================
-   DEFENSE STRIP — saves, perception, speed (resources bundle)
-   ============================================================ */
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:9px;position:relative;z-index:3}
-.stats .st{display:flex;flex-direction:column;align-items:center;gap:2px}
-.stats .st .k{font-family:var(--gl-tech);font-weight:700;font-size:6px;letter-spacing:.1em;color:var(--gl-text-faint)}
-.stats .st .v{font-weight:800;font-size:11px;line-height:1;color:color-mix(in srgb,var(--gl-accent) 30%,#fff)}
-
-/* ============================================================
-   RESOURCES — spell slots per rank / focus points
-   ============================================================ */
-.res{margin-top:10px;position:relative;z-index:3}
-.slotrow{display:flex;align-items:center;gap:5px;margin-top:4px}
-.slotrow .rk{font-family:var(--gl-tech);font-weight:800;font-size:7px;letter-spacing:.06em;color:var(--gl-text-faint);width:14px}
-.slotrow .slots{display:flex;gap:3px}
-.slot{width:8px;height:8px;border-radius:2px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.3));
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-.slot.on{background:linear-gradient(180deg,color-mix(in srgb,var(--gl-violet) 90%,#fff),var(--gl-violet));
-  box-shadow:0 0 7px color-mix(in srgb,var(--gl-violet) 60%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--gl-violet) 80%,transparent)}
-.focus .slot.on{background:linear-gradient(180deg,#fff,var(--gl-cyan));box-shadow:0 0 7px color-mix(in srgb,var(--gl-cyan) 60%,transparent)}
-
-/* ============================================================
-   CONDITIONS — chips that slide in (cascade stagger)
-   ============================================================ */
-.conds{display:flex;flex-wrap:wrap;gap:4px;margin-top:11px;position:relative;z-index:3;min-height:18px}
-.cond{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:99px;
-  font-family:var(--gl-tech);font-weight:700;font-size:8px;letter-spacing:.04em;text-transform:uppercase;
+.conds{display:flex;gap:4px;margin-left:auto}
+.cond{display:inline-flex;align-items:center;gap:3px;height:18px;padding:0 7px;border-radius:99px;
+  font-family:var(--gl-tech);font-weight:700;font-size:8px;letter-spacing:.03em;text-transform:uppercase;
   color:var(--gl-signal-hot);
-  background:linear-gradient(180deg,color-mix(in srgb,var(--gl-signal) 18%,transparent),color-mix(in srgb,var(--gl-signal) 5%,transparent));
-  border:1px solid color-mix(in srgb,var(--gl-signal) 30%,transparent);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--gl-signal) 20%,rgba(8,11,17,.85)),color-mix(in srgb,var(--gl-signal) 6%,rgba(2,4,7,.9)));
+  border:1px solid color-mix(in srgb,var(--gl-signal) 32%,transparent);backdrop-filter:blur(8px);
   animation:condIn .42s var(--gl-snap) backwards}
-.cond .val{font-weight:800;color:#fff;background:color-mix(in srgb,var(--gl-signal) 55%,#5a3d00);
-  border-radius:99px;padding:0 4px;font-size:7.5px;line-height:1.5}
-.cond.bad{color:#ffd9d4;background:linear-gradient(180deg,color-mix(in srgb,var(--gl-hazard) 20%,transparent),color-mix(in srgb,var(--gl-hazard) 6%,transparent));
-  border-color:color-mix(in srgb,var(--gl-hazard) 35%,transparent)}
-.cond.bad .val{background:color-mix(in srgb,var(--gl-hazard) 60%,#400)}
-.cond.persist{color:#ffb39a;animation:condIn .42s var(--gl-snap) backwards, dread 3.2s ease-in-out infinite}
-@keyframes condIn{from{opacity:0;transform:translateY(6px) scale(.8)}to{opacity:1;transform:none}}
+.cond .v{font-weight:800;color:#fff;background:color-mix(in srgb,var(--gl-signal) 55%,#5a3d00);border-radius:99px;padding:0 4px;font-size:7.5px}
+.cond.bad{color:#ffd9d4;background:linear-gradient(180deg,color-mix(in srgb,var(--gl-hazard) 22%,rgba(8,11,17,.85)),color-mix(in srgb,var(--gl-hazard) 7%,rgba(2,4,7,.9)));
+  border-color:color-mix(in srgb,var(--gl-hazard) 36%,transparent)}
+.cond.bad .v{background:color-mix(in srgb,var(--gl-hazard) 60%,#400)}
+.cond.persist{animation:condIn .42s var(--gl-snap) backwards,dread 3.2s ease-in-out infinite}
+@keyframes condIn{from{opacity:0;transform:translateY(-5px) scale(.8)}to{opacity:1;transform:none}}
 @keyframes dread{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
 
-/* resist / weak strip */
-.rw{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px;position:relative;z-index:3}
-.rw .tag{font-family:var(--gl-tech);font-weight:700;font-size:7px;letter-spacing:.06em;text-transform:uppercase;
-  padding:2px 5px;border-radius:4px;color:var(--gl-text-dim);background:rgba(255,255,255,.04);border:1px solid var(--gl-hair)}
-.rw .tag b{color:var(--gl-good)}
-.rw .tag.weak b{color:var(--gl-hazard)}
+/* --- the horizontal stat band (glass) --- */
+.band{position:relative;display:flex;align-items:stretch;gap:0;height:54px;border-radius:11px;overflow:hidden;isolation:isolate;
+  clip-path:polygon(0 0,calc(100% - 11px) 0,100% 11px,100% 100%,0 100%);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,0) 36%),
+    linear-gradient(98deg,color-mix(in srgb,var(--gl-accent) 13%,rgba(8,11,17,.82)),rgba(6,9,14,.86) 66%);
+  border:1px solid var(--gl-edge);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -10px 22px rgba(0,0,0,.4);
+  filter:drop-shadow(0 14px 26px rgba(0,0,0,.5));
+  backdrop-filter:blur(14px) saturate(1.12)}
+.band::after{content:"";position:absolute;top:-1px;right:-1px;width:16px;height:1px;z-index:6;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--gl-accent) 88%,#fff));
+  transform-origin:100% 0;transform:rotate(45deg) translateX(1px);box-shadow:0 0 7px color-mix(in srgb,var(--gl-accent) 70%,transparent);opacity:.9}
+.seg{display:flex;flex-direction:column;justify-content:center;padding:0 11px;position:relative;z-index:2}
+.seg + .seg::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:1px;
+  background:linear-gradient(180deg,transparent,var(--gl-hair) 20%,var(--gl-hair) 80%,transparent)}
 
-/* ============================================================
-   HAZARD STATE — whole card when bloodied/dying (§7.4)
-   ============================================================ */
-.card.hazard{--gl-accent:var(--gl-hazard)}
-.card.hazard .glass{animation:cardDread 3.2s ease-in-out infinite}
-@keyframes cardDread{0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -12px 28px rgba(0,0,0,.38),inset 0 0 0 1px color-mix(in srgb,var(--gl-hazard) 0%,transparent)}
-  50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -12px 28px rgba(0,0,0,.38),inset 0 0 22px color-mix(in srgb,var(--gl-hazard) 22%,transparent)}}
+/* HP segment */
+.seg.hp{min-width:128px}
+.hp .top{display:flex;align-items:baseline;gap:4px}
+.hp .pilllbl{font-family:var(--gl-tech);font-weight:800;font-size:8px;letter-spacing:.1em;color:#cdd6e8;
+  background:rgba(0,0,0,.5);border-radius:99px;padding:2px 6px;align-self:center}
+.hp .cur{font-weight:800;font-size:21px;line-height:1;color:var(--gl-text-bright);text-shadow:0 0 12px color-mix(in srgb,var(--gl-good) 38%,transparent)}
+.hp .max{font-weight:700;font-size:11px;color:var(--gl-text-dim)}.hp .max::before{content:"/";color:var(--gl-text-faint);margin-right:1px}
+.bar{position:relative;height:6px;margin-top:5px;border-radius:99px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.28));box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.bar .fill{position:absolute;inset:0;width:72%;border-radius:99px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--gl-good) 75%,#0a0),var(--gl-good));
+  box-shadow:0 0 9px color-mix(in srgb,var(--gl-good) 55%,transparent);transition:width .6s var(--gl-pop),background .5s,box-shadow .5s}
+.bar .fill.warn{background:linear-gradient(90deg,#caa23a,var(--gl-signal));box-shadow:0 0 9px color-mix(in srgb,var(--gl-signal) 55%,transparent)}
+.bar .fill.crit{background:linear-gradient(90deg,#b3343a,var(--gl-hazard));box-shadow:0 0 11px color-mix(in srgb,var(--gl-hazard) 60%,transparent)}
 
-/* ============================================================
-   THE BIG ROLL — degree-of-success flash overlay (§6.3 reveal)
-   ============================================================ */
-.roll{position:absolute;inset:0;z-index:20;border-radius:15px;display:grid;place-items:center;pointer-events:none;
-  opacity:0;clip-path:polygon(0 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%)}
-.card.rolling .roll{animation:rollShow 2.6s var(--gl-ease) forwards}
-@keyframes rollShow{0%{opacity:0}8%{opacity:1}80%{opacity:1}100%{opacity:0}}
-.roll .veil{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 50%,color-mix(in srgb,var(--roll-c) 34%,transparent),rgba(2,5,8,.74) 70%)}
-.roll .sweep{position:absolute;top:0;bottom:0;width:46%;
-  background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--roll-c) 70%,#fff),transparent);
-  transform:translateX(-160%) skewX(-12deg)}
-.card.rolling .roll .sweep{animation:rollSweep 2.6s var(--gl-ease)}
-@keyframes rollSweep{0%,6%{transform:translateX(-160%) skewX(-12deg);opacity:0}10%{opacity:1}40%{transform:translateX(260%) skewX(-12deg);opacity:0}100%{transform:translateX(260%) skewX(-12deg);opacity:0}}
-.roll .inner{position:relative;text-align:center}
-.roll .deg{font-family:var(--gl-tech);font-weight:800;font-size:9px;letter-spacing:.4em;text-transform:uppercase;
-  color:var(--roll-c);text-shadow:0 0 12px color-mix(in srgb,var(--roll-c) 80%,transparent)}
-.roll .total{font-weight:800;font-size:46px;line-height:1;color:#fff;margin-top:2px;
-  text-shadow:0 0 22px color-mix(in srgb,var(--roll-c) 80%,transparent)}
-.roll .check{font-family:var(--gl-tech);font-weight:700;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--gl-text-dim);margin-top:4px}
-.roll.critsuccess{--roll-c:var(--gl-signal)} .roll.success{--roll-c:var(--gl-good)}
-.roll.failure{--roll-c:#8893a6} .roll.critfail{--roll-c:var(--gl-hazard)}
+/* defense segment: AC shield + Perception d20 */
+.seg.def{flex-direction:row;align-items:center;gap:10px}
+.stat-ico{position:relative;width:34px;height:38px;display:grid;place-items:center;text-align:center}
+.stat-ico .bg{position:absolute;inset:0;font-size:37px;line-height:38px}
+.stat-ico.ac .bg{color:color-mix(in srgb,var(--gl-accent) 26%,transparent)}
+.stat-ico.per .bg{color:color-mix(in srgb,var(--gl-signal) 30%,transparent)}
+.stat-ico .val{position:relative;font-weight:800;font-size:16px;line-height:1;color:var(--gl-text-bright);text-shadow:0 1px 2px #000}
+.stat-ico .k{position:relative;font-family:var(--gl-tech);font-weight:800;font-size:6px;letter-spacing:.14em;color:var(--gl-text-dim);margin-top:1px}
 
-/* defeated state (§7.6) */
-.card.down{filter:saturate(.18) brightness(.62);opacity:.66}
+/* abilities: single horizontal row of 6 */
+.seg.abil{flex:1;flex-direction:row;align-items:center;gap:0;padding:0 6px;justify-content:space-between}
+.ab{display:flex;flex-direction:column;align-items:center;gap:1px;flex:1}
+.ab .k{font-family:var(--gl-tech);font-weight:800;font-size:6.5px;letter-spacing:.04em;color:var(--gl-text-faint)}
+.ab .v{font-weight:800;font-size:13px;line-height:1;color:var(--gl-text)}
+.ab .m{font-family:var(--gl-tech);font-weight:700;font-size:6px;color:color-mix(in srgb,var(--gl-accent) 40%,#fff)}
 
-/* ---- harness controls (not part of overlay) ---- */
-.dock{position:fixed;top:14px;left:14px;display:flex;gap:8px;flex-wrap:wrap;z-index:99;font-family:var(--gl-tech)}
+/* --- spell strip + shield + focus --- */
+.strip{display:flex;align-items:center;gap:10px;margin-top:5px;padding:0 4px;height:18px;font-family:var(--gl-tech)}
+.strip .ico{font-size:10px;color:var(--gl-violet);filter:drop-shadow(0 0 5px color-mix(in srgb,var(--gl-violet) 60%,transparent))}
+.slots{display:flex;gap:7px}
+.slk{display:flex;flex-direction:column;align-items:center;line-height:1}
+.slk .o{font-weight:700;font-size:6px;letter-spacing:.04em;color:var(--gl-text-faint)}
+.slk .pips{display:flex;gap:2px;margin-top:2px}
+.slk .sp{width:6px;height:6px;border-radius:2px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.35));box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+.slk .sp.on{background:linear-gradient(180deg,color-mix(in srgb,var(--gl-violet) 90%,#fff),var(--gl-violet));box-shadow:0 0 6px color-mix(in srgb,var(--gl-violet) 60%,transparent)}
+.focus{display:flex;align-items:center;gap:4px;margin-left:2px}
+.focus .fl{font-weight:800;font-size:7px;letter-spacing:.1em;color:var(--gl-cyan)}
+.focus .sp.on{background:linear-gradient(180deg,#fff,var(--gl-cyan));box-shadow:0 0 6px color-mix(in srgb,var(--gl-cyan) 60%,transparent)}
+.shieldchip{display:none;align-items:center;gap:4px;margin-left:auto;font-weight:700;font-size:8px;letter-spacing:.06em;color:var(--gl-cyan)}
+.unit.raised .shieldchip{display:inline-flex}
+.shieldchip .v{color:var(--gl-text);opacity:.8}
+.rw{display:flex;gap:4px;margin-left:auto}
+.rw .t{font-family:var(--gl-tech);font-weight:700;font-size:7px;letter-spacing:.04em;text-transform:uppercase;color:var(--gl-text-dim)}
+.rw .t b{color:var(--gl-good)} .rw .t.weak b{color:var(--gl-hazard)}
+
+/* --- player token + handle (rotated-diamond frame) --- */
+.who{position:absolute;left:-2px;bottom:-6px;display:flex;align-items:center;gap:7px;z-index:5}
+.who .tok{width:30px;height:30px;transform:rotate(45deg);border-radius:6px;overflow:hidden;flex:none;
+  background:linear-gradient(180deg,var(--gl-ink-3),var(--gl-ink-1));
+  border:1px solid color-mix(in srgb,var(--gl-accent) 50%,var(--gl-edge));
+  box-shadow:0 4px 12px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.08)}
+.who .tok span{display:grid;place-items:center;width:100%;height:100%;transform:rotate(-45deg);font-size:16px}
+.who .handle{font-family:var(--gl-tech);font-weight:700;font-size:8.5px;letter-spacing:.1em;color:var(--gl-text-dim);
+  background:rgba(2,4,7,.7);border-radius:99px;padding:3px 9px;backdrop-filter:blur(6px)}
+
+/* hazard state */
+.unit.hazard{--gl-accent:var(--gl-hazard)}
+.unit.hazard .band{animation:bandDread 3.2s ease-in-out infinite}
+@keyframes bandDread{0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -10px 22px rgba(0,0,0,.4),inset 0 0 0 1px color-mix(in srgb,var(--gl-hazard) 0%,transparent)}
+  50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -10px 22px rgba(0,0,0,.4),inset 0 0 18px color-mix(in srgb,var(--gl-hazard) 24%,transparent)}}
+
+/* --- THE BIG ROLL — degree-of-success flash over the band --- */
+.roll{position:absolute;inset:0;z-index:20;display:grid;place-items:center;pointer-events:none;opacity:0;border-radius:11px;
+  clip-path:polygon(0 0,calc(100% - 11px) 0,100% 11px,100% 100%,0 100%)}
+.unit.rolling .roll{animation:rollShow 2.6s var(--gl-ease) forwards}
+@keyframes rollShow{0%{opacity:0}7%{opacity:1}82%{opacity:1}100%{opacity:0}}
+.roll .veil{position:absolute;inset:0;background:radial-gradient(130% 120% at 50% 50%,color-mix(in srgb,var(--roll-c) 36%,transparent),rgba(2,5,8,.82) 72%)}
+.roll .sweep{position:absolute;top:0;bottom:0;width:46%;background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--roll-c) 72%,#fff),transparent);transform:translateX(-160%) skewX(-12deg)}
+.unit.rolling .roll .sweep{animation:rollSweep 2.6s var(--gl-ease)}
+@keyframes rollSweep{0%,5%{transform:translateX(-160%) skewX(-12deg);opacity:0}9%{opacity:1}38%{transform:translateX(260%) skewX(-12deg);opacity:0}100%{transform:translateX(260%) skewX(-12deg);opacity:0}}
+.roll .inner{position:relative;display:flex;align-items:center;gap:11px}
+.roll .total{font-weight:800;font-size:34px;line-height:1;color:#fff;text-shadow:0 0 20px color-mix(in srgb,var(--roll-c) 80%,transparent)}
+.roll .txt{display:flex;flex-direction:column;gap:2px}
+.roll .deg{font-family:var(--gl-tech);font-weight:800;font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--roll-c);text-shadow:0 0 10px color-mix(in srgb,var(--roll-c) 80%,transparent)}
+.roll .check{font-family:var(--gl-tech);font-weight:700;font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gl-text-dim)}
+.roll.critsuccess{--roll-c:var(--gl-signal)} .roll.success{--roll-c:var(--gl-good)} .roll.failure{--roll-c:#8893a6} .roll.critfail{--roll-c:var(--gl-hazard)}
+
+.unit.down{filter:saturate(.18) brightness(.62);opacity:.66}
+
+/* harness chrome */
+.dock{position:fixed;top:14px;left:14px;display:flex;gap:8px;flex-wrap:wrap;z-index:99}
 .dock button{font:700 10px/1 var(--gl-tech);letter-spacing:.08em;text-transform:uppercase;color:#cdd6e8;
   background:rgba(255,255,255,.06);border:1px solid var(--gl-edge);border-radius:7px;padding:7px 11px;cursor:pointer}
 .dock button:hover{background:rgba(255,255,255,.13);color:#fff}
-.tag-note{position:fixed;bottom:8px;right:12px;font-family:var(--gl-tech);font-size:8px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--gl-text-faint);z-index:99}
-
-@media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
-}
+.note{position:fixed;bottom:8px;right:12px;font-family:var(--gl-tech);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--gl-text-faint);z-index:99}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
 </style>
 </head>
 <body>
-
 <div class="dock">
   <button onclick="document.body.classList.toggle('is-transparent')">Toggle BG</button>
-  <button onclick="demoDamage()">Damage Wizard</button>
-  <button onclick="demoBigRoll()">Big Roll (Cleric)</button>
-  <button onclick="demoCondition()">Add Condition</button>
-  <button onclick="demoHero()">Spend Hero Pt</button>
+  <button onclick="dmg('sable')">Damage Wizard</button>
+  <button onclick="bigRoll('lyra')">Big Roll (Cleric)</button>
+  <button onclick="addCond('vex')">Add Condition</button>
+  <button onclick="spendHero('lyra')">Spend Hero Pt</button>
+  <button onclick="heal('sable')">Heal Wizard</button>
 </div>
-
 <div class="rail" id="rail"></div>
-<div class="tag-note">OBS BROWSER SOURCE · 1920×1080 · TRANSPARENT</div>
+<div class="note">OBS BROWSER SOURCE · 1920×1080 · TRANSPARENT · COMPACT</div>
 
 <script>
-/* ---- fake party (the data shape a Foundry actor read would produce) ---- */
-const PARTY = [
-  { id:"thorne", accent:"#e0a368", bust:"🛡️", name:"Thorne Ironclad", player:"Marcus",
-    cls:"Fighter", lvl:7, ancestry:"Dwarf",
-    hp:{cur:98,max:112}, ac:25, raised:true, shieldHp:"24/40", heroes:2, heroMax:3,
-    abil:{Str:5,Dex:2,Con:4,Int:0,Wis:1,Cha:1},
-    saves:{Fort:"+16",Ref:"+12",Will:"+13"}, per:"+13", speed:"20",
-    conds:[], rw:[{k:"Resist",v:"fire 5"}],
-    spells:null, focus:null },
-
-  { id:"sable", accent:"#b884d0", bust:"🧙", name:"Sable Vexpar", player:"Aria",
-    cls:"Wizard", lvl:7, ancestry:"Elf",
-    hp:{cur:31,max:64}, ac:21, raised:false, heroes:1, heroMax:3, dying:1,
-    abil:{Str:0,Dex:3,Con:1,Int:5,Wis:2,Cha:1},
-    saves:{Fort:"+9",Ref:"+14",Will:"+15"}, per:"+12", speed:"25",
-    conds:[{t:"Frightened",v:2,bad:true},{t:"Fire",v:3,persist:true}],
-    rw:[{k:"Weak",v:"cold 5",weak:true}],
-    spells:[{rk:"4",on:1,max:2},{rk:"3",on:0,max:3},{rk:"2",on:2,max:3}], focus:null },
-
-  { id:"lyra", accent:"#6fb8d8", bust:"⛪", name:"Lyra Dawnbringer", player:"Sam",
-    cls:"Cleric", lvl:7, ancestry:"Human",
-    hp:{cur:72,max:78}, ac:23, raised:false, heroes:3, heroMax:3,
-    abil:{Str:1,Dex:1,Con:3,Int:0,Wis:5,Cha:2},
-    saves:{Fort:"+14",Ref:"+11",Will:"+16"}, per:"+14", speed:"25",
-    conds:[], rw:[],
-    spells:[{rk:"4",on:2,max:2},{rk:"3",on:1,max:3}], focus:{on:2,max:3} },
-
-  { id:"vex", accent:"#5fdb92", bust:"🗡️", name:"Vex Quickfingers", player:"Jordan",
-    cls:"Rogue", lvl:7, ancestry:"Halfling",
-    hp:{cur:58,max:84}, ac:24, raised:false, heroes:0, heroMax:3,
-    abil:{Str:1,Dex:5,Con:2,Int:2,Wis:1,Cha:3},
-    saves:{Fort:"+11",Ref:"+16",Will:"+11"}, per:"+15", speed:"25",
-    conds:[{t:"Clumsy",v:1,bad:true}], rw:[],
-    spells:null, focus:null },
+const PARTY=[
+ {id:"thorne",accent:"#e0a368",bust:"🛡️",name:"Thorne Ironclad",player:"Marcus",ptok:"⚔️",
+  cls:"Fighter",lvl:7,anc:"Dwarf",hp:{cur:98,max:112},ac:25,per:"+13",raised:true,shieldHp:"24/40",heroes:2,heroMax:3,
+  abil:{Str:5,Dex:2,Con:4,Int:0,Wis:1,Cha:1},conds:[],rw:[{k:"Res",v:"fire 5"}],spells:null,focus:null},
+ {id:"sable",accent:"#b884d0",bust:"🧙",name:"Sable Vexpar",player:"Aria",ptok:"🔮",
+  cls:"Wizard",lvl:7,anc:"Elf",hp:{cur:31,max:64},ac:21,per:"+12",raised:false,heroes:1,heroMax:3,dying:0,
+  abil:{Str:0,Dex:3,Con:1,Int:5,Wis:2,Cha:1},conds:[{t:"Frightened",v:2,bad:true},{t:"Fire",v:3,persist:true}],
+  rw:[{k:"Weak",v:"cold 5",weak:true}],spells:[{rk:"4",on:1,max:2},{rk:"3",on:0,max:3},{rk:"2",on:2,max:3}],focus:null},
+ {id:"lyra",accent:"#6fb8d8",bust:"⛪",name:"Lyra Dawnbringer",player:"Sam",ptok:"✨",
+  cls:"Cleric",lvl:7,anc:"Human",hp:{cur:72,max:78},ac:23,per:"+14",raised:false,heroes:3,heroMax:3,
+  abil:{Str:1,Dex:1,Con:3,Int:0,Wis:5,Cha:2},conds:[],rw:[],spells:[{rk:"4",on:2,max:2},{rk:"3",on:1,max:3}],focus:{on:2,max:3}},
+ {id:"vex",accent:"#5fdb92",bust:"🗡️",name:"Vex Quickfingers",player:"Jordan",ptok:"🎭",
+  cls:"Rogue",lvl:7,anc:"Halfling",hp:{cur:58,max:84},ac:24,per:"+15",raised:false,heroes:0,heroMax:3,
+  abil:{Str:1,Dex:5,Con:2,Int:2,Wis:1,Cha:3},conds:[{t:"Clumsy",v:1,bad:true}],rw:[],spells:null,focus:null},
 ];
+const sgn=n=>(n>=0?"+":"")+n, score=m=>10+m*2;
 
-const sgn = n => (n>=0?"+":"")+n;
-const score = m => 10 + m*2; // display an ability *score* from its modifier
+function unit(p){
+ const pct=Math.round(p.hp.cur/p.hp.max*100), hpc=pct<=25?"crit":pct<=50?"warn":"", hz=pct<=33||p.dying;
+ const heroPips=Array.from({length:p.heroMax},(_,i)=>`<span class="pip ${i<p.heroes?'on':''}"></span>`).join("");
+ const dying=`<div class="dying"><span class="dlbl">Dying</span>${Array.from({length:4},(_,i)=>`<span class="sk ${i<(p.dying||0)?'on':''}">💀</span>`).join("")}</div>`;
+ const ab=Object.entries(p.abil).map(([k,m])=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><span class="v">${score(m)}</span><span class="m">${sgn(m)}</span></div>`).join("");
+ const conds=p.conds.map(c=>`<span class="cond ${c.bad?'bad':''} ${c.persist?'persist':''}">${c.t}${c.v?`<span class="v">${c.v}</span>`:""}</span>`).join("");
+ let strip=`<div class="strip">`;
+ if(p.spells||p.focus){
+   strip+=`<span class="ico">✦</span><span class="slots">`;
+   (p.spells||[]).forEach(s=>{strip+=`<span class="slk"><span class="o">${s.rk}${s.rk=="1"?"ST":s.rk=="2"?"ND":s.rk=="3"?"RD":"TH"}</span><span class="pips">${Array.from({length:s.max},(_,i)=>`<span class="sp ${i<s.on?'on':''}"></span>`).join("")}</span></span>`;});
+   strip+=`</span>`;
+   if(p.focus)strip+=`<span class="focus"><span class="fl">◆</span><span class="pips">${Array.from({length:p.focus.max},(_,i)=>`<span class="sp ${i<p.focus.on?'on':''}"></span>`).join("")}</span></span>`;
+ }
+ if(p.raised)strip+=`<span class="shieldchip">🛡 RAISED <span class="v">${p.shieldHp||""}</span></span>`;
+ if(p.rw.length)strip+=`<span class="rw">${p.rw.map(t=>`<span class="t ${t.weak?'weak':''}">${t.k} <b>${t.v}</b></span>`).join("")}</span>`;
+ strip+=`</div>`;
 
-function pipState(cls){ // hero pip dots
-  return "";
+ return `<div class="unit ${hz?'hazard':''} ${p.raised?'raised':''} ${p.dying?'is-dying':''}" id="u-${p.id}" style="--gl-accent:${p.accent}">
+   <div class="art"><div class="scene"></div><div class="bust">${p.bust}</div><div class="scrim"></div></div>
+   <div class="plate">
+     <div class="tab"><span class="cls">${p.cls}<span class="lv">${p.lvl}</span></span><span class="anc">${p.anc}</span></div>
+     <div class="namebar">
+       <span class="name"><span class="bullet">▶</span><span class="nm">${p.name}</span></span>
+       <div class="hero">${heroPips}</div>${dying}
+       <div class="conds">${conds}</div>
+     </div>
+     <div class="band">
+       <div class="seg hp">
+         <div class="top"><span class="pilllbl">HP</span><span class="cur" data-cur>${p.hp.cur}</span><span class="max">${p.hp.max}</span></div>
+         <div class="bar"><div class="fill ${hpc}" data-fill style="width:${pct}%"></div></div>
+       </div>
+       <div class="seg def">
+         <div class="stat-ico ac"><span class="bg">⬣</span><span class="val">${p.ac}</span><span class="k">AC</span></div>
+         <div class="stat-ico per"><span class="bg">⬢</span><span class="val">${p.per}</span><span class="k">PER</span></div>
+       </div>
+       <div class="seg abil">${ab}</div>
+       <div class="roll" data-roll><div class="veil"></div><div class="sweep"></div>
+         <div class="inner"><div class="total" data-total></div><div class="txt"><div class="deg" data-deg></div><div class="check" data-check></div></div></div></div>
+     </div>
+     ${strip}
+     <div class="who"><span class="tok"><span>${p.ptok}</span></span><span class="handle">${p.player}</span></div>
+   </div>
+ </div>`;
 }
-
-function renderCard(p){
-  const hpPct = Math.round(p.hp.cur/p.hp.max*100);
-  const hpCls = hpPct<=25?"crit":hpPct<=50?"warn":"";
-  const hazard = hpPct<=33 || p.dying;
-  const heroPips = Array.from({length:p.heroMax},(_,i)=>`<span class="pip ${i<p.heroes?'on':''}"></span>`).join("");
-  const dying = p.dying ? `<div class="dying"><span class="dlbl">Dying</span>${
-      Array.from({length:4},(_,i)=>`<span class="skull ${i<p.dying?'on':''}">💀</span>`).join("")}</div>` : "";
-  const ab = Object.entries(p.abil).map(([k,m])=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><span class="v">${score(m)}</span><span class="s">${sgn(m)}</span></div>`).join("");
-  const stats = [["FORT",p.saves.Fort],["REF",p.saves.Ref],["WILL",p.saves.Will],["PER",p.per],["SPD",p.speed]]
-      .map(([k,v])=>`<div class="st"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
-  const conds = p.conds.map(c=>`<span class="cond ${c.bad?'bad':''} ${c.persist?'persist':''}">${c.t}${c.v?`<span class="val">${c.v}</span>`:""}</span>`).join("");
-  const rw = p.rw.map(t=>`<span class="tag ${t.weak?'weak':''}">${t.k} <b>${t.v}</b></span>`).join("");
-  let res="";
-  if(p.spells||p.focus){
-    res = `<div class="res"><div class="kick">Resources</div>`;
-    (p.spells||[]).forEach(s=>{
-      res+=`<div class="slotrow"><span class="rk">R${s.rk}</span><span class="slots">${
-        Array.from({length:s.max},(_,i)=>`<span class="slot ${i<s.on?'on':''}"></span>`).join("")}</span></div>`;
-    });
-    if(p.focus) res+=`<div class="slotrow focus"><span class="rk">◆</span><span class="slots">${
-        Array.from({length:p.focus.max},(_,i)=>`<span class="slot ${i<p.focus.on?'on':''}"></span>`).join("")}</span></div>`;
-    res+=`</div>`;
-  }
-  const shield = p.raised ? `<div class="shieldchip">🛡 RAISED <span class="shp">${p.shieldHp||""}</span></div>` : "";
-
-  return `<div class="card ${hazard?'hazard':''} ${p.raised?'raised':''} ${p.dying?'is-dying':''}" id="card-${p.id}" style="--gl-accent:${p.accent}">
-    <span class="lbr"></span>
-    <div class="art"><div class="scene"></div><div class="bust">${p.bust}</div><div class="scrim"></div></div>
-    <div class="glass">
-      <div class="ident">
-        <div class="name">${p.name}</div>
-        <div class="player">▶ ${p.player}</div>
-        <div class="meta">${p.ancestry} · <b>${p.cls}</b> · LV ${p.lvl}</div>
-      </div>
-      <div class="vitals">
-        <div class="hp">
-          <div class="hpnum"><span class="hpcur" data-hpcur>${p.hp.cur}</span><span class="hpmax">${p.hp.max}</span><span class="hplbl">HP</span></div>
-          <div class="bar"><div class="fill ${hpCls}" data-hpfill style="width:${hpPct}%"></div></div>
-          ${shield}
-        </div>
-        <div class="ac"><span class="shieldbg">⬣</span><span class="acval">${p.ac}</span><span class="aclbl">AC</span></div>
-      </div>
-      <div class="statusline">
-        <div class="hero"><span class="hlbl">Hero</span>${heroPips}</div>
-        ${dying}
-      </div>
-      <div class="abil">${ab}</div>
-      <div class="rule"></div>
-      <div class="stats">${stats}</div>
-      ${res}
-      <div class="conds" data-conds>${conds}</div>
-      ${rw?`<div class="rw">${rw}</div>`:""}
-      <div class="roll" data-roll><div class="veil"></div><div class="sweep"></div>
-        <div class="inner"><div class="deg" data-deg></div><div class="total" data-total></div><div class="check" data-check></div></div></div>
-    </div>
-  </div>`;
-}
-
-function paint(){ document.getElementById("rail").innerHTML = PARTY.map(renderCard).join(""); }
+function paint(){document.getElementById("rail").innerHTML=PARTY.map(unit).join("")}
 paint();
 
-/* ---------- simulated live updates ---------- */
-function demoDamage(){
-  const p = PARTY.find(x=>x.id==="sable");
-  p.hp.cur = Math.max(0, p.hp.cur - 14);
-  const card = document.getElementById("card-sable");
-  const fill = card.querySelector("[data-hpfill]");
-  const num  = card.querySelector("[data-hpcur]");
-  const pct = Math.round(p.hp.cur/p.hp.max*100);
-  fill.style.width = pct+"%";
-  fill.className = "fill "+(pct<=25?"crit":pct<=50?"warn":"");
-  num.textContent = p.hp.cur;
-  num.animate([{transform:"scale(1.5)",color:"#ff7a6f"},{transform:"scale(1)",color:"#f3fbff"}],{duration:600,easing:"cubic-bezier(.34,1.56,.5,1)"});
-  card.classList.add("hazard");
-  card.animate([{transform:"translateX(0)"},{transform:"translateX(-5px)"},{transform:"translateX(5px)"},{transform:"translateX(0)"}],{duration:240});
+/* ---- simulated live updates ---- */
+function setHp(id,delta){
+ const p=PARTY.find(x=>x.id===id); p.hp.cur=Math.max(0,Math.min(p.hp.max,p.hp.cur+delta));
+ const u=document.getElementById("u-"+id), f=u.querySelector("[data-fill]"), n=u.querySelector("[data-cur]");
+ const pct=Math.round(p.hp.cur/p.hp.max*100);
+ f.style.width=pct+"%"; f.className="fill "+(pct<=25?"crit":pct<=50?"warn":""); n.textContent=p.hp.cur;
+ const col=delta<0?"#ff7a6f":"#9affc0";
+ n.animate([{transform:"scale(1.5)",color:col},{transform:"scale(1)",color:"#f3fbff"}],{duration:600,easing:"cubic-bezier(.34,1.56,.5,1)"});
+ u.classList.toggle("hazard",pct<=33||!!p.dying);
 }
-function demoBigRoll(){
-  const card = document.getElementById("card-lyra");
-  const roll = card.querySelector("[data-roll]");
-  const outcomes=[["critsuccess","CRITICAL SUCCESS",34],["success","SUCCESS",27],["failure","FAILURE",14],["critfail","CRITICAL FAILURE",6]];
-  const [cls,label,total]=outcomes[Math.floor(Math.random()*outcomes.length)];
-  roll.className="roll "+cls;
-  roll.querySelector("[data-deg]").textContent=label;
-  roll.querySelector("[data-total]").textContent=total;
-  roll.querySelector("[data-check]").textContent="Religion (Recall Knowledge)";
-  card.classList.remove("rolling"); void card.offsetWidth; card.classList.add("rolling");
+function dmg(id){setHp(id,-14);const u=document.getElementById("u-"+id);u.animate([{transform:"translateX(0)"},{transform:"translateX(-5px)"},{transform:"translateX(5px)"},{transform:"translateX(0)"}],{duration:240});}
+function heal(id){setHp(id,+18);}
+function bigRoll(id){
+ const u=document.getElementById("u-"+id),r=u.querySelector("[data-roll]");
+ const o=[["critsuccess","CRITICAL SUCCESS",34],["success","SUCCESS",27],["failure","FAILURE",14],["critfail","CRITICAL FAILURE",6]][Math.floor(Math.random()*4)];
+ r.className="roll "+o[0]; r.querySelector("[data-deg]").textContent=o[1]; r.querySelector("[data-total]").textContent=o[2];
+ r.querySelector("[data-check]").textContent="Religion · Recall Knowledge";
+ u.classList.remove("rolling");void u.offsetWidth;u.classList.add("rolling");
 }
-function demoCondition(){
-  const p = PARTY.find(x=>x.id==="vex");
-  p.conds.push({t:"Off-Guard",v:0,bad:true});
-  const conds = document.querySelector("#card-vex [data-conds]");
-  conds.insertAdjacentHTML("beforeend",`<span class="cond bad">Off-Guard</span>`);
-}
-function demoHero(){
-  const p = PARTY.find(x=>x.id==="lyra");
-  if(p.heroes<=0) return;
-  const pips = document.querySelectorAll("#card-lyra .hero .pip.on");
-  const last = pips[pips.length-1];
-  last.classList.remove("on"); last.classList.add("flare");
-  setTimeout(()=>last.classList.remove("flare"),600);
-  p.heroes--;
-}
+function addCond(id){const p=PARTY.find(x=>x.id===id);p.conds.push({t:"Off-Guard",bad:true});
+ document.querySelector("#u-"+id+" .conds").insertAdjacentHTML("beforeend",`<span class="cond bad">Off-Guard</span>`);}
+function spendHero(id){const p=PARTY.find(x=>x.id===id);if(p.heroes<=0)return;
+ const on=document.querySelectorAll("#u-"+id+" .hero .pip.on");const last=on[on.length-1];
+ last.classList.remove("on");last.classList.add("flare");setTimeout(()=>last.classList.remove("flare"),600);p.heroes--;}
 
-/* gentle auto-demo so the idle capture isn't static */
-let t=0;
-setInterval(()=>{ t++;
-  if(t%6===2) demoBigRoll();
-  if(t%6===4) demoDamage();
-},4200);
+let t=0;setInterval(()=>{t++;if(t%6===2)bigRoll("lyra");if(t%6===4)dmg("sable");if(t%6===5)heal("sable");},4200);
 </script>
 </body>
 </html>
