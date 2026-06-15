@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GLU Stream — PC Party Rail (Etched Glass)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@200..800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   GL UNIVERSE — STREAM OVERLAY  ·  PC PARTY RAIL
+   Mockup specimen (fake PF2e data + simulated live updates).
+   Faithful to docs/design-language.md (Etched Glass).
+   This is the OBS browser-source view: transparent <body>,
+   the rail is one placeable group of cards.
+   ============================================================ */
+
+/* ---- shared GL tokens (§2, §6.1) ---- */
+:root{
+  --gl-ink-0:#02070b; --gl-ink-1:#080b11; --gl-ink-2:#0b0f17; --gl-ink-3:#161d2c;
+  --gl-text:#eef1f7; --gl-text-bright:#f3fbff; --gl-text-dim:#98a2b6; --gl-text-faint:rgba(243,251,255,.38);
+  --gl-hair:rgba(255,255,255,.08); --gl-edge:rgba(255,255,255,.13); --gl-line-strong:rgba(244,252,255,.55);
+  --gl-signal:#ffd24a; --gl-signal-hot:#ffe070; --gl-cyan:#5eeaff; --gl-hazard:#ff4a52;
+  --gl-good:#5fdb92; --gl-violet:#b497ff; --gl-mission:#37d99a;
+  --gl-display:"Oxanium","Segoe UI",system-ui,sans-serif;
+  --gl-tech:"Bahnschrift","JetBrains Mono","Share Tech Mono",Consolas,monospace;
+  --gl-ease:cubic-bezier(.16,1,.3,1); --gl-snap:cubic-bezier(.2,1.35,.22,1);
+  --gl-pop:cubic-bezier(.34,1.56,.5,1); --gl-exit:cubic-bezier(.55,0,.84,0);
+}
+
+/* OBS browser source = transparent. The checkered/scenic backdrop here is ONLY
+   the mockup harness so the frosted glass has something to refract. Toggle it. */
+html,body{height:100%;margin:0}
+body{
+  font-family:var(--gl-display); color:var(--gl-text);
+  background:
+    radial-gradient(900px 500px at 22% 16%, #243a5e, transparent 60%),
+    radial-gradient(800px 520px at 80% 78%, #46264f, transparent 62%),
+    linear-gradient(160deg,#0c1018,#05080d);
+  -webkit-font-smoothing:antialiased;
+  display:flex; align-items:flex-end; justify-content:center;
+  overflow:hidden;
+}
+body.is-transparent{background:
+  conic-gradient(#1b1f27 25%, #20242d 0 50%, #1b1f27 0 75%, #20242d 0) 0 0/40px 40px;}
+
+/* ============================================================
+   PARTY RAIL  — the placeable group
+   ============================================================ */
+.rail{
+  display:flex; gap:18px; align-items:flex-end;
+  padding:0 34px 40px; margin:0 auto;
+  perspective:1400px;
+}
+
+/* ============================================================
+   PC CARD — large glass slab, chamfered top-right, art overflows top
+   ============================================================ */
+.card{
+  --gl-accent:#6fb8d8;                 /* per-card context tint */
+  position:relative; width:246px;
+  /* leave headroom above the glass for the diorama art to overflow into */
+  padding-top:104px;
+  font-variant-numeric:tabular-nums;
+  transition:transform .5s var(--gl-ease), filter .5s var(--gl-ease), opacity .45s var(--gl-ease);
+  animation:cardIn .6s var(--gl-ease) backwards;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+
+/* ---- the glass body (§3.1 glass-panel + §4.1 chamfer) ---- */
+.glass{
+  position:relative; border-radius:15px;
+  clip-path:polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 34%),
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.20)),
+    linear-gradient(98deg, color-mix(in srgb, var(--gl-accent) 14%, var(--gl-ink-1)), var(--gl-ink-1) 64%);
+  border:1px solid var(--gl-edge);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16), inset 0 -12px 28px rgba(0,0,0,.38);
+  /* outer drop+bloom must be filter (clip-path eats box-shadows) */
+  filter:drop-shadow(0 22px 44px rgba(0,0,0,.6))
+         drop-shadow(0 0 30px color-mix(in srgb, var(--gl-accent) 18%, transparent));
+  backdrop-filter:blur(16px) saturate(1.15);
+  padding:42px 13px 13px;             /* top padding clears the name plate over the art base */
+}
+/* inner radial light catch (§3.1 ::before) */
+.glass::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;z-index:0;
+  background:radial-gradient(70% 130% at 50% -30%, color-mix(in srgb,var(--gl-accent) 50%,transparent), transparent 64%);
+  opacity:.22}
+/* 1px accent hairline tracing the chamfer cut (§4.1) */
+.glass::after{content:"";position:absolute;top:-1px;right:-1px;width:22px;height:1px;z-index:6;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--gl-accent) 88%,#fff));
+  transform-origin:100% 0; transform:rotate(45deg) translateX(1.5px);
+  box-shadow:0 0 8px color-mix(in srgb,var(--gl-accent) 70%,transparent); opacity:.9}
+
+/* ---- L-bracket registration mark (§4.2), brightens when card is "active" ---- */
+.card .lbr{position:absolute;left:7px;top:101px;width:8px;height:8px;z-index:7;
+  border-top:1px solid var(--gl-line-strong);border-left:1px solid var(--gl-line-strong);
+  opacity:.5;transition:.4s}
+.card.active .lbr{border-color:var(--gl-accent);opacity:1;box-shadow:-1px -1px 6px color-mix(in srgb,var(--gl-accent) 60%,transparent)}
+
+/* ============================================================
+   DIORAMA ART — overflows the top, blends into the plate
+   ============================================================ */
+.art{position:absolute;left:0;right:0;top:0;height:176px;z-index:1;border-radius:15px 15px 0 0;overflow:hidden;
+  pointer-events:none;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 58%,transparent 96%);
+          mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 58%,transparent 96%);}
+.art .scene{position:absolute;inset:0;
+  background:radial-gradient(120% 90% at 50% 18%, color-mix(in srgb,var(--gl-accent) 40%,#10151f), #0a0e15 72%);}
+/* stand-in "portrait" — a big glyph bust; real build swaps in actor.img */
+.art .bust{position:absolute;left:50%;top:6px;transform:translateX(-50%);font-size:92px;line-height:1;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.6));}
+/* directional legibility scrim (§3.5) at the base where the name sits */
+.art .scrim{position:absolute;inset:0;background:linear-gradient(0deg,rgba(2,5,8,.96),rgba(2,5,8,.25) 46%,transparent 70%)}
+
+/* ============================================================
+   IDENTITY — name plate sitting at the art/glass seam
+   ============================================================ */
+.ident{position:relative;z-index:3;margin-top:-2px;margin-bottom:9px}
+.ident .name{font-weight:800;font-size:19px;line-height:1;letter-spacing:.2px;
+  background:linear-gradient(180deg,#fff,#cdd6e8);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ident .player{font-family:var(--gl-tech);font-weight:700;font-size:8px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--gl-text-dim);margin-top:3px}
+.ident .meta{font-family:var(--gl-tech);font-weight:700;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--gl-text-faint);margin-top:2px}
+.ident .meta b{color:color-mix(in srgb,var(--gl-accent) 70%,#fff);font-weight:800}
+
+/* precision divider (§4.3 static rule) */
+.rule{height:1px;margin:9px 0;background:linear-gradient(90deg,transparent,var(--gl-hair) 18%,var(--gl-hair) 82%,transparent)}
+.rule.lit{background:linear-gradient(90deg,transparent,var(--gl-accent) 24%,var(--gl-accent) 76%,transparent);
+  box-shadow:0 0 14px color-mix(in srgb,var(--gl-accent) 70%,transparent)}
+
+.kick{font-family:var(--gl-tech);font-weight:700;font-size:7px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--gl-text-faint);margin:0 0 5px}
+
+/* ============================================================
+   VITALS — HP (number + bar) hero, AC + shield chips
+   ============================================================ */
+.vitals{display:flex;gap:8px;align-items:flex-end;position:relative;z-index:3}
+.hp{flex:1;min-width:0}
+.hp .hpnum{display:flex;align-items:baseline;gap:3px;font-weight:800;line-height:1}
+.hp .hpcur{font-size:22px;color:var(--gl-text-bright);text-shadow:0 0 14px color-mix(in srgb,var(--gl-good) 40%,transparent)}
+.hp .hpmax{font-size:11px;color:var(--gl-text-dim)}
+.hp .hpmax::before{content:"/";margin-right:1px;color:var(--gl-text-faint)}
+.hp .hplbl{font-family:var(--gl-tech);font-weight:700;font-size:7px;letter-spacing:.2em;color:var(--gl-text-faint);margin-left:auto}
+.hp .hpnum .hplbl{align-self:center}
+.bar{position:relative;height:7px;margin-top:4px;border-radius:99px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.28));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),inset 0 0 0 1px rgba(255,255,255,.05)}
+.bar .fill{position:absolute;inset:0;width:72%;border-radius:99px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--gl-good) 75%,#0a0),var(--gl-good));
+  box-shadow:0 0 10px color-mix(in srgb,var(--gl-good) 55%,transparent);
+  transition:width .6s var(--gl-pop), background .6s var(--gl-ease), box-shadow .6s var(--gl-ease)}
+.bar .fill.warn{background:linear-gradient(90deg,#caa23a,var(--gl-signal));box-shadow:0 0 10px color-mix(in srgb,var(--gl-signal) 55%,transparent)}
+.bar .fill.crit{background:linear-gradient(90deg,#b3343a,var(--gl-hazard));box-shadow:0 0 12px color-mix(in srgb,var(--gl-hazard) 60%,transparent)}
+
+.ac{position:relative;width:38px;height:42px;flex:none;display:grid;place-items:center;text-align:center}
+.ac .shieldbg{position:absolute;inset:0;color:color-mix(in srgb,var(--gl-accent) 22%,transparent);font-size:42px;line-height:42px}
+.ac .acval{position:relative;font-weight:800;font-size:18px;line-height:1;color:var(--gl-text-bright);text-shadow:0 1px 2px #000}
+.ac .aclbl{position:relative;font-family:var(--gl-tech);font-weight:800;font-size:6.5px;letter-spacing:.16em;color:var(--gl-text-dim);margin-top:1px}
+
+/* raised-shield chip (defenses bundle) */
+.shieldchip{display:none;align-items:center;gap:4px;margin-top:7px;padding:3px 7px;border-radius:7px;
+  width:max-content;font-family:var(--gl-tech);font-weight:700;font-size:8px;letter-spacing:.08em;
+  color:var(--gl-cyan);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--gl-cyan) 16%,transparent),color-mix(in srgb,var(--gl-cyan) 5%,transparent));
+  border:1px solid color-mix(in srgb,var(--gl-cyan) 32%,transparent)}
+.card.raised .shieldchip{display:inline-flex}
+.shieldchip .shp{color:var(--gl-text);opacity:.8}
+
+/* ============================================================
+   HERO POINTS (the "lights") + dying / wounded pips
+   ============================================================ */
+.statusline{display:flex;align-items:center;gap:10px;margin-top:9px;position:relative;z-index:3}
+.hero{display:flex;align-items:center;gap:4px}
+.hero .hlbl{font-family:var(--gl-tech);font-weight:700;font-size:7px;letter-spacing:.18em;color:var(--gl-text-faint);margin-right:1px;text-transform:uppercase}
+.hero .pip{width:11px;height:11px;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 38% 34%, rgba(255,255,255,.14), rgba(0,0,0,.4));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transition:.4s var(--gl-pop)}
+.hero .pip.on{background:radial-gradient(circle at 38% 34%, var(--gl-signal-hot), color-mix(in srgb,var(--gl-signal) 60%,#7a5400));
+  box-shadow:0 0 10px color-mix(in srgb,var(--gl-signal) 75%,transparent), inset 0 0 0 1px color-mix(in srgb,var(--gl-signal-hot) 80%,transparent)}
+.hero .pip.flare{animation:pipflare .6s var(--gl-pop)}
+@keyframes pipflare{0%{transform:scale(.4)}55%{transform:scale(1.35);filter:brightness(1.7)}100%{transform:none}}
+
+.dying{display:none;align-items:center;gap:3px;margin-left:auto}
+.card.is-dying .dying{display:inline-flex}
+.dying .dlbl{font-family:var(--gl-tech);font-weight:800;font-size:7px;letter-spacing:.16em;color:var(--gl-hazard);text-transform:uppercase}
+.dying .skull{font-size:11px;line-height:1;opacity:.3;filter:grayscale(1)}
+.dying .skull.on{opacity:1;filter:none;text-shadow:0 0 8px color-mix(in srgb,var(--gl-hazard) 80%,transparent)}
+
+/* ============================================================
+   ABILITY SCORES — six, mono labels + modifier
+   ============================================================ */
+.abil{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:11px;position:relative;z-index:3}
+.abil .ab{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 0 4px;border-radius:6px;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(0,0,0,.18));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.abil .ab .k{font-family:var(--gl-tech);font-weight:800;font-size:6.5px;letter-spacing:.06em;color:var(--gl-text-faint)}
+.abil .ab .v{font-weight:800;font-size:12px;line-height:1;color:var(--gl-text)}
+.abil .ab .s{font-family:var(--gl-tech);font-weight:700;font-size:6px;color:var(--gl-text-faint)}
+
+/* ============================================================
+   DEFENSE STRIP — saves, perception, speed (resources bundle)
+   ============================================================ */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:9px;position:relative;z-index:3}
+.stats .st{display:flex;flex-direction:column;align-items:center;gap:2px}
+.stats .st .k{font-family:var(--gl-tech);font-weight:700;font-size:6px;letter-spacing:.1em;color:var(--gl-text-faint)}
+.stats .st .v{font-weight:800;font-size:11px;line-height:1;color:color-mix(in srgb,var(--gl-accent) 30%,#fff)}
+
+/* ============================================================
+   RESOURCES — spell slots per rank / focus points
+   ============================================================ */
+.res{margin-top:10px;position:relative;z-index:3}
+.slotrow{display:flex;align-items:center;gap:5px;margin-top:4px}
+.slotrow .rk{font-family:var(--gl-tech);font-weight:800;font-size:7px;letter-spacing:.06em;color:var(--gl-text-faint);width:14px}
+.slotrow .slots{display:flex;gap:3px}
+.slot{width:8px;height:8px;border-radius:2px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.3));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.slot.on{background:linear-gradient(180deg,color-mix(in srgb,var(--gl-violet) 90%,#fff),var(--gl-violet));
+  box-shadow:0 0 7px color-mix(in srgb,var(--gl-violet) 60%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--gl-violet) 80%,transparent)}
+.focus .slot.on{background:linear-gradient(180deg,#fff,var(--gl-cyan));box-shadow:0 0 7px color-mix(in srgb,var(--gl-cyan) 60%,transparent)}
+
+/* ============================================================
+   CONDITIONS — chips that slide in (cascade stagger)
+   ============================================================ */
+.conds{display:flex;flex-wrap:wrap;gap:4px;margin-top:11px;position:relative;z-index:3;min-height:18px}
+.cond{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:99px;
+  font-family:var(--gl-tech);font-weight:700;font-size:8px;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--gl-signal-hot);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--gl-signal) 18%,transparent),color-mix(in srgb,var(--gl-signal) 5%,transparent));
+  border:1px solid color-mix(in srgb,var(--gl-signal) 30%,transparent);
+  animation:condIn .42s var(--gl-snap) backwards}
+.cond .val{font-weight:800;color:#fff;background:color-mix(in srgb,var(--gl-signal) 55%,#5a3d00);
+  border-radius:99px;padding:0 4px;font-size:7.5px;line-height:1.5}
+.cond.bad{color:#ffd9d4;background:linear-gradient(180deg,color-mix(in srgb,var(--gl-hazard) 20%,transparent),color-mix(in srgb,var(--gl-hazard) 6%,transparent));
+  border-color:color-mix(in srgb,var(--gl-hazard) 35%,transparent)}
+.cond.bad .val{background:color-mix(in srgb,var(--gl-hazard) 60%,#400)}
+.cond.persist{color:#ffb39a;animation:condIn .42s var(--gl-snap) backwards, dread 3.2s ease-in-out infinite}
+@keyframes condIn{from{opacity:0;transform:translateY(6px) scale(.8)}to{opacity:1;transform:none}}
+@keyframes dread{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
+
+/* resist / weak strip */
+.rw{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px;position:relative;z-index:3}
+.rw .tag{font-family:var(--gl-tech);font-weight:700;font-size:7px;letter-spacing:.06em;text-transform:uppercase;
+  padding:2px 5px;border-radius:4px;color:var(--gl-text-dim);background:rgba(255,255,255,.04);border:1px solid var(--gl-hair)}
+.rw .tag b{color:var(--gl-good)}
+.rw .tag.weak b{color:var(--gl-hazard)}
+
+/* ============================================================
+   HAZARD STATE — whole card when bloodied/dying (§7.4)
+   ============================================================ */
+.card.hazard{--gl-accent:var(--gl-hazard)}
+.card.hazard .glass{animation:cardDread 3.2s ease-in-out infinite}
+@keyframes cardDread{0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -12px 28px rgba(0,0,0,.38),inset 0 0 0 1px color-mix(in srgb,var(--gl-hazard) 0%,transparent)}
+  50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -12px 28px rgba(0,0,0,.38),inset 0 0 22px color-mix(in srgb,var(--gl-hazard) 22%,transparent)}}
+
+/* ============================================================
+   THE BIG ROLL — degree-of-success flash overlay (§6.3 reveal)
+   ============================================================ */
+.roll{position:absolute;inset:0;z-index:20;border-radius:15px;display:grid;place-items:center;pointer-events:none;
+  opacity:0;clip-path:polygon(0 0,calc(100% - 15px) 0,100% 15px,100% 100%,0 100%)}
+.card.rolling .roll{animation:rollShow 2.6s var(--gl-ease) forwards}
+@keyframes rollShow{0%{opacity:0}8%{opacity:1}80%{opacity:1}100%{opacity:0}}
+.roll .veil{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 50%,color-mix(in srgb,var(--roll-c) 34%,transparent),rgba(2,5,8,.74) 70%)}
+.roll .sweep{position:absolute;top:0;bottom:0;width:46%;
+  background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--roll-c) 70%,#fff),transparent);
+  transform:translateX(-160%) skewX(-12deg)}
+.card.rolling .roll .sweep{animation:rollSweep 2.6s var(--gl-ease)}
+@keyframes rollSweep{0%,6%{transform:translateX(-160%) skewX(-12deg);opacity:0}10%{opacity:1}40%{transform:translateX(260%) skewX(-12deg);opacity:0}100%{transform:translateX(260%) skewX(-12deg);opacity:0}}
+.roll .inner{position:relative;text-align:center}
+.roll .deg{font-family:var(--gl-tech);font-weight:800;font-size:9px;letter-spacing:.4em;text-transform:uppercase;
+  color:var(--roll-c);text-shadow:0 0 12px color-mix(in srgb,var(--roll-c) 80%,transparent)}
+.roll .total{font-weight:800;font-size:46px;line-height:1;color:#fff;margin-top:2px;
+  text-shadow:0 0 22px color-mix(in srgb,var(--roll-c) 80%,transparent)}
+.roll .check{font-family:var(--gl-tech);font-weight:700;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--gl-text-dim);margin-top:4px}
+.roll.critsuccess{--roll-c:var(--gl-signal)} .roll.success{--roll-c:var(--gl-good)}
+.roll.failure{--roll-c:#8893a6} .roll.critfail{--roll-c:var(--gl-hazard)}
+
+/* defeated state (§7.6) */
+.card.down{filter:saturate(.18) brightness(.62);opacity:.66}
+
+/* ---- harness controls (not part of overlay) ---- */
+.dock{position:fixed;top:14px;left:14px;display:flex;gap:8px;flex-wrap:wrap;z-index:99;font-family:var(--gl-tech)}
+.dock button{font:700 10px/1 var(--gl-tech);letter-spacing:.08em;text-transform:uppercase;color:#cdd6e8;
+  background:rgba(255,255,255,.06);border:1px solid var(--gl-edge);border-radius:7px;padding:7px 11px;cursor:pointer}
+.dock button:hover{background:rgba(255,255,255,.13);color:#fff}
+.tag-note{position:fixed;bottom:8px;right:12px;font-family:var(--gl-tech);font-size:8px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--gl-text-faint);z-index:99}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+
+<div class="dock">
+  <button onclick="document.body.classList.toggle('is-transparent')">Toggle BG</button>
+  <button onclick="demoDamage()">Damage Wizard</button>
+  <button onclick="demoBigRoll()">Big Roll (Cleric)</button>
+  <button onclick="demoCondition()">Add Condition</button>
+  <button onclick="demoHero()">Spend Hero Pt</button>
+</div>
+
+<div class="rail" id="rail"></div>
+<div class="tag-note">OBS BROWSER SOURCE · 1920×1080 · TRANSPARENT</div>
+
+<script>
+/* ---- fake party (the data shape a Foundry actor read would produce) ---- */
+const PARTY = [
+  { id:"thorne", accent:"#e0a368", bust:"🛡️", name:"Thorne Ironclad", player:"Marcus",
+    cls:"Fighter", lvl:7, ancestry:"Dwarf",
+    hp:{cur:98,max:112}, ac:25, raised:true, shieldHp:"24/40", heroes:2, heroMax:3,
+    abil:{Str:5,Dex:2,Con:4,Int:0,Wis:1,Cha:1},
+    saves:{Fort:"+16",Ref:"+12",Will:"+13"}, per:"+13", speed:"20",
+    conds:[], rw:[{k:"Resist",v:"fire 5"}],
+    spells:null, focus:null },
+
+  { id:"sable", accent:"#b884d0", bust:"🧙", name:"Sable Vexpar", player:"Aria",
+    cls:"Wizard", lvl:7, ancestry:"Elf",
+    hp:{cur:31,max:64}, ac:21, raised:false, heroes:1, heroMax:3, dying:1,
+    abil:{Str:0,Dex:3,Con:1,Int:5,Wis:2,Cha:1},
+    saves:{Fort:"+9",Ref:"+14",Will:"+15"}, per:"+12", speed:"25",
+    conds:[{t:"Frightened",v:2,bad:true},{t:"Fire",v:3,persist:true}],
+    rw:[{k:"Weak",v:"cold 5",weak:true}],
+    spells:[{rk:"4",on:1,max:2},{rk:"3",on:0,max:3},{rk:"2",on:2,max:3}], focus:null },
+
+  { id:"lyra", accent:"#6fb8d8", bust:"⛪", name:"Lyra Dawnbringer", player:"Sam",
+    cls:"Cleric", lvl:7, ancestry:"Human",
+    hp:{cur:72,max:78}, ac:23, raised:false, heroes:3, heroMax:3,
+    abil:{Str:1,Dex:1,Con:3,Int:0,Wis:5,Cha:2},
+    saves:{Fort:"+14",Ref:"+11",Will:"+16"}, per:"+14", speed:"25",
+    conds:[], rw:[],
+    spells:[{rk:"4",on:2,max:2},{rk:"3",on:1,max:3}], focus:{on:2,max:3} },
+
+  { id:"vex", accent:"#5fdb92", bust:"🗡️", name:"Vex Quickfingers", player:"Jordan",
+    cls:"Rogue", lvl:7, ancestry:"Halfling",
+    hp:{cur:58,max:84}, ac:24, raised:false, heroes:0, heroMax:3,
+    abil:{Str:1,Dex:5,Con:2,Int:2,Wis:1,Cha:3},
+    saves:{Fort:"+11",Ref:"+16",Will:"+11"}, per:"+15", speed:"25",
+    conds:[{t:"Clumsy",v:1,bad:true}], rw:[],
+    spells:null, focus:null },
+];
+
+const sgn = n => (n>=0?"+":"")+n;
+const score = m => 10 + m*2; // display an ability *score* from its modifier
+
+function pipState(cls){ // hero pip dots
+  return "";
+}
+
+function renderCard(p){
+  const hpPct = Math.round(p.hp.cur/p.hp.max*100);
+  const hpCls = hpPct<=25?"crit":hpPct<=50?"warn":"";
+  const hazard = hpPct<=33 || p.dying;
+  const heroPips = Array.from({length:p.heroMax},(_,i)=>`<span class="pip ${i<p.heroes?'on':''}"></span>`).join("");
+  const dying = p.dying ? `<div class="dying"><span class="dlbl">Dying</span>${
+      Array.from({length:4},(_,i)=>`<span class="skull ${i<p.dying?'on':''}">💀</span>`).join("")}</div>` : "";
+  const ab = Object.entries(p.abil).map(([k,m])=>`<div class="ab"><span class="k">${k.toUpperCase()}</span><span class="v">${score(m)}</span><span class="s">${sgn(m)}</span></div>`).join("");
+  const stats = [["FORT",p.saves.Fort],["REF",p.saves.Ref],["WILL",p.saves.Will],["PER",p.per],["SPD",p.speed]]
+      .map(([k,v])=>`<div class="st"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  const conds = p.conds.map(c=>`<span class="cond ${c.bad?'bad':''} ${c.persist?'persist':''}">${c.t}${c.v?`<span class="val">${c.v}</span>`:""}</span>`).join("");
+  const rw = p.rw.map(t=>`<span class="tag ${t.weak?'weak':''}">${t.k} <b>${t.v}</b></span>`).join("");
+  let res="";
+  if(p.spells||p.focus){
+    res = `<div class="res"><div class="kick">Resources</div>`;
+    (p.spells||[]).forEach(s=>{
+      res+=`<div class="slotrow"><span class="rk">R${s.rk}</span><span class="slots">${
+        Array.from({length:s.max},(_,i)=>`<span class="slot ${i<s.on?'on':''}"></span>`).join("")}</span></div>`;
+    });
+    if(p.focus) res+=`<div class="slotrow focus"><span class="rk">◆</span><span class="slots">${
+        Array.from({length:p.focus.max},(_,i)=>`<span class="slot ${i<p.focus.on?'on':''}"></span>`).join("")}</span></div>`;
+    res+=`</div>`;
+  }
+  const shield = p.raised ? `<div class="shieldchip">🛡 RAISED <span class="shp">${p.shieldHp||""}</span></div>` : "";
+
+  return `<div class="card ${hazard?'hazard':''} ${p.raised?'raised':''} ${p.dying?'is-dying':''}" id="card-${p.id}" style="--gl-accent:${p.accent}">
+    <span class="lbr"></span>
+    <div class="art"><div class="scene"></div><div class="bust">${p.bust}</div><div class="scrim"></div></div>
+    <div class="glass">
+      <div class="ident">
+        <div class="name">${p.name}</div>
+        <div class="player">▶ ${p.player}</div>
+        <div class="meta">${p.ancestry} · <b>${p.cls}</b> · LV ${p.lvl}</div>
+      </div>
+      <div class="vitals">
+        <div class="hp">
+          <div class="hpnum"><span class="hpcur" data-hpcur>${p.hp.cur}</span><span class="hpmax">${p.hp.max}</span><span class="hplbl">HP</span></div>
+          <div class="bar"><div class="fill ${hpCls}" data-hpfill style="width:${hpPct}%"></div></div>
+          ${shield}
+        </div>
+        <div class="ac"><span class="shieldbg">⬣</span><span class="acval">${p.ac}</span><span class="aclbl">AC</span></div>
+      </div>
+      <div class="statusline">
+        <div class="hero"><span class="hlbl">Hero</span>${heroPips}</div>
+        ${dying}
+      </div>
+      <div class="abil">${ab}</div>
+      <div class="rule"></div>
+      <div class="stats">${stats}</div>
+      ${res}
+      <div class="conds" data-conds>${conds}</div>
+      ${rw?`<div class="rw">${rw}</div>`:""}
+      <div class="roll" data-roll><div class="veil"></div><div class="sweep"></div>
+        <div class="inner"><div class="deg" data-deg></div><div class="total" data-total></div><div class="check" data-check></div></div></div>
+    </div>
+  </div>`;
+}
+
+function paint(){ document.getElementById("rail").innerHTML = PARTY.map(renderCard).join(""); }
+paint();
+
+/* ---------- simulated live updates ---------- */
+function demoDamage(){
+  const p = PARTY.find(x=>x.id==="sable");
+  p.hp.cur = Math.max(0, p.hp.cur - 14);
+  const card = document.getElementById("card-sable");
+  const fill = card.querySelector("[data-hpfill]");
+  const num  = card.querySelector("[data-hpcur]");
+  const pct = Math.round(p.hp.cur/p.hp.max*100);
+  fill.style.width = pct+"%";
+  fill.className = "fill "+(pct<=25?"crit":pct<=50?"warn":"");
+  num.textContent = p.hp.cur;
+  num.animate([{transform:"scale(1.5)",color:"#ff7a6f"},{transform:"scale(1)",color:"#f3fbff"}],{duration:600,easing:"cubic-bezier(.34,1.56,.5,1)"});
+  card.classList.add("hazard");
+  card.animate([{transform:"translateX(0)"},{transform:"translateX(-5px)"},{transform:"translateX(5px)"},{transform:"translateX(0)"}],{duration:240});
+}
+function demoBigRoll(){
+  const card = document.getElementById("card-lyra");
+  const roll = card.querySelector("[data-roll]");
+  const outcomes=[["critsuccess","CRITICAL SUCCESS",34],["success","SUCCESS",27],["failure","FAILURE",14],["critfail","CRITICAL FAILURE",6]];
+  const [cls,label,total]=outcomes[Math.floor(Math.random()*outcomes.length)];
+  roll.className="roll "+cls;
+  roll.querySelector("[data-deg]").textContent=label;
+  roll.querySelector("[data-total]").textContent=total;
+  roll.querySelector("[data-check]").textContent="Religion (Recall Knowledge)";
+  card.classList.remove("rolling"); void card.offsetWidth; card.classList.add("rolling");
+}
+function demoCondition(){
+  const p = PARTY.find(x=>x.id==="vex");
+  p.conds.push({t:"Off-Guard",v:0,bad:true});
+  const conds = document.querySelector("#card-vex [data-conds]");
+  conds.insertAdjacentHTML("beforeend",`<span class="cond bad">Off-Guard</span>`);
+}
+function demoHero(){
+  const p = PARTY.find(x=>x.id==="lyra");
+  if(p.heroes<=0) return;
+  const pips = document.querySelectorAll("#card-lyra .hero .pip.on");
+  const last = pips[pips.length-1];
+  last.classList.remove("on"); last.classList.add("flare");
+  setTimeout(()=>last.classList.remove("flare"),600);
+  p.heroes--;
+}
+
+/* gentle auto-demo so the idle capture isn't static */
+let t=0;
+setInterval(()=>{ t++;
+  if(t%6===2) demoBigRoll();
+  if(t%6===4) demoDamage();
+},4200);
+</script>
+</body>
+</html>
